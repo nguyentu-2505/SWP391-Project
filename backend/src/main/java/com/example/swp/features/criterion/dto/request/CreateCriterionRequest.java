@@ -1,0 +1,11 @@
+package com.example.swp.features.criterion.dto.request;
+
+import lombok.Data;
+
+@Data
+public class CreateCriterionRequest {
+    private String name;
+    private String description;
+    private int weight;
+    private Long hackathonEventId; // Can be null to create a default criterion
+}
