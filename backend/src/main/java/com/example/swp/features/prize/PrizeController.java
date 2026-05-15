@@ -6,6 +6,7 @@ import com.example.swp.features.prize.dto.response.PrizeResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,12 +19,14 @@ public class PrizeController {
     private final PrizeService prizeService;
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
     public ResponseEntity<PrizeResponse> createPrize(@RequestBody CreatePrizeRequest request) {
         PrizeResponse response = prizeService.createPrize(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PatchMapping("/{prizeId}/assign")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
     public ResponseEntity<PrizeResponse> assignPrizeToTeam(@PathVariable Long prizeId, @RequestBody AssignPrizeRequest request) {
         PrizeResponse response = prizeService.assignPrizeToTeam(prizeId, request);
         return ResponseEntity.ok(response);

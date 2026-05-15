@@ -9,4 +9,6 @@ public interface CriterionService {
     CriterionResponse createCriterion(CreateCriterionRequest request);
     List<CriterionResponse> getCriteriaForEvent(Long hackathonEventId);
     List<CriterionResponse> getDefaultCriteria();
+    CriterionResponse updateCriterion(Long id, com.example.swp.features.criterion.dto.request.UpdateCriterionRequest request);
+    void deleteCriterion(Long id);
 }

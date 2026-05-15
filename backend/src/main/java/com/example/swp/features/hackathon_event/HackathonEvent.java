@@ -1,5 +1,6 @@
 package com.example.swp.features.hackathon_event;
 
+import com.example.swp.features.criterion.Criterion;
 import com.example.swp.features.round.Round;
 import com.example.swp.features.track.Track;
 import jakarta.persistence.*;
@@ -44,4 +45,7 @@ public class HackathonEvent {
 
     @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Track> tracks;
+
+    @OneToMany(mappedBy = "hackathonEvent", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Criterion> criteria;
 }

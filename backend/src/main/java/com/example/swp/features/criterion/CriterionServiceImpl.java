@@ -3,6 +3,7 @@ package com.example.swp.features.criterion;
 import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.hackathon_event.HackathonEventRepository;
 import com.example.swp.features.criterion.dto.request.CreateCriterionRequest;
+import com.example.swp.features.criterion.dto.request.UpdateCriterionRequest;
 import com.example.swp.features.criterion.dto.response.CriterionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,7 @@ public class CriterionServiceImpl implements CriterionService {
 
     @Override
     public List<CriterionResponse> getCriteriaForEvent(Long hackathonEventId) {
-        return criterionRepository.findAllByHackathonEventIdOrDefault(hackathonEventId).stream()
+        return criterionRepository.findByHackathonEventId(hackathonEventId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -48,6 +49,27 @@ public class CriterionServiceImpl implements CriterionService {
         return criterionRepository.findByHackathonEventIsNull().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public CriterionResponse updateCriterion(Long id, UpdateCriterionRequest request) {
+        Criterion criterion = criterionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Criterion not found with id: " + id));
+
+        criterion.setName(request.getName());
+        criterion.setDescription(request.getDescription());
+        criterion.setWeight(request.getWeight());
+
+        Criterion updatedCriterion = criterionRepository.save(criterion);
+        return mapToResponse(updatedCriterion);
+    }
+
+    @Override
+    public void deleteCriterion(Long id) {
+        if (!criterionRepository.existsById(id)) {
+            throw new RuntimeException("Criterion not found with id: " + id);
+        }
+        criterionRepository.deleteById(id);
     }
 
     private CriterionResponse mapToResponse(Criterion criterion) {

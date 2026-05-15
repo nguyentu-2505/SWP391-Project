@@ -7,7 +7,6 @@ export interface Criterion {
     name: string;
     description: string;
     weight: number;
-    hackathonEventId?: number;
 }
 
 export interface CreateCriterionRequest {
@@ -15,6 +14,12 @@ export interface CreateCriterionRequest {
     description: string;
     weight: number;
     hackathonEventId?: number;
+}
+
+export interface UpdateCriterionRequest {
+    name?: string;
+    description?: string;
+    weight?: number;
 }
 
 const createCriterion = async (criterion: CreateCriterionRequest): Promise<Criterion> => {
@@ -44,8 +49,27 @@ const getDefaultCriteria = async (): Promise<Criterion[]> => {
     return response.data;
 };
 
+const updateCriterion = async (id: number, criterion: UpdateCriterionRequest): Promise<Criterion> => {
+    const response = await axios.put(`${API_URL}/${id}`, criterion, {
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        }
+    });
+    return response.data;
+};
+
+const deleteCriterion = async (id: number): Promise<void> => {
+    await axios.delete(`${API_URL}/${id}`, {
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        }
+    });
+};
+
 export const CriterionService = {
     createCriterion,
     getCriteriaForEvent,
     getDefaultCriteria,
+    updateCriterion,
+    deleteCriterion,
 };

@@ -29,9 +29,10 @@ public class RankingServiceImpl implements RankingService {
 
     @Override
     public List<RankingResponse> getRankingForRound(Long roundId) {
-        // 1. Validate Round existence
-        roundRepository.findById(roundId)
-                .orElseThrow(() -> new RuntimeException("Round not found with id: " + roundId));
+        // 1. Validate Round existence - return empty if round doesn't exist
+        if (!roundRepository.existsById(roundId)) {
+            return List.of();
+        }
 
         // 2. Get all submissions for the given round
         List<Submission> submissions = submissionRepository.findByRoundId(roundId);
@@ -56,9 +57,16 @@ public class RankingServiceImpl implements RankingService {
 
             // Fetch all criteria for the event (or default ones) to get weights
             // Assuming all criteria for a round belong to the same event as the round
-            // This might need refinement if criteria can be round-specific without event link
-            List<Criterion> criteria = criterionRepository.findAllByHackathonEventIdOrDefault(roundRepository.findById(roundId).get().getHackathonEvent().getId());
-            criteria.forEach(c -> criterionWeights.put(c.getId(), c.getWeight()));
+            var round = roundRepository.findById(roundId).orElseThrow();
+            var event = round.getHackathonEvent();
+            if (event == null) {
+                // If round has no event, use default criteria only
+                List<Criterion> criteria = criterionRepository.findByHackathonEventIsNull();
+                criteria.forEach(c -> criterionWeights.put(c.getId(), c.getWeight()));
+            } else {
+                List<Criterion> criteria = criterionRepository.findAllByHackathonEventIdOrDefault(event.getId());
+                criteria.forEach(c -> criterionWeights.put(c.getId(), c.getWeight()));
+            }
 
 
             // Calculate weighted score for the submission

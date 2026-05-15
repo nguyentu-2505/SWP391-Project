@@ -3,6 +3,7 @@ package com.example.swp.features.audit_log;
 import com.example.swp.features.audit_log.dto.response.AuditLogResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/audit-logs")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ADMIN')")
 public class AuditLogController {
 
     private final AuditLogService auditLogService;

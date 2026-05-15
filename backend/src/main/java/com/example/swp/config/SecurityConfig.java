@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll() // Allow all auth requests
+                        .requestMatchers("/error").permitAll() // Allow error handling to return correct status codes instead of 403
                         .anyRequest().authenticated() // All other requests need authentication
                 );
 

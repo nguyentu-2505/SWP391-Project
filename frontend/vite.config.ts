@@ -49,6 +49,22 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      '/hackathon-events': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/criteria': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/team-members': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/tournaments': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
   },
 })

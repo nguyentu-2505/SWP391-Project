@@ -1,6 +1,7 @@
 package com.example.swp.features.hackathon_event;
 
 import com.example.swp.features.hackathon_event.dto.request.CreateHackathonEventRequest;
+import com.example.swp.features.hackathon_event.dto.request.UpdateHackathonEventRequest;
 import com.example.swp.features.hackathon_event.dto.response.HackathonEventResponse;
 import com.example.swp.util.SlugUtil;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,30 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         return hackathonEventRepository.findBySlug(slug)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new RuntimeException("Hackathon event not found with slug: " + slug)); // Replace with custom exception
+    }
+
+    @Override
+    public HackathonEventResponse updateHackathonEvent(Long id, UpdateHackathonEventRequest request) {
+        HackathonEvent event = hackathonEventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Hackathon event not found with id: " + id));
+
+        event.setName(request.getName());
+        event.setSlug(SlugUtil.createSlug(request.getName()));
+        event.setDescription(request.getDescription());
+        event.setStartTime(request.getStartTime());
+        event.setEndTime(request.getEndTime());
+        event.setImageUrl(request.getImageUrl());
+
+        HackathonEvent updatedEvent = hackathonEventRepository.save(event);
+        return mapToResponse(updatedEvent);
+    }
+
+    @Override
+    public void deleteHackathonEvent(Long id) {
+        if (!hackathonEventRepository.existsById(id)) {
+            throw new RuntimeException("Hackathon event not found with id: " + id);
+        }
+        hackathonEventRepository.deleteById(id);
     }
 
     private HackathonEventResponse mapToResponse(HackathonEvent event) {

@@ -1,6 +1,7 @@
 package com.example.swp.features.hackathon_event;
 
 import com.example.swp.features.hackathon_event.dto.request.CreateHackathonEventRequest;
+import com.example.swp.features.hackathon_event.dto.request.UpdateHackathonEventRequest;
 import com.example.swp.features.hackathon_event.dto.response.HackathonEventResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +36,19 @@ public class HackathonEventController {
     public ResponseEntity<HackathonEventResponse> getHackathonEventBySlug(@PathVariable String slug) {
         HackathonEventResponse response = hackathonEventService.getHackathonEventBySlug(slug);
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<HackathonEventResponse> updateHackathonEvent(@PathVariable Long id, @Valid @RequestBody UpdateHackathonEventRequest request) {
+        HackathonEventResponse response = hackathonEventService.updateHackathonEvent(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<Void> deleteHackathonEvent(@PathVariable Long id) {
+        hackathonEventService.deleteHackathonEvent(id);
+        return ResponseEntity.noContent().build();
     }
 }

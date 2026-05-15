@@ -40,6 +40,9 @@ public class Submission {
     @Column(name = "report_url")
     private String reportUrl;
 
+    @Column(name = "version")
+    private int version;
+
     @CreationTimestamp
     @Column(name = "submitted_at", updatable = false)
     private LocalDateTime submittedAt;

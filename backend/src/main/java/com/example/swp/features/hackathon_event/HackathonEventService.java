@@ -9,4 +9,6 @@ public interface HackathonEventService {
     HackathonEventResponse createHackathonEvent(CreateHackathonEventRequest request);
     List<HackathonEventResponse> getAllHackathonEvents();
     HackathonEventResponse getHackathonEventBySlug(String slug);
+    HackathonEventResponse updateHackathonEvent(Long id, com.example.swp.features.hackathon_event.dto.request.UpdateHackathonEventRequest request);
+    void deleteHackathonEvent(Long id);
 }

@@ -40,4 +40,7 @@ public class Prize {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "winning_team_id")
     private Team winningTeam;
+
+    @Column(name = "rank")
+    private int rank;
 }
