@@ -168,4 +168,3 @@ VALUES ('Hackathon 2026', 'hackathon-2026', 'Cuộc thi lập trình 2026', GETD
 PRINT '=== Script executed successfully! ===';
 PRINT 'Login username: admin | password: password123';
 GO
-GO
