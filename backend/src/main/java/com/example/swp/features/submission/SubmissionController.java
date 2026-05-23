@@ -19,29 +19,29 @@ public class SubmissionController {
     private final SubmissionService submissionService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('TEAM_MEMBER')")
-    public ResponseEntity<SubmissionResponse> createSubmission(@Valid @RequestBody CreateSubmissionRequest request) {
-        // TODO: Add logic in service to check if the authenticated user is part of the team (request.getTeamId())
+    @PreAuthorize("hasAuthority('ROLE_PARTICIPANT')")
+    public ResponseEntity<SubmissionResponse> createOrUpdateSubmission(@Valid @RequestBody CreateSubmissionRequest request) {
         SubmissionResponse response = submissionService.createSubmission(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER', 'JUDGE', 'MENTOR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ORGANIZER', 'ROLE_JUDGE', 'ROLE_MENTOR')")
     public ResponseEntity<SubmissionResponse> getSubmissionById(@PathVariable Long id) {
         SubmissionResponse response = submissionService.getSubmissionById(id);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/team/{teamId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER', 'JUDGE', 'MENTOR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ORGANIZER', 'ROLE_JUDGE', 'ROLE_MENTOR', 'ROLE_PARTICIPANT')")
     public ResponseEntity<List<SubmissionResponse>> getSubmissionsByTeam(@PathVariable Long teamId) {
+        // TODO: Add security check to ensure a participant can only see their own team's submissions
         List<SubmissionResponse> responses = submissionService.getSubmissionsByTeam(teamId);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/round/{roundId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER', 'JUDGE', 'MENTOR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ORGANIZER', 'ROLE_JUDGE', 'ROLE_MENTOR')")
     public ResponseEntity<List<SubmissionResponse>> getSubmissionsByRound(@PathVariable Long roundId) {
         List<SubmissionResponse> responses = submissionService.getSubmissionsByRound(roundId);
         return ResponseEntity.ok(responses);

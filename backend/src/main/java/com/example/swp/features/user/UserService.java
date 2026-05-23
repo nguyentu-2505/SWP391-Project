@@ -8,4 +8,5 @@ public interface UserService {
     UserResponse approveUser(Long userId);
     List<UserResponse> getAllUsers();
     List<UserResponse> getPendingUsers();
+    UserResponse createUser(com.example.swp.features.user.dto.request.CreateUserRequest request);
 }

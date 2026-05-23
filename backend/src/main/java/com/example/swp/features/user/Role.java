@@ -6,5 +6,5 @@ public enum Role {
     JUDGE,
     GUEST_JUDGE,
     MENTOR,
-    TEAM_MEMBER
+    PARTICIPANT
 }

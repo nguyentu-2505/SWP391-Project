@@ -15,4 +15,5 @@ public class SubmissionResponse {
     private String demoUrl;
     private String reportUrl;
     private LocalDateTime submittedAt;
+    private int version;
 }

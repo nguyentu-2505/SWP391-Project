@@ -4,18 +4,22 @@ import com.example.swp.features.round.Round;
 import com.example.swp.features.round.RoundRepository;
 import com.example.swp.features.team.Team;
 import com.example.swp.features.team.TeamRepository;
+import com.example.swp.features.team_member.TeamMember;
 import com.example.swp.features.team_member.TeamMemberRepository;
 import com.example.swp.features.submission.dto.request.CreateSubmissionRequest;
 import com.example.swp.features.submission.dto.response.SubmissionResponse;
 import com.example.swp.features.user.User;
+import com.example.swp.features.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,45 +30,60 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final TeamRepository teamRepository;
     private final RoundRepository roundRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public SubmissionResponse createSubmission(CreateSubmissionRequest request) {
-        // Get authenticated user's ID
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
-            throw new AccessDeniedException("User not authenticated.");
-        }
-        User currentUser = (User) authentication.getPrincipal();
-        Long currentUserId = currentUser.getId();
-
+        User currentUser = getCurrentUser();
+        
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new RuntimeException("Team not found"));
         Round round = roundRepository.findById(request.getRoundId())
                 .orElseThrow(() -> new RuntimeException("Round not found"));
 
-        // Validate if the current authenticated user is a member of the team they are submitting for
-        if (!teamMemberRepository.existsByTeamIdAndUserId(team.getId(), currentUserId)) {
-            throw new AccessDeniedException("You are not a member of this team and cannot submit on its behalf.");
+        // Security Check 1: Ensure the current user is the leader of the team
+        TeamMember teamMember = teamMemberRepository.findByTeamIdAndUserId(team.getId(), currentUser.getId())
+                .orElseThrow(() -> new AccessDeniedException("You are not a member of this team."));
+        
+        if (!teamMember.isLeader()) {
+            throw new AccessDeniedException("Only the team leader can make a submission.");
         }
 
-        // Add validation: check if submission deadline has passed
+        // Security Check 2: Check if submission is within the round's timeframe
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(round.getStartTime())) {
-            throw new IllegalStateException("Submission for this round has not started yet.");
+            throw new IllegalStateException("The submission period for this round has not started yet.");
         }
         if (now.isAfter(round.getEndTime())) {
-            throw new IllegalStateException("Submission for this round has already ended.");
+            throw new IllegalStateException("The submission period for this round has ended.");
         }
 
-        Submission newSubmission = Submission.builder()
-                .team(team)
-                .round(round)
-                .repositoryUrl(request.getRepositoryUrl())
-                .demoUrl(request.getDemoUrl())
-                .reportUrl(request.getReportUrl())
-                .build();
+        // Find existing submission or create a new one
+        Optional<Submission> existingSubmissionOpt = submissionRepository.findByTeamIdAndRoundId(team.getId(), round.getId());
 
-        Submission savedSubmission = submissionRepository.save(newSubmission);
+        Submission submission;
+        if (existingSubmissionOpt.isPresent()) {
+            // Update existing submission
+            submission = existingSubmissionOpt.get();
+            submission.setRepositoryUrl(request.getRepositoryUrl());
+            submission.setDemoUrl(request.getDemoUrl());
+            submission.setReportUrl(request.getReportUrl());
+            submission.setVersion(submission.getVersion() + 1);
+            submission.setSubmittedAt(LocalDateTime.now()); // Update timestamp on re-submission
+        } else {
+            // Create new submission
+            submission = Submission.builder()
+                    .team(team)
+                    .round(round)
+                    .repositoryUrl(request.getRepositoryUrl())
+                    .demoUrl(request.getDemoUrl())
+                    .reportUrl(request.getReportUrl())
+                    .version(1)
+                    .build();
+        }
+
+        Submission savedSubmission = submissionRepository.save(submission);
         return mapToResponse(savedSubmission);
     }
 
@@ -88,6 +107,12 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new RuntimeException("Submission not found"));
     }
+    
+    private User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
 
     private SubmissionResponse mapToResponse(Submission submission) {
         return SubmissionResponse.builder()
@@ -97,6 +122,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .repositoryUrl(submission.getRepositoryUrl())
                 .demoUrl(submission.getDemoUrl())
                 .reportUrl(submission.getReportUrl())
+                .version(submission.getVersion())
                 .submittedAt(submission.getSubmittedAt())
                 .build();
     }

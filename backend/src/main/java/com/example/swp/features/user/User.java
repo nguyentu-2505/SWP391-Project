@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -41,8 +42,14 @@ public class User implements UserDetails {
     private String fptStudentId;
     private String schoolName;
 
+    @Column(name = "approved")
     @Builder.Default
     private boolean approved = false;
+
+    @Column(name = "is_verified")
+    private boolean verified;
+    private String otpCode;
+    private LocalDateTime otpExpiry;
 
     @OneToMany(mappedBy = "user")
     private List<TeamMember> teamMemberships;
@@ -52,11 +59,14 @@ public class User implements UserDetails {
         if (role == null) {
             return Collections.emptyList();
         }
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
     public boolean isEnabled() {
+        if (this.role == Role.PARTICIPANT) {
+            return this.verified;
+        }
         return this.approved;
     }
 

@@ -16,8 +16,9 @@ const LoginPage: React.FC = () => {
             localStorage.setItem('accessToken', accessToken);
             localStorage.setItem('refreshToken', refreshToken);
             navigate('/dashboard');
-        } catch (err) {
-            setError('Invalid username or password');
+        } catch (err: any) {
+            const message = err.response?.data?.message || 'Invalid username or password';
+            setError(message);
         }
     };
 

@@ -14,11 +14,8 @@ public class CreateScoreRequest {
     @NotNull(message = "Submission ID cannot be null")
     private Long submissionId;
 
-    @NotNull(message = "Judge ID cannot be null")
-    private Long judgeId;
-
     @NotEmpty(message = "Scores list cannot be empty")
-    @Valid // This is important to trigger validation on the objects inside the list
+    @Valid
     private List<ScoreCriterion> scores;
 
     @Data

@@ -22,6 +22,12 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping
+    public ResponseEntity<UserResponse> createUser(@jakarta.validation.Valid @RequestBody com.example.swp.features.user.dto.request.CreateUserRequest request) {
+        UserResponse response = userService.createUser(request);
+        return new ResponseEntity<>(response, org.springframework.http.HttpStatus.CREATED);
+    }
+
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<UserResponse> responses = userService.getAllUsers();

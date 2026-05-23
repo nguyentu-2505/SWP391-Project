@@ -2,20 +2,18 @@ package com.example.swp.features.ranking;
 
 import com.example.swp.features.criterion.Criterion;
 import com.example.swp.features.criterion.CriterionRepository;
-import com.example.swp.features.ranking.dto.RankingResponse;
+import com.example.swp.features.ranking.dto.CriterionScoreResponse;
+import com.example.swp.features.ranking.dto.TeamRankingResponse;
+import com.example.swp.features.round.Round;
 import com.example.swp.features.round.RoundRepository;
 import com.example.swp.features.score.Score;
 import com.example.swp.features.score.ScoreRepository;
 import com.example.swp.features.submission.Submission;
 import com.example.swp.features.submission.SubmissionRepository;
-import com.example.swp.features.team.Team;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,92 +23,63 @@ public class RankingServiceImpl implements RankingService {
     private final SubmissionRepository submissionRepository;
     private final ScoreRepository scoreRepository;
     private final CriterionRepository criterionRepository;
-    private final RoundRepository roundRepository; // To validate round existence
+    private final RoundRepository roundRepository;
 
     @Override
-    public List<RankingResponse> getRankingForRound(Long roundId) {
-        // 1. Validate Round existence - return empty if round doesn't exist
-        if (!roundRepository.existsById(roundId)) {
-            return List.of();
-        }
+    public List<TeamRankingResponse> getRankingForRound(Long roundId) {
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new RuntimeException("Round not found"));
 
-        // 2. Get all submissions for the given round
         List<Submission> submissions = submissionRepository.findByRoundId(roundId);
-        if (submissions.isEmpty()) {
-            return List.of(); // No submissions, no ranking
-        }
+        List<Criterion> criteria = criterionRepository.findAllByHackathonEventIdOrDefault(round.getHackathonEvent().getId());
+        int totalWeight = criteria.stream().mapToInt(Criterion::getWeight).sum();
 
-        // Map to store total scores for each team
-        Map<Long, Double> teamScores = new HashMap<>();
-        Map<Long, Team> teamsMap = new HashMap<>(); // To quickly get team details
+        List<TeamRankingResponse> teamRankings = new ArrayList<>();
 
         for (Submission submission : submissions) {
-            Team team = submission.getTeam();
-            teamsMap.putIfAbsent(team.getId(), team);
-
-            // Get all scores for this submission
             List<Score> scores = scoreRepository.findBySubmissionId(submission.getId());
-
-            double submissionTotalScore = 0.0;
-            // Map to store criterion weights for quick lookup
-            Map<Long, Integer> criterionWeights = new HashMap<>();
-
-            // Fetch all criteria for the event (or default ones) to get weights
-            // Assuming all criteria for a round belong to the same event as the round
-            var round = roundRepository.findById(roundId).orElseThrow();
-            var event = round.getHackathonEvent();
-            if (event == null) {
-                // If round has no event, use default criteria only
-                List<Criterion> criteria = criterionRepository.findByHackathonEventIsNull();
-                criteria.forEach(c -> criterionWeights.put(c.getId(), c.getWeight()));
-            } else {
-                List<Criterion> criteria = criterionRepository.findAllByHackathonEventIdOrDefault(event.getId());
-                criteria.forEach(c -> criterionWeights.put(c.getId(), c.getWeight()));
-            }
-
-
-            // Calculate weighted score for the submission
             Map<Long, List<Score>> scoresByCriterion = scores.stream()
-                    .collect(Collectors.groupingBy(s -> s.getCriterion().getId()));
+                    .collect(Collectors.groupingBy(score -> score.getCriterion().getId()));
 
-            for (Map.Entry<Long, List<Score>> entry : scoresByCriterion.entrySet()) {
-                Long criterionId = entry.getKey();
-                List<Score> criterionScores = entry.getValue();
+            double finalScore = 0;
+            List<CriterionScoreResponse> scoreDetails = new ArrayList<>();
 
-                // Calculate average score for this criterion across all judges
-                double averageCriterionScore = criterionScores.stream()
+            for (Criterion criterion : criteria) {
+                List<Score> criterionScores = scoresByCriterion.getOrDefault(criterion.getId(), Collections.emptyList());
+                double averageScore = criterionScores.stream()
                         .mapToInt(Score::getScoreValue)
                         .average()
                         .orElse(0.0);
 
-                // Get weight for this criterion
-                Integer weight = criterionWeights.getOrDefault(criterionId, 0); // Default to 0 if weight not found
-
-                submissionTotalScore += averageCriterionScore * weight;
+                finalScore += averageScore * criterion.getWeight();
+                
+                scoreDetails.add(CriterionScoreResponse.builder()
+                        .criterionId(criterion.getId())
+                        .criterionName(criterion.getName())
+                        .averageScore(averageScore)
+                        .build());
             }
             
-            // Normalize the score by total weight if needed, or just use raw weighted sum
-            // For simplicity, we'll use raw weighted sum for now.
-            // If you want a score out of 100, you'd divide by sum of all weights * max_score_per_criterion
-            
-            teamScores.merge(team.getId(), submissionTotalScore, Double::sum);
+            // Normalize the final score to be out of 100
+            double normalizedScore = (totalWeight > 0) ? (finalScore / totalWeight) * 10 : 0;
+
+            teamRankings.add(TeamRankingResponse.builder()
+                    .teamId(submission.getTeam().getId())
+                    .teamName(submission.getTeam().getName())
+                    .projectName(submission.getTeam().getProjectName())
+                    .finalScore(normalizedScore)
+                    .scoreDetails(scoreDetails)
+                    .build());
         }
 
-        // 3. Convert to RankingResponse and sort
-        List<RankingResponse> ranking = teamScores.entrySet().stream()
-                .map(entry -> RankingResponse.builder()
-                        .teamId(entry.getKey())
-                        .teamName(teamsMap.get(entry.getKey()).getName())
-                        .totalScore(entry.getValue())
-                        .build())
-                .sorted(Comparator.comparingDouble(RankingResponse::getTotalScore).reversed()) // Sort descending
-                .collect(Collectors.toList());
+        // Sort teams by final score in descending order
+        teamRankings.sort(Comparator.comparingDouble(TeamRankingResponse::getFinalScore).reversed());
 
-        // 4. Assign ranks
-        for (int i = 0; i < ranking.size(); i++) {
-            ranking.get(i).setRank(i + 1);
+        // Assign ranks
+        for (int i = 0; i < teamRankings.size(); i++) {
+            teamRankings.get(i).setRank(i + 1);
         }
 
-        return ranking;
+        return teamRankings;
     }
 }

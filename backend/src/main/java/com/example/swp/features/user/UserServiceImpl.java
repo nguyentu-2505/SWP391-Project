@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Override
     public UserResponse approveUser(Long userId) {
@@ -36,6 +37,29 @@ public class UserServiceImpl implements UserService {
                 .filter(user -> !user.isApproved())
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserResponse createUser(com.example.swp.features.user.dto.request.CreateUserRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Error: Username is already taken!");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Error: Email is already in use!");
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(request.getRole());
+        user.setFptStudentId(request.getFptStudentId());
+        user.setSchoolName(request.getSchoolName());
+        user.setApproved(true);
+        user.setVerified(true);
+        
+        User savedUser = userRepository.save(user);
+        return mapToResponse(savedUser);
     }
 
     private UserResponse mapToResponse(User user) {
