@@ -18,6 +18,9 @@ public class CreateScoreRequest {
     @Valid
     private List<ScoreCriterion> scores;
 
+    public Long getSubmissionId() { return submissionId; }
+    public List<ScoreCriterion> getScores() { return scores; }
+
     @Data
     public static class ScoreCriterion {
         @NotNull(message = "Criterion ID cannot be null")
@@ -28,5 +31,8 @@ public class CreateScoreRequest {
         private int scoreValue;
 
         private String comment;
+        public Long getCriterionId() { return criterionId; }
+        public int getScoreValue() { return scoreValue; }
+        public String getComment() { return comment; }
     }
 }

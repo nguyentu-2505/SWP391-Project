@@ -4,8 +4,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TeamInvitationRepository extends JpaRepository<TeamInvitation, Long> {
-    List<TeamInvitation> findByInviteeEmailAndStatus(String inviteeEmail, String status);
+    Optional<TeamInvitation> findByTeamIdAndInviteeEmail(Long teamId, String inviteeEmail);
+    List<TeamInvitation> findByInviteeEmailAndStatus(String inviteeEmail, InvitationStatus status);
 }

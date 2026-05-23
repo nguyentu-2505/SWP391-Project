@@ -19,7 +19,7 @@ public class TrackController {
     private final TrackService trackService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<TrackResponse> createTrack(@Valid @RequestBody CreateTrackRequest request) {
         TrackResponse response = trackService.createTrack(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);

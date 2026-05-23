@@ -8,4 +8,9 @@ public class CreatePrizeRequest {
     private String description;
     private Long hackathonEventId;
     private Long trackId; // Optional
+
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public Long getHackathonEventId() { return hackathonEventId; }
+    public Long getTrackId() { return trackId; }
 }

@@ -1,5 +1,6 @@
 package com.example.swp.features.ranking;
 
+import com.example.swp.common.ApiResponse;
 import com.example.swp.features.ranking.dto.TeamRankingResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,16 +13,16 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/rankings")
+@RequestMapping("/api/v1/rankings")
 @RequiredArgsConstructor
 public class RankingController {
 
     private final RankingService rankingService;
 
     @GetMapping("/round/{roundId}")
-    @PreAuthorize("hasAuthority('ROLE_ORGANIZER')")
-    public ResponseEntity<List<TeamRankingResponse>> getRankingForRound(@PathVariable Long roundId) {
+    @PreAuthorize("permitAll()") // Publicly accessible leaderboard
+    public ResponseEntity<ApiResponse<List<TeamRankingResponse>>> getRankingForRound(@PathVariable Long roundId) {
         List<TeamRankingResponse> rankings = rankingService.getRankingForRound(roundId);
-        return ResponseEntity.ok(rankings);
+        return ResponseEntity.ok(ApiResponse.success(rankings));
     }
 }

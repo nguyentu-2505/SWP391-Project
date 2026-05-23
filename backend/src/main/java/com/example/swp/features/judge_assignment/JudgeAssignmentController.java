@@ -1,7 +1,8 @@
 package com.example.swp.features.judge_assignment;
 
-import com.example.swp.features.judge_assignment.dto.AssignJudgeRequest;
-import com.example.swp.features.submission.dto.response.SubmissionResponse;
+import com.example.swp.common.ApiResponse;
+import com.example.swp.features.judge_assignment.dto.request.AssignJudgeRequest;
+import com.example.swp.features.judge_assignment.dto.response.JudgeAssignmentResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,23 +13,30 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/judge-assignments")
+@RequestMapping("/api/v1/judge-assignments")
 @RequiredArgsConstructor
 public class JudgeAssignmentController {
 
-    private final JudgeAssignmentService judgeAssignmentService;
+    private final JudgeAssignmentService assignmentService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_ORGANIZER')")
-    public ResponseEntity<Void> assignJudge(@Valid @RequestBody AssignJudgeRequest request) {
-        judgeAssignmentService.assignJudge(request);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<JudgeAssignmentResponse>> assignJudge(@Valid @RequestBody AssignJudgeRequest request) {
+        JudgeAssignmentResponse response = assignmentService.assignJudge(request);
+        return new ResponseEntity<>(ApiResponse.success(response, "Judge assigned successfully."), HttpStatus.CREATED);
     }
 
-    @GetMapping("/my-submissions")
-    @PreAuthorize("hasAuthority('ROLE_JUDGE')")
-    public ResponseEntity<List<SubmissionResponse>> getAssignedSubmissions() {
-        List<SubmissionResponse> responses = judgeAssignmentService.getAssignedSubmissions();
-        return ResponseEntity.ok(responses);
+    @GetMapping("/my-assignments")
+    @PreAuthorize("hasRole('JUDGE')")
+    public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getMyAssignments() {
+        List<JudgeAssignmentResponse> responses = assignmentService.getMyAssignments();
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+    
+    @GetMapping("/judge/{judgeId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getAssignmentsForJudge(@PathVariable Long judgeId) {
+        List<JudgeAssignmentResponse> responses = assignmentService.getAssignmentsForJudge(judgeId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
     }
 }

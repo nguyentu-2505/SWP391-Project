@@ -1,5 +1,6 @@
 package com.example.swp.features.team;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,6 +9,14 @@ import java.util.Optional;
 
 @Repository
 public interface TeamRepository extends JpaRepository<Team, Long> {
-    Optional<Team> findByName(String name);
+    Optional<Team> findByNameAndEventId(String name, Long eventId);
+    
+    @EntityGraph(attributePaths = {"teamMembers", "teamMembers.user"})
     List<Team> findByTrackId(Long trackId);
+    
+    @EntityGraph(attributePaths = {"teamMembers", "teamMembers.user"})
+    List<Team> findByEventId(Long eventId);
+
+    @EntityGraph(attributePaths = {"teamMembers", "teamMembers.user"})
+    Optional<Team> findById(Long id);
 }

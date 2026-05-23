@@ -9,5 +9,6 @@ public interface SubmissionService {
     SubmissionResponse createSubmission(CreateSubmissionRequest request);
     List<SubmissionResponse> getSubmissionsByTeam(Long teamId);
     List<SubmissionResponse> getSubmissionsByRound(Long roundId);
+    List<SubmissionResponse> getSubmissionsByEvent(Long eventId);
     SubmissionResponse getSubmissionById(Long id);
 }

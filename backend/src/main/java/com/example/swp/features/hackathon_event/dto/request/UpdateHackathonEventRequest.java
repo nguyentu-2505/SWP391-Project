@@ -17,4 +17,10 @@ public class UpdateHackathonEventRequest {
     private LocalDateTime endTime;
 
     private String imageUrl;
+
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
+    public String getImageUrl() { return imageUrl; }
 }

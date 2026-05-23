@@ -19,4 +19,10 @@ public class CreateUserRequest {
     private Role role;
     private String fptStudentId;
     private String schoolName;
+    public String getUsername() { return username; }
+    public String getEmail() { return email; }
+    public String getPassword() { return password; }
+    public Role getRole() { return role; }
+    public String getFptStudentId() { return fptStudentId; }
+    public String getSchoolName() { return schoolName; }
 }

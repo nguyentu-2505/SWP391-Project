@@ -19,14 +19,14 @@ public class PrizeController {
     private final PrizeService prizeService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<PrizeResponse> createPrize(@RequestBody CreatePrizeRequest request) {
         PrizeResponse response = prizeService.createPrize(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PatchMapping("/{prizeId}/assign")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<PrizeResponse> assignPrizeToTeam(@PathVariable Long prizeId, @RequestBody AssignPrizeRequest request) {
         PrizeResponse response = prizeService.assignPrizeToTeam(prizeId, request);
         return ResponseEntity.ok(response);

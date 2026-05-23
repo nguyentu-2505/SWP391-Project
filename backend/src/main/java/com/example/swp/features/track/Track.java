@@ -27,4 +27,29 @@ public class Track {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hackathon_event_id")
     private HackathonEvent hackathonEvent;
+
+    public Long getId() { return id; }
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public HackathonEvent getHackathonEvent() { return hackathonEvent; }
+
+    public static TrackBuilder builder() { return new TrackBuilder(); }
+    public static class TrackBuilder {
+        private Long id;
+        private String name;
+        private String description;
+        private HackathonEvent hackathonEvent;
+
+        public TrackBuilder id(Long id) { this.id = id; return this; }
+        public TrackBuilder name(String name) { this.name = name; return this; }
+        public TrackBuilder description(String description) { this.description = description; return this; }
+        public TrackBuilder hackathonEvent(HackathonEvent hackathonEvent) { this.hackathonEvent = hackathonEvent; return this; }
+
+        public Track build() {
+            Track t = new Track();
+            t.id = this.id; t.name = this.name;
+            t.description = this.description; t.hackathonEvent = this.hackathonEvent;
+            return t;
+        }
+    }
 }

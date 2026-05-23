@@ -35,4 +35,33 @@ public class Round {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hackathon_event_id")
     private HackathonEvent hackathonEvent;
+    public Long getId() { return id; }
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
+    public HackathonEvent getHackathonEvent() { return hackathonEvent; }
+
+    public static RoundBuilder builder() { return new RoundBuilder(); }
+    public static class RoundBuilder {
+        private Long id;
+        private String name;
+        private String description;
+        private LocalDateTime startTime;
+        private LocalDateTime endTime;
+        private HackathonEvent hackathonEvent;
+
+        public RoundBuilder id(Long id) { this.id = id; return this; }
+        public RoundBuilder name(String name) { this.name = name; return this; }
+        public RoundBuilder description(String description) { this.description = description; return this; }
+        public RoundBuilder startTime(LocalDateTime startTime) { this.startTime = startTime; return this; }
+        public RoundBuilder endTime(LocalDateTime endTime) { this.endTime = endTime; return this; }
+        public RoundBuilder hackathonEvent(HackathonEvent hackathonEvent) { this.hackathonEvent = hackathonEvent; return this; }
+        public Round build() {
+            Round r = new Round();
+            r.id = this.id; r.name = this.name; r.description = this.description;
+            r.startTime = this.startTime; r.endTime = this.endTime; r.hackathonEvent = this.hackathonEvent;
+            return r;
+        }
+    }
 }

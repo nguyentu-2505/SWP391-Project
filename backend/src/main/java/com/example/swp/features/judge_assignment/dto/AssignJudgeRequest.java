@@ -10,4 +10,7 @@ public class AssignJudgeRequest {
 
     @NotNull
     private Long submissionId;
+
+    public Long getJudgeId() { return judgeId; }
+    public Long getSubmissionId() { return submissionId; }
 }

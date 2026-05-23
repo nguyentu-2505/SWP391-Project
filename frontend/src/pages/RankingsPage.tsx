@@ -1,28 +1,55 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { RankingService, Ranking } from '../services/RankingService';
+import { RoundService, Round } from '../services/RoundService';
 import { Trophy, Loader2, Medal, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const RankingsPage: React.FC = () => {
+    const { slug } = useParams<{ slug: string }>();
     const [rankings, setRankings] = useState<Ranking[]>([]);
+    const [rounds, setRounds] = useState<Round[]>([]);
+    const [selectedRoundId, setSelectedRoundId] = useState<number | ''>('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchRankings();
-    }, []);
+        const fetchRounds = async () => {
+            if (!slug) return;
+            try {
+                const eventRounds = await RoundService.getRoundsForEvent(slug);
+                setRounds(eventRounds);
+                if (eventRounds.length > 0) {
+                    setSelectedRoundId(eventRounds[0].id);
+                }
+            } catch (err) {
+                toast.error('Failed to fetch rounds for this event.');
+            }
+        };
+        fetchRounds();
+    }, [slug]);
 
-    const fetchRankings = async () => {
+    useEffect(() => {
+        if (selectedRoundId) {
+            fetchRankings(selectedRoundId);
+        }
+    }, [selectedRoundId]);
+
+    const fetchRankings = async (roundId: number) => {
         setLoading(true);
         try {
-            // For now, fetching rankings for round 1.
-            const allRankings = await RankingService.getRankingForRound(1);
+            const allRankings = await RankingService.getRankingForRound(roundId);
             setRankings(allRankings);
         } catch (err: any) {
             console.error('Failed to fetch rankings:', err);
+            setRankings([]);
             toast.error(err.response?.data?.message || 'No rankings found for this round.');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleRoundChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedRoundId(Number(e.target.value));
     };
 
     const getRankIcon = (rank: number) => {
@@ -34,12 +61,25 @@ const RankingsPage: React.FC = () => {
 
     return (
         <div className="container mx-auto">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <TrendingUp className="text-blue-600" />
-                    Leaderboard
-                </h1>
-                <p className="text-gray-500 text-sm mt-1">Real-time team standings based on judge scores.</p>
+            <div className="mb-6 flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                        <TrendingUp className="text-blue-600" />
+                        Leaderboard
+                    </h1>
+                    <p className="text-gray-500 text-sm mt-1">Real-time team standings based on judge scores.</p>
+                </div>
+                {rounds.length > 0 && (
+                    <select
+                        value={selectedRoundId}
+                        onChange={handleRoundChange}
+                        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        {rounds.map(round => (
+                            <option key={round.id} value={round.id}>{round.name}</option>
+                        ))}
+                    </select>
+                )}
             </div>
 
             {loading ? (

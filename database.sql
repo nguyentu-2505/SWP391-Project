@@ -26,6 +26,7 @@ IF OBJECT_ID('team', 'U') IS NOT NULL DROP TABLE team;
 IF OBJECT_ID('criterion', 'U') IS NOT NULL DROP TABLE criterion;
 IF OBJECT_ID('round', 'U') IS NOT NULL DROP TABLE round;
 IF OBJECT_ID('track', 'U') IS NOT NULL DROP TABLE track;
+IF OBJECT_ID('event_registration', 'U') IS NOT NULL DROP TABLE event_registration;
 IF OBJECT_ID('hackathon_event', 'U') IS NOT NULL DROP TABLE hackathon_event;
 IF OBJECT_ID('_user', 'U') IS NOT NULL DROP TABLE _user;
 GO
@@ -57,13 +58,24 @@ CREATE TABLE _user (
 
 -- Bảng Hackathon Event
 CREATE TABLE hackathon_event (
-                                 id BIGINT IDENTITY(1,1) PRIMARY KEY,
-                                 name NVARCHAR(255) NOT NULL,
-                                 slug NVARCHAR(255) NOT NULL UNIQUE,
-                                 description NVARCHAR(MAX),
-                                 start_time DATETIME2 NOT NULL,
-                                 end_time DATETIME2 NOT NULL,
-                                 image_url NVARCHAR(255)
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    name NVARCHAR(255) NOT NULL,
+    slug NVARCHAR(255) NOT NULL UNIQUE,
+    description NVARCHAR(MAX),
+    status NVARCHAR(50) NOT NULL DEFAULT 'DRAFT',
+    registration_start DATETIME2,
+    registration_end DATETIME2,
+    start_time DATETIME2 NOT NULL,
+    end_time DATETIME2 NOT NULL,
+    max_team_size INT DEFAULT 5,
+    min_team_size INT DEFAULT 2,
+    rules NVARCHAR(MAX),
+    image_url NVARCHAR(255),
+    organizer_id BIGINT,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    is_deleted BIT DEFAULT 0,
+    FOREIGN KEY (organizer_id) REFERENCES _user(id)
 );
 
 -- Bảng Track (Hạng mục thi đấu)
@@ -73,6 +85,18 @@ CREATE TABLE track (
                        description NVARCHAR(MAX),
                        hackathon_event_id BIGINT,
                        FOREIGN KEY (hackathon_event_id) REFERENCES hackathon_event(id) ON DELETE CASCADE
+);
+
+-- Bảng Event Registration (Mới)
+CREATE TABLE event_registration (
+                                    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+                                    event_id BIGINT NOT NULL,
+                                    user_id BIGINT NOT NULL,
+                                    status NVARCHAR(50) DEFAULT 'REGISTERED',
+                                    registered_at DATETIME2 DEFAULT GETDATE(),
+                                    FOREIGN KEY (event_id) REFERENCES hackathon_event(id) ON DELETE CASCADE,
+                                    FOREIGN KEY (user_id) REFERENCES _user(id) ON DELETE CASCADE,
+                                    UNIQUE (event_id, user_id)
 );
 
 -- Bảng Round (Vòng thi)
@@ -91,7 +115,8 @@ CREATE TABLE criterion (
                            id BIGINT IDENTITY(1,1) PRIMARY KEY,
                            name NVARCHAR(255) NOT NULL,
                            description NVARCHAR(MAX),
-                           weight INT NOT NULL,
+                           max_score INT NOT NULL,
+                           weight INT DEFAULT 1 NOT NULL,
                            hackathon_event_id BIGINT,
                            FOREIGN KEY (hackathon_event_id) REFERENCES hackathon_event(id) ON DELETE CASCADE
 );
@@ -99,11 +124,16 @@ CREATE TABLE criterion (
 -- Bảng Team
 CREATE TABLE team (
                       id BIGINT IDENTITY(1,1) PRIMARY KEY,
-                      name NVARCHAR(255) NOT NULL UNIQUE,
+                      name NVARCHAR(255) NOT NULL,
                       project_name NVARCHAR(255),
                       project_description NVARCHAR(MAX),
                       track_id BIGINT,
-                      FOREIGN KEY (track_id) REFERENCES track(id)
+                      event_id BIGINT NOT NULL,
+                      status NVARCHAR(50) DEFAULT 'ACTIVE',
+                      created_at DATETIME2 DEFAULT GETDATE(),
+                      FOREIGN KEY (track_id) REFERENCES track(id),
+                      FOREIGN KEY (event_id) REFERENCES hackathon_event(id),
+                      UNIQUE (name, event_id)
 );
 
 -- Bảng Team Member
@@ -230,8 +260,8 @@ VALUES
 ('mentor1', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'mentor1@fpt.edu.vn', 'MENTOR', NULL, 'FPT', 1, 1),
 ('student1', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student1@fpt.edu.vn', 'PARTICIPANT', 'SE170001', 'FPT University', 0, 1);
 
-INSERT INTO hackathon_event (name, slug, description, start_time, end_time)
-VALUES ('FPT Hackathon 2026', 'fpt-hackathon-2026', 'Cuộc thi khởi nghiệp công nghệ', GETDATE(), DATEADD(day, 30, GETDATE()));
+INSERT INTO hackathon_event (name, slug, description, start_time, end_time, organizer_id)
+VALUES ('FPT Hackathon 2026', 'fpt-hackathon-2026', 'Cuộc thi khởi nghiệp công nghệ', GETDATE(), DATEADD(day, 30, GETDATE()), 2);
 
 PRINT '=== Script Database chạy thành công! ===';
 GO

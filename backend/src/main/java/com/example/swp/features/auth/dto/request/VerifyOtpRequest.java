@@ -12,4 +12,7 @@ public class VerifyOtpRequest {
 
     @NotBlank
     private String otp;
+
+    public String getEmail() { return email; }
+    public String getOtp() { return otp; }
 }

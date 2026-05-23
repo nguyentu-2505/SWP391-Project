@@ -1,5 +1,6 @@
 package com.example.swp.features.submission;
 
+import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.round.Round;
 import com.example.swp.features.round.RoundRepository;
 import com.example.swp.features.team.Team;
@@ -13,7 +14,6 @@ import com.example.swp.features.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,11 +38,10 @@ public class SubmissionServiceImpl implements SubmissionService {
         User currentUser = getCurrentUser();
         
         Team team = teamRepository.findById(request.getTeamId())
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
         Round round = roundRepository.findById(request.getRoundId())
-                .orElseThrow(() -> new RuntimeException("Round not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
 
-        // Security Check 1: Ensure the current user is the leader of the team
         TeamMember teamMember = teamMemberRepository.findByTeamIdAndUserId(team.getId(), currentUser.getId())
                 .orElseThrow(() -> new AccessDeniedException("You are not a member of this team."));
         
@@ -50,29 +49,25 @@ public class SubmissionServiceImpl implements SubmissionService {
             throw new AccessDeniedException("Only the team leader can make a submission.");
         }
 
-        // Security Check 2: Check if submission is within the round's timeframe
         LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(round.getStartTime())) {
+        if (round.getStartTime() != null && now.isBefore(round.getStartTime())) {
             throw new IllegalStateException("The submission period for this round has not started yet.");
         }
-        if (now.isAfter(round.getEndTime())) {
+        if (round.getEndTime() != null && now.isAfter(round.getEndTime())) {
             throw new IllegalStateException("The submission period for this round has ended.");
         }
 
-        // Find existing submission or create a new one
         Optional<Submission> existingSubmissionOpt = submissionRepository.findByTeamIdAndRoundId(team.getId(), round.getId());
 
         Submission submission;
         if (existingSubmissionOpt.isPresent()) {
-            // Update existing submission
             submission = existingSubmissionOpt.get();
             submission.setRepositoryUrl(request.getRepositoryUrl());
             submission.setDemoUrl(request.getDemoUrl());
             submission.setReportUrl(request.getReportUrl());
             submission.setVersion(submission.getVersion() + 1);
-            submission.setSubmittedAt(LocalDateTime.now()); // Update timestamp on re-submission
+            submission.setSubmittedAt(LocalDateTime.now());
         } else {
-            // Create new submission
             submission = Submission.builder()
                     .team(team)
                     .round(round)
@@ -102,23 +97,32 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     @Override
+    public List<SubmissionResponse> getSubmissionsByEvent(Long eventId) {
+        return submissionRepository.findByEventId(eventId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public SubmissionResponse getSubmissionById(Long id) {
         return submissionRepository.findById(id)
                 .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("Submission not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Submission not found"));
     }
     
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 
     private SubmissionResponse mapToResponse(Submission submission) {
         return SubmissionResponse.builder()
                 .id(submission.getId())
                 .teamId(submission.getTeam().getId())
+                .teamName(submission.getTeam().getName())
                 .roundId(submission.getRound().getId())
+                .roundName(submission.getRound().getName())
                 .repositoryUrl(submission.getRepositoryUrl())
                 .demoUrl(submission.getDemoUrl())
                 .reportUrl(submission.getReportUrl())

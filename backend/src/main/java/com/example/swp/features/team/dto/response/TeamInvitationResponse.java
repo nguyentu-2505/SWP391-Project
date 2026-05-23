@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class TeamInvitationResponse {
     private Long id;
     private Long teamId;
@@ -16,3 +18,4 @@ public class TeamInvitationResponse {
     private String status;
     private LocalDateTime createdAt;
 }
+
