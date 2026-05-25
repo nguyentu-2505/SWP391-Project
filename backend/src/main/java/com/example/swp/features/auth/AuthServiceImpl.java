@@ -21,7 +21,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.security.SecureRandom;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -47,6 +49,8 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        log.info("User logged in successfully: {}", user.getUsername());
 
         String accessToken = jwtTokenProvider.generateAccessToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user);
@@ -99,6 +103,7 @@ public class AuthServiceImpl implements AuthService {
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
 
         userRepository.save(user);
+        log.info("New user registered successfully: {}", user.getUsername());
 
         String emailBody = "Your OTP for Hackathon registration is: " + otp;
         emailService.sendSimpleMessage(user.getEmail(), "Hackathon Registration OTP", emailBody);

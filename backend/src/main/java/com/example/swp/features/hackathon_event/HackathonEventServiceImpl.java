@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HackathonEventServiceImpl implements HackathonEventService {
@@ -39,6 +41,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .build();
 
         HackathonEvent savedEvent = hackathonEventRepository.save(event);
+        log.info("Hackathon event created successfully: id={}, name={} by organizer={}", savedEvent.getId(), savedEvent.getName(), organizer.getUsername());
         return mapToResponse(savedEvent);
     }
 
@@ -59,7 +62,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
 
     @Override
     public HackathonEventResponse getHackathonEventBySlug(String slug) {
-        HackathonEvent event = hackathonEventRepository.findBySlug(slug)
+        HackathonEvent event = hackathonEventRepository.findBySlugAndIsDeletedFalse(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found with slug: " + slug));
         return mapToResponse(event);
     }
@@ -68,7 +71,11 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     public HackathonEventResponse updateHackathonEvent(Long id, UpdateHackathonEventRequest request) {
         HackathonEvent event = hackathonEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
-        // TODO: Add security check to ensure only the organizer can edit
+        
+        User currentUser = getCurrentUser();
+        if (!event.getOrganizer().getId().equals(currentUser.getId()) && !currentUser.getRole().name().equals("ADMIN")) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the organizer or admin can edit this event.");
+        }
 
         event.setName(request.getName());
         event.setSlug(slugify.slugify(request.getName()));
@@ -85,7 +92,11 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     public void deleteHackathonEvent(Long id) {
         HackathonEvent event = hackathonEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
-        // TODO: Add security check
+                
+        User currentUser = getCurrentUser();
+        if (!event.getOrganizer().getId().equals(currentUser.getId()) && !currentUser.getRole().name().equals("ADMIN")) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the organizer or admin can delete this event.");
+        }
         event.setDeleted(true);
         hackathonEventRepository.save(event);
     }
@@ -94,7 +105,11 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     public HackathonEventResponse updateHackathonEventStatus(Long id, HackathonStatus newStatus) {
         HackathonEvent event = hackathonEventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
-        // TODO: Add security check
+                
+        User currentUser = getCurrentUser();
+        if (!event.getOrganizer().getId().equals(currentUser.getId()) && !currentUser.getRole().name().equals("ADMIN")) {
+            throw new org.springframework.security.access.AccessDeniedException("Only the organizer or admin can change the status of this event.");
+        }
         event.setStatus(newStatus);
         
         HackathonEvent updatedEvent = hackathonEventRepository.save(event);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
-import { FileText, Search, Filter, ChevronLeft, ChevronRight, Github } from 'lucide-react';
+import { FileText, Search, Filter, ChevronLeft, ChevronRight, Link } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Skeleton from '../../../components/Skeleton';
 import EmptyState from '../../../components/EmptyState';
@@ -157,7 +157,7 @@ const SubmissionsTab: React.FC = () => {
                                                     rel="noopener noreferrer" 
                                                     className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                                                 >
-                                                    <Github size={16} />
+                                                    <Link size={16} />
                                                     Repo
                                                 </a>
                                             ) : (

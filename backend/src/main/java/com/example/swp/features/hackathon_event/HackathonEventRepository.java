@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface HackathonEventRepository extends JpaRepository<HackathonEvent, Long> {
     @EntityGraph(attributePaths = {"organizer"})
-    Optional<HackathonEvent> findBySlug(String slug);
+    Optional<HackathonEvent> findBySlugAndIsDeletedFalse(String slug);
     
     @EntityGraph(attributePaths = {"organizer"})
     Page<HackathonEvent> findByIsDeletedFalseAndStatus(HackathonStatus status, Pageable pageable);

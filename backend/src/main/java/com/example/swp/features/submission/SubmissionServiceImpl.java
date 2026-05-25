@@ -21,7 +21,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubmissionServiceImpl implements SubmissionService {
@@ -79,11 +81,19 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
 
         Submission savedSubmission = submissionRepository.save(submission);
+        log.info("Submission created/updated successfully: id={}, teamId={}, roundId={}", savedSubmission.getId(), team.getId(), round.getId());
         return mapToResponse(savedSubmission);
     }
 
     @Override
     public List<SubmissionResponse> getSubmissionsByTeam(Long teamId) {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole().name().equals("PARTICIPANT")) {
+            boolean isMember = teamMemberRepository.findByTeamIdAndUserId(teamId, currentUser.getId()).isPresent();
+            if (!isMember) {
+                throw new AccessDeniedException("You can only view submissions for your own team.");
+            }
+        }
         return submissionRepository.findByTeamId(teamId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -105,9 +115,17 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     public SubmissionResponse getSubmissionById(Long id) {
-        return submissionRepository.findById(id)
-                .map(this::mapToResponse)
+        Submission submission = submissionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Submission not found"));
+                
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole().name().equals("PARTICIPANT")) {
+            boolean isMember = teamMemberRepository.findByTeamIdAndUserId(submission.getTeam().getId(), currentUser.getId()).isPresent();
+            if (!isMember) {
+                throw new AccessDeniedException("You can only view submissions for your own team.");
+            }
+        }
+        return mapToResponse(submission);
     }
     
     private User getCurrentUser() {

@@ -21,7 +21,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ScoreServiceImpl implements ScoreService {
@@ -80,6 +82,7 @@ public class ScoreServiceImpl implements ScoreService {
     public void finalizeScores(Long roundId) {
         auditLogService.logAction("FINALIZE_SCORES", "Round", roundId, null, "All scores for round " + roundId + " finalized.");
         scoreRepository.finalizeScoresByRound(roundId);
+        log.info("Scores finalized successfully for round: {}", roundId);
     }
 
     @Override

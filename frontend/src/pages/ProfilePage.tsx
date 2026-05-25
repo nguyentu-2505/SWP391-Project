@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { User, Github, BookOpen, School, Hash, Loader2, Save } from 'lucide-react';
+import { User, Link, BookOpen, School, Hash, Loader2, Save } from 'lucide-react';
 
 interface ProfileData {
     username: string;
@@ -155,7 +155,7 @@ const ProfilePage: React.FC = () => {
                     {/* GitHub URL */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            <span className="flex items-center gap-1.5"><Github size={14} /> GitHub URL</span>
+                            <span className="flex items-center gap-1.5"><Link size={14} /> GitHub URL</span>
                         </label>
                         <input
                             type="url"

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { CheckCircle2, ChevronLeft, Github, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, Code, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import Skeleton from '../../components/Skeleton';
 
 interface SubmissionDetails {
@@ -175,7 +175,7 @@ const ScoringPage: React.FC = () => {
                             rel="noopener noreferrer" 
                             className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm"
                         >
-                            <Github size={16} /> View Code
+                            <Code size={16} /> View Code
                         </a>
                     )}
                     {submission.demoUrl && (
