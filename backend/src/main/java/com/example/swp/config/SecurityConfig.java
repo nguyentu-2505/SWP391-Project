@@ -52,6 +52,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll() // Allow all auth requests
                         .requestMatchers("/error").permitAll() // Allow error handling to return correct status codes instead of 403
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/CategoryCustomers/**").permitAll() // Allow public GET requests
                         .anyRequest().authenticated() // All other requests need authentication
                 );
 
