@@ -7,6 +7,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 
 import java.util.stream.Collectors;
 
@@ -39,20 +41,36 @@ public class GlobalExceptionHandler {
         );
     }
     
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException ex) {
+        return new ResponseEntity<>(
+                ApiResponse.error("UNAUTHORIZED", "Authentication failed."),
+                HttpStatus.UNAUTHORIZED
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
+        return new ResponseEntity<>(
+                ApiResponse.error("FORBIDDEN", "You do not have permission to access this resource."),
+                HttpStatus.FORBIDDEN
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex, WebRequest request) {
-        // In a real app, you would log the exception ex
+        ex.printStackTrace();
         return new ResponseEntity<>(
-                ApiResponse.error("INTERNAL_SERVER_ERROR", "An unexpected error occurred. " + ex.getMessage()),
+                ApiResponse.error("INTERNAL_SERVER_ERROR", "An unexpected error occurred."),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
 
-    private static class ValidationError {
+    public static class ValidationError {
         private final String field;
         private final String message;
 
-        ValidationError(String field, String message) {
+        public ValidationError(String field, String message) {
             this.field = field;
             this.message = message;
         }

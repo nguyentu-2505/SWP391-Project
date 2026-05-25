@@ -20,11 +20,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Random;
+import java.security.SecureRandom;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
@@ -92,7 +94,7 @@ public class AuthServiceImpl implements AuthService {
         user.setApproved(false);
         user.setVerified(false);
 
-        String otp = String.format("%06d", new Random().nextInt(999999));
+        String otp = String.format("%06d", SECURE_RANDOM.nextInt(999999));
         user.setOtpCode(otp);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
 

@@ -11,6 +11,7 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank
+    @jakarta.validation.constraints.Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
     @NotBlank
