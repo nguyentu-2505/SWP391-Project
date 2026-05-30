@@ -15,6 +15,9 @@ public interface ScoreRepository extends JpaRepository<Score, Long> {
     List<Score> findBySubmissionId(Long submissionId);
     
     @EntityGraph(attributePaths = {"judge", "submission", "criterion"})
+    List<Score> findBySubmissionIdIn(List<Long> submissionIds);
+
+    @EntityGraph(attributePaths = {"judge", "submission", "criterion"})
     List<Score> findByJudgeId(Long judgeId);
     
     @EntityGraph(attributePaths = {"judge", "submission", "criterion"})

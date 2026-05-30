@@ -3,6 +3,7 @@ package com.example.swp.features.team;
 import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.team_member.TeamMember;
 import com.example.swp.features.track.Track;
+import com.example.swp.features.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -48,6 +49,16 @@ public class Team {
     @Column(length = 50)
     private TeamStatus status = TeamStatus.ACTIVE;
 
+    @Column(name = "disqualification_reason", columnDefinition = "NVARCHAR(MAX)")
+    private String disqualificationReason;
+
+    @Column(name = "disqualified_at")
+    private LocalDateTime disqualifiedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "disqualified_by")
+    private User disqualifiedBy;
+
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeamMember> teamMembers;
 
@@ -60,6 +71,9 @@ public class Team {
     public Track getTrack() { return track; }
     public HackathonEvent getEvent() { return event; }
     public TeamStatus getStatus() { return status; }
+    public String getDisqualificationReason() { return disqualificationReason; }
+    public LocalDateTime getDisqualifiedAt() { return disqualifiedAt; }
+    public User getDisqualifiedBy() { return disqualifiedBy; }
     public List<TeamMember> getTeamMembers() { return teamMembers; }
     public void setTeamMembers(List<TeamMember> teamMembers) { this.teamMembers = teamMembers; }
     public LocalDateTime getCreatedAt() { return createdAt; }
@@ -73,6 +87,9 @@ public class Team {
         private Track track;
         private HackathonEvent event;
         private TeamStatus status;
+        private String disqualificationReason;
+        private LocalDateTime disqualifiedAt;
+        private User disqualifiedBy;
         private List<TeamMember> teamMembers;
         private LocalDateTime createdAt;
 
@@ -83,6 +100,9 @@ public class Team {
         public TeamBuilder track(Track track) { this.track = track; return this; }
         public TeamBuilder event(HackathonEvent event) { this.event = event; return this; }
         public TeamBuilder status(TeamStatus status) { this.status = status; return this; }
+        public TeamBuilder disqualificationReason(String disqualificationReason) { this.disqualificationReason = disqualificationReason; return this; }
+        public TeamBuilder disqualifiedAt(LocalDateTime disqualifiedAt) { this.disqualifiedAt = disqualifiedAt; return this; }
+        public TeamBuilder disqualifiedBy(User disqualifiedBy) { this.disqualifiedBy = disqualifiedBy; return this; }
         public TeamBuilder teamMembers(List<TeamMember> teamMembers) { this.teamMembers = teamMembers; return this; }
         public TeamBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
         
@@ -91,6 +111,9 @@ public class Team {
             t.id = this.id; t.name = this.name; t.projectName = this.projectName;
             t.projectDescription = this.projectDescription; t.track = this.track;
             t.event = this.event; t.status = this.status; t.teamMembers = this.teamMembers;
+            t.disqualificationReason = this.disqualificationReason;
+            t.disqualifiedAt = this.disqualifiedAt;
+            t.disqualifiedBy = this.disqualifiedBy;
             t.createdAt = this.createdAt;
             return t;
         }

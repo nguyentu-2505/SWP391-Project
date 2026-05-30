@@ -1,0 +1,44 @@
+package com.example.swp.features.export;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/v1/export")
+@RequiredArgsConstructor
+public class ExportController {
+
+    private final ExportService exportService;
+
+    @GetMapping("/rounds/{roundId}/ranking")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<byte[]> exportRankingCsv(@PathVariable Long roundId) {
+        byte[] csvData = exportService.exportRankingCsv(roundId);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv; charset=utf-8"));
+        headers.setContentDispositionFormData("attachment", "ranking_round_" + roundId + ".csv");
+        
+        return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/rounds/{roundId}/scoring")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<byte[]> exportScoringCsv(@PathVariable Long roundId) {
+        byte[] csvData = exportService.exportAnonymizedScoringCsv(roundId);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv; charset=utf-8"));
+        headers.setContentDispositionFormData("attachment", "scoring_round_" + roundId + ".csv");
+        
+        return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+    }
+}

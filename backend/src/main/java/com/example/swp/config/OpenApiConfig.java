@@ -113,4 +113,12 @@ public class OpenApiConfig {
                 .packagesToScan("com.example.swp.features.notification")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi exportApi() {
+        return GroupedOpenApi.builder()
+                .group("Exports")
+                .packagesToScan("com.example.swp.features.export")
+                .build();
+    }
 }

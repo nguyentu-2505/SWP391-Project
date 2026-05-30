@@ -1,6 +1,7 @@
 package com.example.swp.features.auth;
 
 import com.example.swp.common.ApiResponse;
+import com.example.swp.features.auth.dto.request.CreateGuestJudgeRequest;
 import com.example.swp.features.auth.dto.request.LoginRequest;
 import com.example.swp.features.auth.dto.request.RefreshTokenRequest;
 import com.example.swp.features.auth.dto.request.RegisterRequest;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,4 +47,15 @@ public class AuthController {
         authService.verifyOtp(request);
         return ResponseEntity.ok(ApiResponse.success(null, "OTP verified successfully."));
     }
-}
+
+    /**
+     * Organizer creates a temporary Guest Judge account.
+     * Guest judge credentials are emailed to the provided address.
+     */
+    @PostMapping("/create-guest-judge")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<Void>> createGuestJudge(@Valid @RequestBody CreateGuestJudgeRequest request) {
+        authService.createGuestJudge(request);
+        return new ResponseEntity<>(ApiResponse.success(null, "Guest judge account created. Credentials sent via email."), HttpStatus.CREATED);
+    }
+}

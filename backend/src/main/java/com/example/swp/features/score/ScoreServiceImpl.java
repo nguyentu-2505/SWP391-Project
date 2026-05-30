@@ -7,6 +7,7 @@ import com.example.swp.features.criterion.CriterionRepository;
 import com.example.swp.features.judge_assignment.JudgeAssignmentRepository;
 import com.example.swp.features.submission.Submission;
 import com.example.swp.features.submission.SubmissionRepository;
+import com.example.swp.features.round.TeamRoundAdvancementRepository;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.score.dto.request.CreateScoreRequest;
@@ -33,6 +34,7 @@ public class ScoreServiceImpl implements ScoreService {
     private final UserRepository userRepository;
     private final CriterionRepository criterionRepository;
     private final JudgeAssignmentRepository judgeAssignmentRepository;
+    private final TeamRoundAdvancementRepository advancementRepository;
     private final AuditLogService auditLogService;
 
     @Override
@@ -42,8 +44,16 @@ public class ScoreServiceImpl implements ScoreService {
         Submission submission = submissionRepository.findById(request.getSubmissionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Submission not found"));
 
+        if (submission.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new IllegalStateException("Cannot score submissions from disqualified teams.");
+        }
+
         if (!judgeAssignmentRepository.existsByJudgeIdAndSubmissionId(judge.getId(), submission.getId())) {
             throw new AccessDeniedException("You are not assigned to score this submission.");
+        }
+
+        if (advancementRepository.existsByFromRoundId(submission.getRound().getId())) {
+            throw new IllegalStateException("Scoring is frozen. Teams have already advanced from this round.");
         }
         
         List<Score> savedScores = new ArrayList<>();

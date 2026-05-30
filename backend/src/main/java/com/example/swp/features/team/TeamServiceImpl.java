@@ -5,7 +5,10 @@ import com.example.swp.features.event_registration.EventRegistrationRepository;
 import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.hackathon_event.HackathonEventRepository;
 import com.example.swp.features.team.dto.request.CreateTeamRequest;
+import com.example.swp.features.team.dto.request.DisqualifyTeamRequest;
 import com.example.swp.features.team.dto.response.TeamResponse;
+import com.example.swp.features.audit_log.AuditLogService;
+import com.example.swp.features.notification.NotificationService;
 import com.example.swp.features.team_member.TeamMember;
 import com.example.swp.features.team_member.TeamMemberRepository;
 import com.example.swp.features.track.Track;
@@ -17,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +35,8 @@ public class TeamServiceImpl implements TeamService {
     private final HackathonEventRepository eventRepository;
     private final TrackRepository trackRepository;
     private final EventRegistrationRepository registrationRepository;
+    private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -103,6 +109,49 @@ public class TeamServiceImpl implements TeamService {
         return mapToResponse(membership.getTeam());
     }
     
+    @Override
+    @Transactional
+    public void disqualifyTeam(Long teamId, DisqualifyTeamRequest request) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+
+        if (team.getStatus() == TeamStatus.DISQUALIFIED) {
+            throw new IllegalStateException("Team is already disqualified");
+        }
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        team.setStatus(TeamStatus.DISQUALIFIED);
+        team.setDisqualificationReason(request.getReason());
+        team.setDisqualifiedAt(LocalDateTime.now());
+        team.setDisqualifiedBy(currentUser);
+
+        teamRepository.save(team);
+
+        auditLogService.logAction(
+                "DISQUALIFY_TEAM",
+                "TEAM",
+                team.getId(),
+                "ACTIVE",
+                String.format("Team '%s' DISQUALIFIED by %s. Reason: %s", 
+                        team.getName(), currentUser.getUsername(), request.getReason())
+        );
+
+        List<TeamMember> members = teamMemberRepository.findByTeamId(team.getId());
+        for (TeamMember member : members) {
+            notificationService.createNotification(
+                    member.getUser(),
+                    "Team Disqualified",
+                    "Your team '" + team.getName() + "' has been disqualified. Reason: " + request.getReason(),
+                    "TEAM_DISQUALIFIED",
+                    "TEAM",
+                    team.getId()
+            );
+        }
+    }
+
     private boolean isUserInAnotherTeamInEvent(User user, Long eventId) {
         List<TeamMember> memberships = teamMemberRepository.findByUserId(user.getId());
         return memberships.stream().anyMatch(m -> m.getTeam().getEvent().getId().equals(eventId));

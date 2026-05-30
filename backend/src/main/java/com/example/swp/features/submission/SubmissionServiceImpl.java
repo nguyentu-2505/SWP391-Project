@@ -41,6 +41,11 @@ public class SubmissionServiceImpl implements SubmissionService {
         
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+        
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new IllegalStateException("Your team has been disqualified and cannot make submissions.");
+        }
+
         Round round = roundRepository.findById(request.getRoundId())
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
 

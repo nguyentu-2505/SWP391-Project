@@ -51,6 +51,8 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true; // We can integrate user.isApproved() if required in the future
+        // Security fix: previously always returned true, bypassing approval/verification gates.
+        // Now: user must have verified email (OTP) AND been approved by admin/organizer.
+        return user.isVerified() && user.isApproved();
     }
 }

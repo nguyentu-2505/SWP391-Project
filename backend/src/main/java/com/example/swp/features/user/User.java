@@ -59,6 +59,11 @@ public class User {
     private String otpCode;
     @Column(name = "otp_expiry")
     private LocalDateTime otpExpiry;
+
+    /** Marks accounts created temporarily by organizers for guest judges. */
+    @Column(name = "is_temporary")
+    @Builder.Default
+    private boolean temporary = false;
     
     public String getUsername() { return username; }
     public String getPassword() { return password; }
@@ -94,4 +99,6 @@ public class User {
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public void setFptStudentId(String fptStudentId) { this.fptStudentId = fptStudentId; }
     public void setSchoolName(String schoolName) { this.schoolName = schoolName; }
+    public boolean isTemporary() { return temporary; }
+    public void setTemporary(boolean temporary) { this.temporary = temporary; }
 }

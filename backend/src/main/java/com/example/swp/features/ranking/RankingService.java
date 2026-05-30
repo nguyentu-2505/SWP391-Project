@@ -26,18 +26,18 @@ public class RankingService {
     private final ScoreRepository scoreRepository;
 
     public List<TeamRankingResponse> getRankingForRound(Long roundId) {
-        List<Submission> submissions = submissionRepository.findByRoundId(roundId);
+        List<Submission> submissions = submissionRepository.findByRoundId(roundId).stream()
+                .filter(sub -> sub.getTeam().getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED)
+                .collect(Collectors.toList());
+                
         if (submissions.isEmpty()) {
             return List.of();
         }
 
         List<Long> submissionIds = submissions.stream().map(Submission::getId).collect(Collectors.toList());
-        List<Score> allScores = scoreRepository.findAllById(submissionIds); // This is not correct, need to find by submission ids
 
-        // Correct way to fetch scores for all submissions in a round
-        List<Score> scoresForRound = submissionRepository.findByRoundId(roundId).stream()
-            .flatMap(sub -> scoreRepository.findBySubmissionId(sub.getId()).stream())
-            .collect(Collectors.toList());
+        // Fetch all scores for submissions in this round (avoids N+1)
+        List<Score> scoresForRound = scoreRepository.findBySubmissionIdIn(submissionIds);
 
 
         Map<Submission, List<Score>> scoresBySubmission = scoresForRound.stream()

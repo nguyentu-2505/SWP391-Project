@@ -69,7 +69,13 @@ public class MentorshipRequestService {
     @Transactional
     public MentorshipRequestResponse acceptRequest(Long requestId) {
         User mentor = getCurrentUser();
-        if (mentor.getRole() != Role.MENTOR) {
+
+        // Explicit block: Guest Judges are external reviewers only, not mentors.
+        if (mentor.getRole() == Role.GUEST_JUDGE) {
+            throw new AccessDeniedException("Guest judges cannot accept mentorship requests.");
+        }
+        // Internal judges (JUDGE role) CAN be mentors on different tracks – allow them.
+        if (mentor.getRole() != Role.MENTOR && mentor.getRole() != Role.JUDGE) {
             throw new AccessDeniedException("Only mentors can accept requests.");
         }
 
@@ -128,7 +134,8 @@ public class MentorshipRequestService {
     
     public List<MentorshipRequestResponse> getMyMentorshipRequests() {
         User currentUser = getCurrentUser();
-        if (currentUser.getRole() == Role.MENTOR) {
+        // Internal mentors and internal judges who can also mentor
+        if (currentUser.getRole() == Role.MENTOR || currentUser.getRole() == Role.JUDGE) {
             return requestRepository.findByMentorId(currentUser.getId()).stream()
                 .map(this::mapToResponse).collect(Collectors.toList());
         }

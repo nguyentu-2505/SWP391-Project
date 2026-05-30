@@ -44,4 +44,11 @@ public class TeamController {
         TeamResponse response = teamService.getMyTeamForEvent(eventId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    @PostMapping("/{id}/disqualify")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<Void>> disqualifyTeam(@PathVariable Long id, @Valid @RequestBody com.example.swp.features.team.dto.request.DisqualifyTeamRequest request) {
+        teamService.disqualifyTeam(id, request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Team disqualified successfully."));
+    }
 }

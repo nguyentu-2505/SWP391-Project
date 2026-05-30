@@ -1,5 +1,6 @@
 package com.example.swp.features.auth;
 
+import com.example.swp.features.auth.dto.request.CreateGuestJudgeRequest;
 import com.example.swp.features.auth.dto.request.LoginRequest;
 import com.example.swp.features.auth.dto.request.RefreshTokenRequest;
 import com.example.swp.features.auth.dto.request.RegisterRequest;
@@ -8,6 +9,7 @@ import com.example.swp.features.auth.dto.response.LoginResponse;
 import com.example.swp.features.user.Role;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
+import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.security.jwt.JwtTokenProvider;
 import com.example.swp.util.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.security.SecureRandom;
@@ -29,12 +32,14 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthServiceImpl implements AuthService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final String TEMP_PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final AuditLogService auditLogService;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -131,4 +136,71 @@ public class AuthServiceImpl implements AuthService {
         user.setOtpExpiry(null);
         userRepository.save(user);
     }
-}
+
+    /**
+     * Creates a temporary Guest Judge account on behalf of an Organizer.
+     * WHY: Guest judges are external (non-FPT) evaluators who do not go through
+     * the normal OTP registration flow. Organizer creates them directly and
+     * sends credentials via email.
+     *
+     * Security:
+     * - Guest judges get role GUEST_JUDGE (cannot mentor, cannot manage events)
+     * - Account is marked is_temporary=true for easy cleanup post-event
+     * - Auto-approved and auto-verified to bypass normal gating
+     * - Password is randomly generated (12 chars, alphanumeric)
+     * - Email failure will rollback transaction to prevent orphaned accounts.
+     */
+    @Override
+    @Transactional
+    public void createGuestJudge(CreateGuestJudgeRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Error: Username is already taken!");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Error: Email is already in use!");
+        }
+
+        String tempPassword = generateTemporaryPassword(12);
+
+        User guestJudge = new User();
+        guestJudge.setUsername(request.getUsername());
+        guestJudge.setEmail(request.getEmail());
+        guestJudge.setFullName(request.getFullName());
+        guestJudge.setPassword(passwordEncoder.encode(tempPassword));
+        guestJudge.setRole(Role.GUEST_JUDGE);
+        guestJudge.setApproved(true);      // auto-approved – no admin review needed
+        guestJudge.setVerified(true);      // skip OTP – organizer vouches for them
+        guestJudge.setTemporary(true);     // flag for post-event cleanup
+
+        userRepository.save(guestJudge);
+        log.info("Guest judge account created: username={}", guestJudge.getUsername());
+
+        auditLogService.logAction(
+            "CREATE_GUEST_JUDGE",
+            "USER",
+            guestJudge.getId(),
+            null,
+            request.getUsername()
+        );
+
+        // Send credentials to guest judge via email
+        String emailBody = String.format(
+            "You have been invited as a Guest Judge for SEAL Hackathon.\n\n" +
+            "Login credentials:\n" +
+            "  Username : %s\n" +
+            "  Password : %s\n\n" +
+            "Please change your password after first login.",
+            request.getUsername(), tempPassword
+        );
+        emailService.sendSimpleMessage(request.getEmail(), "SEAL Hackathon – Guest Judge Account", emailBody);
+    }
+
+    /** Generates a cryptographically-random alphanumeric password of the given length. */
+    private String generateTemporaryPassword(int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(TEMP_PASSWORD_CHARS.charAt(SECURE_RANDOM.nextInt(TEMP_PASSWORD_CHARS.length())));
+        }
+        return sb.toString();
+    }
+}

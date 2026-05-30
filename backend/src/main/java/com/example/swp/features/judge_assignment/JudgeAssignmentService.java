@@ -5,6 +5,7 @@ import com.example.swp.features.judge_assignment.dto.request.AssignJudgeRequest;
 import com.example.swp.features.judge_assignment.dto.response.JudgeAssignmentResponse;
 import com.example.swp.features.submission.Submission;
 import com.example.swp.features.submission.SubmissionRepository;
+import com.example.swp.features.track.TrackMentorRepository;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.user.Role;
@@ -22,16 +23,30 @@ public class JudgeAssignmentService {
     private final JudgeAssignmentRepository assignmentRepository;
     private final UserRepository userRepository;
     private final SubmissionRepository submissionRepository;
+    private final TrackMentorRepository trackMentorRepository;
 
     public JudgeAssignmentResponse assignJudge(AssignJudgeRequest request) {
         User judge = userRepository.findById(request.getJudgeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Judge not found"));
-        if (judge.getRole() != Role.JUDGE) {
-            throw new IllegalArgumentException("User is not a judge.");
+
+        if (judge.getRole() != Role.JUDGE && judge.getRole() != Role.GUEST_JUDGE) {
+            throw new IllegalArgumentException(
+                "User '" + judge.getUsername() + "' is not a judge. Current role: " + judge.getRole()
+            );
         }
         
         Submission submission = submissionRepository.findById(request.getSubmissionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Submission not found"));
+
+        if (submission.getTeam().getTrack() != null) {
+            Long trackId = submission.getTeam().getTrack().getId();
+            if (trackMentorRepository.existsByTrackIdAndMentorId(trackId, judge.getId())) {
+                throw new IllegalStateException(
+                    "Judge '" + judge.getUsername() + "' is currently assigned as mentor for this track " +
+                    "and cannot judge submissions in the same track (conflict of interest)."
+                );
+            }
+        }
 
         if (assignmentRepository.existsByJudgeIdAndSubmissionId(judge.getId(), submission.getId())) {
             throw new IllegalStateException("Judge is already assigned to this submission.");
