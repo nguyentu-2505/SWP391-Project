@@ -1,1 +1,4 @@
-{"username":"nonexistent","password":"password"}
+{
+  "username": "admin",
+  "password": "password123"
+}
