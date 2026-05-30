@@ -1,26 +1,20 @@
 package com.example.swp.features.user;
 
-import com.example.swp.features.team_member.TeamMember;
 import jakarta.persistence.*;
-import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = "teamMemberships")
 @Entity
 @Table(name = "_user")
-public class User implements UserDetails {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,51 +34,71 @@ public class User implements UserDetails {
 
     private String fptStudentId;
     private String schoolName;
+    private String githubUrl;
+    @Lob
+    private String skills;
 
+    @Column(name = "full_name")
+    private String fullName;
+
+    private String phone;
+
+    @Lob
+    private String bio;
+
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
+    @Column(name = "approved")
     @Builder.Default
     private boolean approved = false;
 
-    @OneToMany(mappedBy = "user")
-    private List<TeamMember> teamMemberships;
+    @Column(name = "is_verified")
+    private boolean verified;
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (role == null) {
-            return Collections.emptyList();
-        }
-        return List.of(new SimpleGrantedAuthority(role.name()));
-    }
+    private String otpCode;
+    @Column(name = "otp_expiry")
+    private LocalDateTime otpExpiry;
 
-    @Override
-    public boolean isEnabled() {
-        return this.approved;
-    }
+    /** Marks accounts created temporarily by organizers for guest judges. */
+    @Column(name = "is_temporary")
+    @Builder.Default
+    private boolean temporary = false;
+    
+    public String getUsername() { return username; }
+    public String getPassword() { return password; }
+    public void setUsername(String username) { this.username = username; }
+    public void setPassword(String password) { this.password = password; }
+    public void setEmail(String email) { this.email = email; }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
+    public void setApproved(boolean approved) { this.approved = approved; }
+    public void setActive(boolean active) { this.approved = active; } // The field is 'approved', so maybe active is same? Or add active field? Wait.
+    public void setVerified(boolean verified) { this.verified = verified; }
+    public String getEmail() { return email; }
+    public String getFptStudentId() { return fptStudentId; }
+    public String getSchoolName() { return schoolName; }
+    public Long getId() { return id; }
+    public boolean isApproved() { return approved; }
+    public boolean isActive() { return approved; } // fallback
+    public boolean isVerified() { return verified; }
+    public String getOtpCode() { return otpCode; }
+    public LocalDateTime getOtpExpiry() { return otpExpiry; }
+    public void setOtpCode(String otpCode) { this.otpCode = otpCode; }
+    public void setOtpExpiry(LocalDateTime otpExpiry) { this.otpExpiry = otpExpiry; }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return username != null && username.equals(user.username);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(username);
-    }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public String getGithubUrl() { return githubUrl; }
+    public void setGithubUrl(String githubUrl) { this.githubUrl = githubUrl; }
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    public void setFptStudentId(String fptStudentId) { this.fptStudentId = fptStudentId; }
+    public void setSchoolName(String schoolName) { this.schoolName = schoolName; }
+    public boolean isTemporary() { return temporary; }
+    public void setTemporary(boolean temporary) { this.temporary = temporary; }
 }

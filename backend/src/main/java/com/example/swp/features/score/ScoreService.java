@@ -9,4 +9,5 @@ public interface ScoreService {
     List<ScoreResponse> saveScores(CreateScoreRequest request);
     List<ScoreResponse> getScoresForSubmission(Long submissionId);
     List<ScoreResponse> getScoresForSubmissionByJudge(Long submissionId, Long judgeId);
+    void finalizeScores(Long roundId);
 }

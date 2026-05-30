@@ -23,4 +23,9 @@ public class CreateRoundRequest {
 
     @NotNull(message = "Hackathon Event ID cannot be null")
     private Long hackathonEventId;
+    public Long getHackathonEventId() { return hackathonEventId; }
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
 }

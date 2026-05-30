@@ -1,21 +1,30 @@
 package com.example.swp.features.score;
 
+import com.example.swp.exception.ResourceNotFoundException;
+import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.criterion.Criterion;
 import com.example.swp.features.criterion.CriterionRepository;
+import com.example.swp.features.judge_assignment.JudgeAssignmentRepository;
 import com.example.swp.features.submission.Submission;
 import com.example.swp.features.submission.SubmissionRepository;
+import com.example.swp.features.round.TeamRoundAdvancementRepository;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.score.dto.request.CreateScoreRequest;
 import com.example.swp.features.score.dto.response.ScoreResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ScoreServiceImpl implements ScoreService {
@@ -24,37 +33,66 @@ public class ScoreServiceImpl implements ScoreService {
     private final SubmissionRepository submissionRepository;
     private final UserRepository userRepository;
     private final CriterionRepository criterionRepository;
+    private final JudgeAssignmentRepository judgeAssignmentRepository;
+    private final TeamRoundAdvancementRepository advancementRepository;
+    private final AuditLogService auditLogService;
 
     @Override
     @Transactional
     public List<ScoreResponse> saveScores(CreateScoreRequest request) {
+        User judge = getCurrentUser();
         Submission submission = submissionRepository.findById(request.getSubmissionId())
-                .orElseThrow(() -> new RuntimeException("Submission not found"));
-        User judge = userRepository.findById(request.getJudgeId())
-                .orElseThrow(() -> new RuntimeException("Judge not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Submission not found"));
 
+        if (submission.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new IllegalStateException("Cannot score submissions from disqualified teams.");
+        }
+
+        if (!judgeAssignmentRepository.existsByJudgeIdAndSubmissionId(judge.getId(), submission.getId())) {
+            throw new AccessDeniedException("You are not assigned to score this submission.");
+        }
+
+        if (advancementRepository.existsByFromRoundId(submission.getRound().getId())) {
+            throw new IllegalStateException("Scoring is frozen. Teams have already advanced from this round.");
+        }
+        
         List<Score> savedScores = new ArrayList<>();
         for (CreateScoreRequest.ScoreCriterion sc : request.getScores()) {
             Criterion criterion = criterionRepository.findById(sc.getCriterionId())
-                    .orElseThrow(() -> new RuntimeException("Criterion not found: " + sc.getCriterionId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Criterion not found: " + sc.getCriterionId()));
 
-            // Use a custom method to find and update, or create a new score
-            Score score = scoreRepository.findBySubmissionIdAndJudgeId(submission.getId(), judge.getId())
-                .stream()
-                .filter(s -> s.getCriterion().getId().equals(criterion.getId()))
-                .findFirst()
+            if (sc.getScoreValue() < 0 || sc.getScoreValue() > criterion.getMaxScore()) {
+                throw new IllegalArgumentException(
+                    "Score for criterion '" + criterion.getName() + "' must be between 0 and " + criterion.getMaxScore()
+                );
+            }
+
+            Score score = scoreRepository.findBySubmissionIdAndJudgeIdAndCriterionId(submission.getId(), judge.getId(), criterion.getId())
                 .orElse(new Score());
+                
+            if (score.isFinalized()) {
+                throw new IllegalStateException("Scores for this submission have been finalized and cannot be changed.");
+            }
 
             score.setSubmission(submission);
             score.setJudge(judge);
             score.setCriterion(criterion);
             score.setScoreValue(sc.getScoreValue());
             score.setComment(sc.getComment());
+            score.setScoredAt(LocalDateTime.now());
             
             savedScores.add(scoreRepository.save(score));
         }
 
         return savedScores.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void finalizeScores(Long roundId) {
+        auditLogService.logAction("FINALIZE_SCORES", "Round", roundId, null, "All scores for round " + roundId + " finalized.");
+        scoreRepository.finalizeScoresByRound(roundId);
+        log.info("Scores finalized successfully for round: {}", roundId);
     }
 
     @Override
@@ -70,8 +108,12 @@ public class ScoreServiceImpl implements ScoreService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
-
-
+    
+    private User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+    }
 
     private ScoreResponse mapToResponse(Score score) {
         return ScoreResponse.builder()
@@ -81,6 +123,7 @@ public class ScoreServiceImpl implements ScoreService {
                 .criterionId(score.getCriterion().getId())
                 .scoreValue(score.getScoreValue())
                 .comment(score.getComment())
+                .isFinalized(score.isFinalized())
                 .scoredAt(score.getScoredAt())
                 .build();
     }

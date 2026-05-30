@@ -1,32 +1,29 @@
 package com.example.swp.exception;
 
+import com.example.swp.common.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(org.springframework.web.bind.MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((org.springframework.validation.FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-        // Combine into a single message for simple alert
-        String combinedMessage = errors.values().stream().reduce((a, b) -> a + "; " + b).orElse("Validation failed");
-        Map<String, String> response = new HashMap<>();
-        response.put("message", combinedMessage);
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
+        return new ResponseEntity<>(
+                ApiResponse.error("RESOURCE_NOT_FOUND", ex.getMessage()),
+                HttpStatus.NOT_FOUND
+        );
     }
 
+<<<<<<< HEAD
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleResourceNotFoundException(ResourceNotFoundException ex) {
         Map<String, String> error = new HashMap<>();
@@ -39,26 +36,66 @@ public class GlobalExceptionHandler {
         Map<String, String> error = new HashMap<>();
         error.put("message", ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+=======
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Object details = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> new ValidationError(error.getField(), error.getDefaultMessage()))
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(
+                ApiResponse.error("VALIDATION_ERROR", "Invalid input", details),
+                HttpStatus.BAD_REQUEST
+        );
+>>>>>>> main
     }
-
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalStateException(IllegalStateException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
+    public ResponseEntity<ApiResponse<Void>> handleIllegalStateAndArgument(RuntimeException ex) {
+        return new ResponseEntity<>(
+                ApiResponse.error("BAD_REQUEST", ex.getMessage()),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+    
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException ex) {
+        return new ResponseEntity<>(
+                ApiResponse.error("UNAUTHORIZED", "Authentication failed."),
+                HttpStatus.UNAUTHORIZED
+        );
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, String>> handleAccessDeniedException(AccessDeniedException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", "You do not have permission to perform this action.");
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
+        return new ResponseEntity<>(
+                ApiResponse.error("FORBIDDEN", "You do not have permission to access this resource."),
+                HttpStatus.FORBIDDEN
+        );
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGeneralException(Exception ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", "An unexpected error occurred: " + ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex, WebRequest request) {
+        ex.printStackTrace();
+        return new ResponseEntity<>(
+                ApiResponse.error("INTERNAL_SERVER_ERROR", "An unexpected error occurred."),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    public static class ValidationError {
+        private final String field;
+        private final String message;
+
+        public ValidationError(String field, String message) {
+            this.field = field;
+            this.message = message;
+        }
+
+        public String getField() {
+            return field;
+        }
+
+        public String getMessage() {
+            return message;
+        }
     }
 }

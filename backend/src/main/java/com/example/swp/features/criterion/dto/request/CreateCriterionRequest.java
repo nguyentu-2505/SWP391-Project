@@ -8,4 +8,8 @@ public class CreateCriterionRequest {
     private String description;
     private int weight;
     private Long hackathonEventId; // Can be null to create a default criterion
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public Long getHackathonEventId() { return hackathonEventId; }
+    public int getWeight() { return weight; }
 }

@@ -5,6 +5,8 @@ import lombok.Data;
 
 @Data
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class RankingResponse {
     private int rank;
     private Long teamId;
@@ -12,3 +14,5 @@ public class RankingResponse {
     private double totalScore;
     // You can add more details here, like a breakdown of scores per criterion
 }
+
+

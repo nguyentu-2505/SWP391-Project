@@ -20,7 +20,7 @@ public class CriterionController {
     private final CriterionService criterionService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<CriterionResponse> createCriterion(@RequestBody CreateCriterionRequest request) {
         CriterionResponse response = criterionService.createCriterion(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -39,14 +39,14 @@ public class CriterionController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<CriterionResponse> updateCriterion(@PathVariable Long id, @Valid @RequestBody UpdateCriterionRequest request) {
         CriterionResponse response = criterionService.updateCriterion(id, request);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<Void> deleteCriterion(@PathVariable Long id) {
         criterionService.deleteCriterion(id);
         return ResponseEntity.noContent().build();

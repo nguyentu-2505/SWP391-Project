@@ -13,4 +13,8 @@ public class UpdateCriterionRequest {
 
     @NotNull(message = "Weight cannot be null")
     private Integer weight;
+    
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public Integer getWeight() { return weight; }
 }

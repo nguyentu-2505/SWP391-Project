@@ -1,23 +1,29 @@
 package com.example.swp.features.submission;
 
+import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.round.Round;
 import com.example.swp.features.round.RoundRepository;
 import com.example.swp.features.team.Team;
 import com.example.swp.features.team.TeamRepository;
+import com.example.swp.features.team_member.TeamMember;
 import com.example.swp.features.team_member.TeamMemberRepository;
 import com.example.swp.features.submission.dto.request.CreateSubmissionRequest;
 import com.example.swp.features.submission.dto.response.SubmissionResponse;
 import com.example.swp.features.user.User;
+import com.example.swp.features.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubmissionServiceImpl implements SubmissionService {
@@ -26,50 +32,73 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final TeamRepository teamRepository;
     private final RoundRepository roundRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public SubmissionResponse createSubmission(CreateSubmissionRequest request) {
-        // Get authenticated user's ID
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
-            throw new AccessDeniedException("User not authenticated.");
-        }
-        User currentUser = (User) authentication.getPrincipal();
-        Long currentUserId = currentUser.getId();
-
+        User currentUser = getCurrentUser();
+        
         Team team = teamRepository.findById(request.getTeamId())
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+        
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new IllegalStateException("Your team has been disqualified and cannot make submissions.");
+        }
+
         Round round = roundRepository.findById(request.getRoundId())
-                .orElseThrow(() -> new RuntimeException("Round not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
 
-        // Validate if the current authenticated user is a member of the team they are submitting for
-        if (!teamMemberRepository.existsByTeamIdAndUserId(team.getId(), currentUserId)) {
-            throw new AccessDeniedException("You are not a member of this team and cannot submit on its behalf.");
+        TeamMember teamMember = teamMemberRepository.findByTeamIdAndUserId(team.getId(), currentUser.getId())
+                .orElseThrow(() -> new AccessDeniedException("You are not a member of this team."));
+        
+        if (!teamMember.isLeader()) {
+            throw new AccessDeniedException("Only the team leader can make a submission.");
         }
 
-        // Add validation: check if submission deadline has passed
         LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(round.getStartTime())) {
-            throw new IllegalStateException("Submission for this round has not started yet.");
+        if (round.getStartTime() != null && now.isBefore(round.getStartTime())) {
+            throw new IllegalStateException("The submission period for this round has not started yet.");
         }
-        if (now.isAfter(round.getEndTime())) {
-            throw new IllegalStateException("Submission for this round has already ended.");
+        if (round.getEndTime() != null && now.isAfter(round.getEndTime())) {
+            throw new IllegalStateException("The submission period for this round has ended.");
         }
 
-        Submission newSubmission = Submission.builder()
-                .team(team)
-                .round(round)
-                .repositoryUrl(request.getRepositoryUrl())
-                .demoUrl(request.getDemoUrl())
-                .reportUrl(request.getReportUrl())
-                .build();
+        Optional<Submission> existingSubmissionOpt = submissionRepository.findByTeamIdAndRoundId(team.getId(), round.getId());
 
-        Submission savedSubmission = submissionRepository.save(newSubmission);
+        Submission submission;
+        if (existingSubmissionOpt.isPresent()) {
+            submission = existingSubmissionOpt.get();
+            submission.setRepositoryUrl(request.getRepositoryUrl());
+            submission.setDemoUrl(request.getDemoUrl());
+            submission.setReportUrl(request.getReportUrl());
+            submission.setVersion(submission.getVersion() + 1);
+            submission.setSubmittedAt(LocalDateTime.now());
+        } else {
+            submission = Submission.builder()
+                    .team(team)
+                    .round(round)
+                    .repositoryUrl(request.getRepositoryUrl())
+                    .demoUrl(request.getDemoUrl())
+                    .reportUrl(request.getReportUrl())
+                    .version(1)
+                    .build();
+        }
+
+        Submission savedSubmission = submissionRepository.save(submission);
+        log.info("Submission created/updated successfully: id={}, teamId={}, roundId={}", savedSubmission.getId(), team.getId(), round.getId());
         return mapToResponse(savedSubmission);
     }
 
     @Override
     public List<SubmissionResponse> getSubmissionsByTeam(Long teamId) {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole().name().equals("PARTICIPANT")) {
+            boolean isMember = teamMemberRepository.findByTeamIdAndUserId(teamId, currentUser.getId()).isPresent();
+            if (!isMember) {
+                throw new AccessDeniedException("You can only view submissions for your own team.");
+            }
+        }
         return submissionRepository.findByTeamId(teamId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -83,20 +112,44 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     @Override
-    public SubmissionResponse getSubmissionById(Long id) {
-        return submissionRepository.findById(id)
+    public List<SubmissionResponse> getSubmissionsByEvent(Long eventId) {
+        return submissionRepository.findByEventId(eventId).stream()
                 .map(this::mapToResponse)
-                .orElseThrow(() -> new RuntimeException("Submission not found"));
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public SubmissionResponse getSubmissionById(Long id) {
+        Submission submission = submissionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Submission not found"));
+                
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole().name().equals("PARTICIPANT")) {
+            boolean isMember = teamMemberRepository.findByTeamIdAndUserId(submission.getTeam().getId(), currentUser.getId()).isPresent();
+            if (!isMember) {
+                throw new AccessDeniedException("You can only view submissions for your own team.");
+            }
+        }
+        return mapToResponse(submission);
+    }
+    
+    private User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 
     private SubmissionResponse mapToResponse(Submission submission) {
         return SubmissionResponse.builder()
                 .id(submission.getId())
                 .teamId(submission.getTeam().getId())
+                .teamName(submission.getTeam().getName())
                 .roundId(submission.getRound().getId())
+                .roundName(submission.getRound().getName())
                 .repositoryUrl(submission.getRepositoryUrl())
                 .demoUrl(submission.getDemoUrl())
                 .reportUrl(submission.getReportUrl())
+                .version(submission.getVersion())
                 .submittedAt(submission.getSubmittedAt())
                 .build();
     }

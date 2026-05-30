@@ -1,5 +1,6 @@
 package com.example.swp.features.team_member;
 
+import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.team.Team;
 import com.example.swp.features.team.TeamRepository;
 import com.example.swp.features.user.User;
@@ -23,19 +24,19 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     @Override
     public TeamMemberResponse addTeamMember(AddTeamMemberRequest request) {
         Team team = teamRepository.findById(request.getTeamId())
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         // Check if user is already in the team
         if (teamMemberRepository.existsByTeamIdAndUserId(team.getId(), user.getId())) {
             throw new IllegalStateException("User is already a member of this team.");
         }
 
-        // Check team size limit
+        // Check team size limit from the event settings
         long currentSize = teamMemberRepository.countByTeamId(team.getId());
-        if (currentSize >= 5) {
-            throw new IllegalStateException("Team is full. Cannot add more than 5 members.");
+        if (team.getEvent().getMaxTeamSize() != null && currentSize >= team.getEvent().getMaxTeamSize()) {
+            throw new IllegalStateException("Team is full. Cannot add more members.");
         }
 
         // TODO: Add more validation logic (e.g., check if user is already in another team for this event)
@@ -60,7 +61,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     @Override
     public void removeTeamMember(Long teamMemberId) {
         // TODO: Add validation to ensure the person removing has permission (e.g., is a team leader or an admin)
-        // TODO: Add logic to handle minimum team size (e.g., cannot remove if size becomes < 3)
+        // TODO: Add logic to handle minimum team size (e.g., cannot remove if size becomes < min_team_size)
         teamMemberRepository.deleteById(teamMemberId);
     }
 

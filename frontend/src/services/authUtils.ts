@@ -3,7 +3,9 @@ import { jwtDecode } from 'jwt-decode';
 export enum Role {
     ADMIN = 'ADMIN',
     ORGANIZER = 'ORGANIZER',
-    TEAM_MEMBER = 'TEAM_MEMBER'
+    JUDGE = 'JUDGE',
+    MENTOR = 'MENTOR',
+    PARTICIPANT = 'PARTICIPANT'
 }
 
 interface JwtPayload {

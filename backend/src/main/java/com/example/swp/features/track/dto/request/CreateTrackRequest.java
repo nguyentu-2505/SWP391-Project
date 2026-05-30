@@ -13,4 +13,8 @@ public class CreateTrackRequest {
 
     @NotNull(message = "Hackathon Event ID cannot be null")
     private Long hackathonEventId;
+
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public Long getHackathonEventId() { return hackathonEventId; }
 }

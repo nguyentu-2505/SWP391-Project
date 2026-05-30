@@ -14,4 +14,13 @@ public class CreateTeamRequest {
 
     @NotNull(message = "Track ID cannot be null")
     private Long trackId;
+
+    @NotNull(message = "Event ID cannot be null")
+    private Long eventId;
+
+    public String getName() { return name; }
+    public String getProjectName() { return projectName; }
+    public String getProjectDescription() { return projectDescription; }
+    public Long getTrackId() { return trackId; }
+    public Long getEventId() { return eventId; }
 }

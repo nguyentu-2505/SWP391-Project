@@ -1,6 +1,7 @@
 package com.example.swp.features.track;
 
 import com.example.swp.features.track.dto.request.CreateTrackRequest;
+import com.example.swp.features.track.dto.response.TrackMentorResponse;
 import com.example.swp.features.track.dto.response.TrackResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +19,10 @@ public class TrackController {
 
     private final TrackService trackService;
 
+    // ── Existing endpoints – UNCHANGED ────────────────────────────────────────
+
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<TrackResponse> createTrack(@Valid @RequestBody CreateTrackRequest request) {
         TrackResponse response = trackService.createTrack(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
@@ -30,4 +33,41 @@ public class TrackController {
         List<TrackResponse> responses = trackService.getTracksByHackathonEvent(hackathonEventId);
         return ResponseEntity.ok(responses);
     }
-}
+
+    // ── Track-Mentor assignment endpoints (Phase 1) ───────────────────────────
+
+    /**
+     * Assign a mentor/internal-judge to a track.
+     * This creates the record used for conflict-of-interest validation.
+     */
+    @PostMapping("/{trackId}/mentors/{mentorUserId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<TrackMentorResponse> assignMentor(
+            @PathVariable Long trackId,
+            @PathVariable Long mentorUserId) {
+        TrackMentorResponse response = trackService.assignMentor(trackId, mentorUserId);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    /**
+     * Remove a mentor from a track.
+     */
+    @DeleteMapping("/{trackId}/mentors/{mentorUserId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<Void> removeMentor(
+            @PathVariable Long trackId,
+            @PathVariable Long mentorUserId) {
+        trackService.removeMentor(trackId, mentorUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * List all mentors assigned to a track.
+     */
+    @GetMapping("/{trackId}/mentors")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<List<TrackMentorResponse>> getMentorsByTrack(@PathVariable Long trackId) {
+        List<TrackMentorResponse> responses = trackService.getMentorsByTrack(trackId);
+        return ResponseEntity.ok(responses);
+    }
+}

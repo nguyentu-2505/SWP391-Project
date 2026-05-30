@@ -14,12 +14,12 @@ public class CreateScoreRequest {
     @NotNull(message = "Submission ID cannot be null")
     private Long submissionId;
 
-    @NotNull(message = "Judge ID cannot be null")
-    private Long judgeId;
-
     @NotEmpty(message = "Scores list cannot be empty")
-    @Valid // This is important to trigger validation on the objects inside the list
+    @Valid
     private List<ScoreCriterion> scores;
+
+    public Long getSubmissionId() { return submissionId; }
+    public List<ScoreCriterion> getScores() { return scores; }
 
     @Data
     public static class ScoreCriterion {
@@ -31,5 +31,8 @@ public class CreateScoreRequest {
         private int scoreValue;
 
         private String comment;
+        public Long getCriterionId() { return criterionId; }
+        public int getScoreValue() { return scoreValue; }
+        public String getComment() { return comment; }
     }
 }

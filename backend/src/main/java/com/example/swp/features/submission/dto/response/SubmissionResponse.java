@@ -7,12 +7,54 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class SubmissionResponse {
     private Long id;
     private Long teamId;
+    private String teamName;
     private Long roundId;
+    private String roundName;
     private String repositoryUrl;
     private String demoUrl;
     private String reportUrl;
     private LocalDateTime submittedAt;
+    private int version;
+
+    public static SubmissionResponseBuilder builder() { return new SubmissionResponseBuilder(); }
+    public static class SubmissionResponseBuilder {
+        private Long id;
+        private Long teamId;
+        private String teamName;
+        private Long roundId;
+        private String roundName;
+        private String repositoryUrl;
+        private String demoUrl;
+        private String reportUrl;
+        private LocalDateTime submittedAt;
+        private int version;
+
+        public SubmissionResponseBuilder id(Long id) { this.id = id; return this; }
+        public SubmissionResponseBuilder teamId(Long teamId) { this.teamId = teamId; return this; }
+        public SubmissionResponseBuilder teamName(String teamName) { this.teamName = teamName; return this; }
+        public SubmissionResponseBuilder roundId(Long roundId) { this.roundId = roundId; return this; }
+        public SubmissionResponseBuilder roundName(String roundName) { this.roundName = roundName; return this; }
+        public SubmissionResponseBuilder repositoryUrl(String repositoryUrl) { this.repositoryUrl = repositoryUrl; return this; }
+        public SubmissionResponseBuilder demoUrl(String demoUrl) { this.demoUrl = demoUrl; return this; }
+        public SubmissionResponseBuilder reportUrl(String reportUrl) { this.reportUrl = reportUrl; return this; }
+        public SubmissionResponseBuilder submittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; return this; }
+        public SubmissionResponseBuilder version(int version) { this.version = version; return this; }
+
+        public SubmissionResponse build() {
+            SubmissionResponse r = new SubmissionResponse();
+            r.id = this.id; r.teamId = this.teamId; r.teamName = this.teamName;
+            r.roundId = this.roundId; r.roundName = this.roundName;
+            r.repositoryUrl = this.repositoryUrl; r.demoUrl = this.demoUrl;
+            r.reportUrl = this.reportUrl; r.submittedAt = this.submittedAt;
+            r.version = this.version;
+            return r;
+        }
+    }
 }
+
+

@@ -11,13 +11,18 @@ const LoginPage: React.FC = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await axios.post('/auth/login', { username, password });
-            const { accessToken, refreshToken } = response.data;
+            const response = await axios.post(
+                'http://localhost:8080/api/v1/auth/login',
+                { username, password }
+            );
+
+            const { accessToken, refreshToken } = response.data.data;
             localStorage.setItem('accessToken', accessToken);
             localStorage.setItem('refreshToken', refreshToken);
             navigate('/dashboard');
-        } catch (err) {
-            setError('Invalid username or password');
+        } catch (err: any) {
+            const message = err.response?.data?.message || 'Invalid username or password';
+            setError(message);
         }
     };
 

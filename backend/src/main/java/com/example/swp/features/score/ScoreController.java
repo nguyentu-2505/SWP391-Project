@@ -1,5 +1,6 @@
 package com.example.swp.features.score;
 
+import com.example.swp.common.ApiResponse;
 import com.example.swp.features.score.dto.request.CreateScoreRequest;
 import com.example.swp.features.score.dto.response.ScoreResponse;
 import jakarta.validation.Valid;
@@ -12,31 +13,37 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/scores")
+@RequestMapping("/api/v1/scores")
 @RequiredArgsConstructor
 public class ScoreController {
 
     private final ScoreService scoreService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('JUDGE', 'GUEST_JUDGE')")
-    public ResponseEntity<List<ScoreResponse>> saveScores(@Valid @RequestBody CreateScoreRequest request) {
-        // TODO: Add logic in service to check if the authenticated judge is the same as request.getJudgeId()
+    @PreAuthorize("hasRole('JUDGE')")
+    public ResponseEntity<ApiResponse<List<ScoreResponse>>> saveScores(@Valid @RequestBody CreateScoreRequest request) {
         List<ScoreResponse> responses = scoreService.saveScores(request);
-        return new ResponseEntity<>(responses, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(responses, "Scores saved successfully."), HttpStatus.CREATED);
     }
 
     @GetMapping("/submission/{submissionId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER', 'JUDGE', 'MENTOR')")
-    public ResponseEntity<List<ScoreResponse>> getScoresForSubmission(@PathVariable Long submissionId) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'JUDGE', 'MENTOR')")
+    public ResponseEntity<ApiResponse<List<ScoreResponse>>> getScoresForSubmission(@PathVariable Long submissionId) {
         List<ScoreResponse> responses = scoreService.getScoresForSubmission(submissionId);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
     @GetMapping("/submission/{submissionId}/judge/{judgeId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER', 'JUDGE', 'MENTOR')")
-    public ResponseEntity<List<ScoreResponse>> getScoresForSubmissionByJudge(@PathVariable Long submissionId, @PathVariable Long judgeId) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'JUDGE', 'MENTOR')")
+    public ResponseEntity<ApiResponse<List<ScoreResponse>>> getScoresForSubmissionByJudge(@PathVariable Long submissionId, @PathVariable Long judgeId) {
         List<ScoreResponse> responses = scoreService.getScoresForSubmissionByJudge(submissionId, judgeId);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+    
+    @PostMapping("/finalize/round/{roundId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<Void>> finalizeScores(@PathVariable Long roundId) {
+        scoreService.finalizeScores(roundId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Scores for the round have been finalized."));
     }
 }

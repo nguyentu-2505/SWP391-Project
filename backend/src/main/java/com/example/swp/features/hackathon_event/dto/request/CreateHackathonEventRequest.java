@@ -20,4 +20,10 @@ public class CreateHackathonEventRequest {
     private LocalDateTime endTime; // Additional validation for endTime > startTime will be in service layer
 
     private String imageUrl;
+
+    public String getName() { return name; }
+    public String getDescription() { return description; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
+    public String getImageUrl() { return imageUrl; }
 }

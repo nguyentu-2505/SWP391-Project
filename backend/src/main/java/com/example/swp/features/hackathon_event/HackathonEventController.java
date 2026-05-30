@@ -1,10 +1,13 @@
 package com.example.swp.features.hackathon_event;
 
+import com.example.swp.common.ApiResponse;
 import com.example.swp.features.hackathon_event.dto.request.CreateHackathonEventRequest;
 import com.example.swp.features.hackathon_event.dto.request.UpdateHackathonEventRequest;
 import com.example.swp.features.hackathon_event.dto.response.HackathonEventResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,42 +16,56 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/hackathon-events")
+@RequestMapping("/api/v1/hackathon-events")
 @RequiredArgsConstructor
 public class HackathonEventController {
 
     private final HackathonEventService hackathonEventService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<HackathonEventResponse> createHackathonEvent(@Valid @RequestBody CreateHackathonEventRequest request) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<HackathonEventResponse>> createHackathonEvent(@Valid @RequestBody CreateHackathonEventRequest request) {
         HackathonEventResponse response = hackathonEventService.createHackathonEvent(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(response, "Hackathon event created successfully."), HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<List<HackathonEventResponse>> getAllHackathonEvents() {
-        List<HackathonEventResponse> responses = hackathonEventService.getAllHackathonEvents();
-        return ResponseEntity.ok(responses);
+    public ResponseEntity<ApiResponse<List<HackathonEventResponse>>> getAllHackathonEvents(Pageable pageable) {
+        Page<HackathonEventResponse> responses = hackathonEventService.getAllHackathonEvents(pageable);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @GetMapping("/my-events")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<List<HackathonEventResponse>>> getMyHackathonEvents() {
+        List<HackathonEventResponse> responses = hackathonEventService.getMyHackathonEvents();
+        return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
     @GetMapping("/{slug}")
-    public ResponseEntity<HackathonEventResponse> getHackathonEventBySlug(@PathVariable String slug) {
+    public ResponseEntity<ApiResponse<HackathonEventResponse>> getHackathonEventBySlug(@PathVariable String slug) {
         HackathonEventResponse response = hackathonEventService.getHackathonEventBySlug(slug);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<HackathonEventResponse> updateHackathonEvent(@PathVariable Long id, @Valid @RequestBody UpdateHackathonEventRequest request) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<HackathonEventResponse>> updateHackathonEvent(@PathVariable Long id, @Valid @RequestBody UpdateHackathonEventRequest request) {
         HackathonEventResponse response = hackathonEventService.updateHackathonEvent(id, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response, "Hackathon event updated successfully."));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<Void> deleteHackathonEvent(@PathVariable Long id) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<Void>> deleteHackathonEvent(@PathVariable Long id) {
         hackathonEventService.deleteHackathonEvent(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Hackathon event deleted successfully."));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<HackathonEventResponse>> updateHackathonEventStatus(@PathVariable Long id, @RequestParam HackathonStatus status) {
+        HackathonEventResponse response = hackathonEventService.updateHackathonEventStatus(id, status);
+        return ResponseEntity.ok(ApiResponse.success(response, "Hackathon event status updated successfully."));
     }
 }

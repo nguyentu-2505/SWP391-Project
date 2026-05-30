@@ -6,6 +6,8 @@ import lombok.Data;
 
 @Data
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class UserResponse {
     private Long id;
     private String username;
@@ -14,4 +16,8 @@ public class UserResponse {
     private String fptStudentId;
     private String schoolName;
     private boolean approved;
+    private boolean isActive;
+
 }
+
+

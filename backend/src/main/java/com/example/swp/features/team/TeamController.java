@@ -1,5 +1,6 @@
 package com.example.swp.features.team;
 
+import com.example.swp.common.ApiResponse;
 import com.example.swp.features.team.dto.request.CreateTeamRequest;
 import com.example.swp.features.team.dto.response.TeamResponse;
 import jakarta.validation.Valid;
@@ -12,28 +13,42 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/teams")
+@RequestMapping("/api/v1/teams")
 @RequiredArgsConstructor
 public class TeamController {
 
     private final TeamService teamService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('TEAM_MEMBER')")
-    public ResponseEntity<TeamResponse> createTeam(@Valid @RequestBody CreateTeamRequest request) {
+    @PreAuthorize("hasRole('PARTICIPANT')")
+    public ResponseEntity<ApiResponse<TeamResponse>> createTeam(@Valid @RequestBody CreateTeamRequest request) {
         TeamResponse response = teamService.createTeam(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(response, "Team created successfully."), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TeamResponse> getTeamById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<TeamResponse>> getTeamById(@PathVariable Long id) {
         TeamResponse response = teamService.getTeamById(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @GetMapping("/track/{trackId}")
-    public ResponseEntity<List<TeamResponse>> getTeamsByTrack(@PathVariable Long trackId) {
-        List<TeamResponse> responses = teamService.getTeamsByTrack(trackId);
-        return ResponseEntity.ok(responses);
+    @GetMapping("/event/{eventId}")
+    public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsByEvent(@PathVariable Long eventId) {
+        List<TeamResponse> responses = teamService.getTeamsByEvent(eventId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @GetMapping("/my-team/event/{eventId}")
+    @PreAuthorize("hasRole('PARTICIPANT')")
+    public ResponseEntity<ApiResponse<TeamResponse>> getMyTeamForEvent(@PathVariable Long eventId) {
+        TeamResponse response = teamService.getMyTeamForEvent(eventId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/{id}/disqualify")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<Void>> disqualifyTeam(@PathVariable Long id, @Valid @RequestBody com.example.swp.features.team.dto.request.DisqualifyTeamRequest request) {
+        teamService.disqualifyTeam(id, request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Team disqualified successfully."));
     }
 }

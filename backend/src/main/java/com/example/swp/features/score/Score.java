@@ -45,7 +45,24 @@ public class Score {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
+    @Builder.Default
+    private boolean isFinalized = false;
+
     @CreationTimestamp
     @Column(name = "scored_at", updatable = false)
     private LocalDateTime scoredAt;
+    public Criterion getCriterion() { return criterion; }
+    public int getScoreValue() { return scoreValue; }
+    public Submission getSubmission() { return submission; }
+    public User getJudge() { return judge; }
+    public boolean isFinalized() { return isFinalized; }
+    public Long getId() { return id; }
+    public String getComment() { return comment; }
+    public LocalDateTime getScoredAt() { return scoredAt; }
+    public void setSubmission(Submission submission) { this.submission = submission; }
+    public void setJudge(User judge) { this.judge = judge; }
+    public void setCriterion(Criterion criterion) { this.criterion = criterion; }
+    public void setScoreValue(int scoreValue) { this.scoreValue = scoreValue; }
+    public void setScoredAt(LocalDateTime scoredAt) { this.scoredAt = scoredAt; }
+    public void setComment(String comment) { this.comment = comment; }
 }

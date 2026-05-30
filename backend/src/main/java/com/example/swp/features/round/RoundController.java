@@ -19,7 +19,7 @@ public class RoundController {
     private final RoundService roundService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<RoundResponse> createRound(@Valid @RequestBody CreateRoundRequest request) {
         RoundResponse response = roundService.createRound(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
