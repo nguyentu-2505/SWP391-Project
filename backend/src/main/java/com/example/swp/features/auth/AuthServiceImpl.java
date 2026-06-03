@@ -43,6 +43,21 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
+        // Pre-check: give specific error messages instead of generic "Bad credentials"
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + request.getUsername()));
+
+        log.info("Login attempt for user: {}, verified={}, approved={}", 
+                user.getUsername(), user.isVerified(), user.isApproved());
+
+        if (!user.isVerified()) {
+            throw new RuntimeException("Account email has not been verified. Please verify your OTP first.");
+        }
+
+        if (!user.isApproved()) {
+            throw new RuntimeException("Account has not been approved by admin yet.");
+        }
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
@@ -51,9 +66,6 @@ public class AuthServiceImpl implements AuthService {
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         log.info("User logged in successfully: {}", user.getUsername());
 
@@ -203,4 +215,4 @@ public class AuthServiceImpl implements AuthService {
         }
         return sb.toString();
     }
-}
+}
