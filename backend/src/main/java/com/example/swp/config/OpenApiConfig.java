@@ -121,4 +121,20 @@ public class OpenApiConfig {
                 .packagesToScan("com.example.swp.features.export")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi mentorshipApi() {
+        return GroupedOpenApi.builder()
+                .group("Mentorship")
+                .packagesToScan("com.example.swp.features.mentorship_request")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi auditLogsApi() {
+        return GroupedOpenApi.builder()
+                .group("AuditLogs")
+                .packagesToScan("com.example.swp.features.audit_log")
+                .build();
+    }
 }
