@@ -51,10 +51,11 @@ public class User {
 
     @Column(name = "approved")
     @Builder.Default
-    private boolean approved = false;
+    private Boolean approved = false;
 
     @Column(name = "is_verified")
-    private boolean verified;
+    @Builder.Default
+    private Boolean verified = false;
 
     private String otpCode;
     @Column(name = "otp_expiry")
@@ -63,7 +64,7 @@ public class User {
     /** Marks accounts created temporarily by organizers for guest judges. */
     @Column(name = "is_temporary")
     @Builder.Default
-    private boolean temporary = false;
+    private Boolean temporary = false;
     
     public String getUsername() { return username; }
     public String getPassword() { return password; }
@@ -73,15 +74,15 @@ public class User {
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
     public void setApproved(boolean approved) { this.approved = approved; }
-    public void setActive(boolean active) { this.approved = active; } // The field is 'approved', so maybe active is same? Or add active field? Wait.
+    public void setActive(boolean active) { this.approved = active; }
     public void setVerified(boolean verified) { this.verified = verified; }
     public String getEmail() { return email; }
     public String getFptStudentId() { return fptStudentId; }
     public String getSchoolName() { return schoolName; }
     public Long getId() { return id; }
-    public boolean isApproved() { return approved; }
-    public boolean isActive() { return approved; } // fallback
-    public boolean isVerified() { return verified; }
+    public boolean isApproved() { return Boolean.TRUE.equals(approved); }
+    public boolean isActive() { return Boolean.TRUE.equals(approved); }
+    public boolean isVerified() { return Boolean.TRUE.equals(verified); }
     public String getOtpCode() { return otpCode; }
     public LocalDateTime getOtpExpiry() { return otpExpiry; }
     public void setOtpCode(String otpCode) { this.otpCode = otpCode; }
@@ -99,6 +100,6 @@ public class User {
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public void setFptStudentId(String fptStudentId) { this.fptStudentId = fptStudentId; }
     public void setSchoolName(String schoolName) { this.schoolName = schoolName; }
-    public boolean isTemporary() { return temporary; }
+    public boolean isTemporary() { return Boolean.TRUE.equals(temporary); }
     public void setTemporary(boolean temporary) { this.temporary = temporary; }
 }
