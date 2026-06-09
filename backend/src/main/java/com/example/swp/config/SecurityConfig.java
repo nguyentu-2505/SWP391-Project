@@ -75,12 +75,6 @@ public class SecurityConfig {
                 .cors(org.springframework.security.config.Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-<<<<<<< HEAD
-                        .requestMatchers("/auth/**").permitAll() // Allow all auth requests
-                        .requestMatchers("/error").permitAll() // Allow error handling to return correct status codes instead of 403
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/CategoryCustomers/**").permitAll() // Allow public GET requests
-                        .anyRequest().authenticated() // All other requests need authentication
-=======
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",
@@ -88,9 +82,9 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/hackathon-events/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/CategoryCustomers/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
->>>>>>> main
                 );
 
         http.authenticationProvider(authenticationProvider());

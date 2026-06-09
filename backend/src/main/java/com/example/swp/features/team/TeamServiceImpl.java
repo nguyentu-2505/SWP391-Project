@@ -62,6 +62,8 @@ public class TeamServiceImpl implements TeamService {
 
         Team team = Team.builder()
                 .name(request.getName())
+                .projectName(request.getProjectName())
+                .projectDescription(request.getProjectDescription())
                 .event(event)
                 .track(track)
                 .status(TeamStatus.ACTIVE)
@@ -106,7 +108,11 @@ public class TeamServiceImpl implements TeamService {
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("You are not in a team for this event."));
         
-        return mapToResponse(membership.getTeam());
+        Team team = teamRepository.findById(membership.getTeam().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+        team.setTeamMembers(teamMemberRepository.findByTeamId(team.getId()));
+        
+        return mapToResponse(team);
     }
     
     @Override

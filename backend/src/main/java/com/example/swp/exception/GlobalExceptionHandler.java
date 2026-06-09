@@ -23,20 +23,6 @@ public class GlobalExceptionHandler {
         );
     }
 
-<<<<<<< HEAD
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-=======
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Object details = ex.getBindingResult().getFieldErrors().stream()
@@ -46,7 +32,6 @@ public class GlobalExceptionHandler {
                 ApiResponse.error("VALIDATION_ERROR", "Invalid input", details),
                 HttpStatus.BAD_REQUEST
         );
->>>>>>> main
     }
     @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
     public ResponseEntity<ApiResponse<Void>> handleIllegalStateAndArgument(RuntimeException ex) {
@@ -73,10 +58,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex, WebRequest request) {
-        ex.printStackTrace();
+    public ResponseEntity<ApiResponse<Void>> handleAllExceptions(Exception ex, WebRequest request) {
         return new ResponseEntity<>(
-                ApiResponse.error("INTERNAL_SERVER_ERROR", "An unexpected error occurred."),
+                ApiResponse.error("INTERNAL_SERVER_ERROR", ex.toString() + " | " + ex.getMessage()),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
