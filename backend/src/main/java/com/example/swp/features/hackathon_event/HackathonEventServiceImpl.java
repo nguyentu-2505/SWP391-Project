@@ -6,6 +6,7 @@ import com.example.swp.features.hackathon_event.dto.request.UpdateHackathonEvent
 import com.example.swp.features.hackathon_event.dto.response.HackathonEventResponse;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
+import com.example.swp.features.audit_log.AuditLogService;
 import com.github.slugify.Slugify;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,6 +25,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
 
     private final HackathonEventRepository hackathonEventRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
     private final Slugify slugify = Slugify.builder().build();
 
     @Override
@@ -41,8 +43,15 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .build();
 
         HackathonEvent savedEvent = hackathonEventRepository.save(event);
+        auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent", savedEvent.getId(), null, "Created event: " + savedEvent.getName());
         log.info("Hackathon event created successfully: id={}, name={} by organizer={}", savedEvent.getId(), savedEvent.getName(), organizer.getUsername());
         return mapToResponse(savedEvent);
+    }
+
+    @Override
+    public Page<HackathonEventResponse> getAllEventsForAdmin(Pageable pageable) {
+        return hackathonEventRepository.findAll(pageable)
+                .map(this::mapToResponse);
     }
 
     @Override
@@ -85,6 +94,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         event.setImageUrl(request.getImageUrl());
 
         HackathonEvent updatedEvent = hackathonEventRepository.save(event);
+        auditLogService.logAction("UPDATE_HACKATHON_EVENT", "HackathonEvent", updatedEvent.getId(), "name: " + event.getName(), "name: " + updatedEvent.getName());
         return mapToResponse(updatedEvent);
     }
 
@@ -99,6 +109,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
         event.setDeleted(true);
         hackathonEventRepository.save(event);
+        auditLogService.logAction("DELETE_HACKATHON_EVENT", "HackathonEvent", event.getId(), "isDeleted: false", "isDeleted: true");
     }
 
     @Override
@@ -110,9 +121,11 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         if (!event.getOrganizer().getId().equals(currentUser.getId()) && !currentUser.getRole().name().equals("ADMIN")) {
             throw new org.springframework.security.access.AccessDeniedException("Only the organizer or admin can change the status of this event.");
         }
+        String oldStatus = event.getStatus().name();
         event.setStatus(newStatus);
         
         HackathonEvent updatedEvent = hackathonEventRepository.save(event);
+        auditLogService.logAction("UPDATE_HACKATHON_EVENT_STATUS", "HackathonEvent", updatedEvent.getId(), "status: " + oldStatus, "status: " + newStatus.name());
         return mapToResponse(updatedEvent);
     }
     

@@ -39,4 +39,18 @@ public class JudgeAssignmentController {
         List<JudgeAssignmentResponse> responses = assignmentService.getAssignmentsForJudge(judgeId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
+
+    @GetMapping("/round/{roundId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getAssignmentsForRound(@PathVariable Long roundId) {
+        List<JudgeAssignmentResponse> responses = assignmentService.getAssignmentsForRound(roundId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @DeleteMapping("/{assignmentId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<Void>> unassignJudge(@PathVariable Long assignmentId) {
+        assignmentService.unassignJudge(assignmentId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Judge unassigned successfully."));
+    }
 }

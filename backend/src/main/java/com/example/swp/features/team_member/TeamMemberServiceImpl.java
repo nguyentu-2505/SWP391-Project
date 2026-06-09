@@ -59,10 +59,76 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void removeTeamMember(Long teamMemberId) {
-        // TODO: Add validation to ensure the person removing has permission (e.g., is a team leader or an admin)
-        // TODO: Add logic to handle minimum team size (e.g., cannot remove if size becomes < min_team_size)
         teamMemberRepository.deleteById(teamMemberId);
+    }
+
+    private User getCurrentUser() {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void kickMember(Long userId, Long teamId) {
+        User currentUser = getCurrentUser();
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+
+        boolean isCurrentUserAdmin = currentUser.getRole() == com.example.swp.features.user.Role.ADMIN || currentUser.getRole() == com.example.swp.features.user.Role.ORGANIZER;
+        boolean isCurrentUserLeader = teamMemberRepository.existsByTeamIdAndUserIdAndIsLeaderTrue(teamId, currentUser.getId());
+
+        if (!isCurrentUserAdmin && !isCurrentUserLeader) {
+            throw new com.example.swp.exception.BadRequestException("Only Team Leader or Admin can kick members");
+        }
+
+        if (currentUser.getId().equals(userId)) {
+            throw new com.example.swp.exception.BadRequestException("Leader cannot kick themselves");
+        }
+
+        TeamMember memberToKick = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User is not a member of this team"));
+
+        teamMemberRepository.delete(memberToKick);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void leaveTeam(Long teamId) {
+        User currentUser = getCurrentUser();
+
+        TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("You are not a member of this team"));
+
+        if (member.isLeader()) {
+            throw new com.example.swp.exception.BadRequestException("Leader cannot leave the team without transferring leadership first");
+        }
+
+        teamMemberRepository.delete(member);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void transferLeadership(com.example.swp.features.team_member.dto.request.TransferLeadershipRequest request) {
+        User currentUser = getCurrentUser();
+
+        TeamMember currentLeader = teamMemberRepository.findByTeamIdAndUserId(request.getTeamId(), currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("You are not a member of this team"));
+
+        if (!currentLeader.isLeader()) {
+            throw new com.example.swp.exception.BadRequestException("Only the current leader can transfer leadership");
+        }
+
+        TeamMember newLeader = teamMemberRepository.findByTeamIdAndUserId(request.getTeamId(), request.getNewLeaderUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("New leader is not a member of this team"));
+
+        currentLeader.setLeader(false);
+        newLeader.setLeader(true);
+
+        teamMemberRepository.save(currentLeader);
+        teamMemberRepository.save(newLeader);
     }
 
     private TeamMemberResponse mapToResponse(TeamMember teamMember) {

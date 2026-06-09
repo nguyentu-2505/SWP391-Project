@@ -10,4 +10,5 @@ public interface ScoreService {
     List<ScoreResponse> getScoresForSubmission(Long submissionId);
     List<ScoreResponse> getScoresForSubmissionByJudge(Long submissionId, Long judgeId);
     void finalizeScores(Long roundId);
+    ScoreResponse updateScore(Long scoreId, com.example.swp.features.score.dto.request.UpdateScoreRequest request);
 }

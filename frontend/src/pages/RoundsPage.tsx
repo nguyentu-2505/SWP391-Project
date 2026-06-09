@@ -28,22 +28,22 @@ const RoundsPage: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto">
-            <div className="flex justify-between items-center mb-6">
+        <div className="space-y-6 max-w-[1440px] mx-auto">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 border border-outline-variant rounded-xl shadow-sm">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <Layers className="text-purple-600" />
+                    <h1 className="text-2xl md:text-3xl font-bold text-on-surface tracking-tight flex items-center gap-2">
+                        <Layers className="text-primary-container" />
                         Event Rounds
                     </h1>
-                    <p className="text-gray-500 text-sm mt-1">Manage competition rounds and schedules.</p>
+                    <p className="text-sm text-on-surface-variant mt-1">Manage competition rounds, submission timelines, and schedules.</p>
                 </div>
                 
                 <Authorizable allowedRoles={[Role.ADMIN, Role.ORGANIZER]}>
                     <button
                         onClick={() => toast('Create functionality coming soon!', { icon: '🚧' })}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors"
+                        className="bg-primary-container hover:bg-[#d9611b] text-white font-semibold py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors cursor-pointer text-sm"
                     >
-                        <Plus size={18} />
+                        <Plus size={16} />
                         Add Round
                     </button>
                 </Authorizable>
@@ -51,68 +51,68 @@ const RoundsPage: React.FC = () => {
 
             {loading ? (
                 <div className="flex justify-center items-center py-20">
-                    <Loader2 className="animate-spin text-blue-600" size={32} />
+                    <Loader2 className="animate-spin text-primary-container" size={32} />
                 </div>
             ) : rounds.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-                    <Layers className="mx-auto h-12 w-12 text-gray-300" />
-                    <h3 className="mt-2 text-sm font-semibold text-gray-900">No rounds</h3>
-                    <p className="mt-1 text-sm text-gray-500">There are no rounds scheduled for this event.</p>
+                <div className="bg-white border border-outline-variant rounded-xl p-16 text-center max-w-2xl mx-auto shadow-sm">
+                    <Layers className="mx-auto h-16 w-16 text-slate-300 mb-4" />
+                    <h3 className="text-lg font-bold text-on-surface mb-1">No Rounds Scheduled</h3>
+                    <p className="text-sm text-on-surface-variant">There are no rounds scheduled for this event yet.</p>
                 </div>
             ) : (
-                <div className="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
+                <div className="bg-white border border-outline-variant rounded-xl overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-slate-100">
+                            <thead className="bg-slate-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Round Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Round Name</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Schedule</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white divide-y divide-slate-100">
                                 {rounds.map((round) => {
                                     const now = new Date();
                                     const start = new Date(round.startTime);
                                     const end = new Date(round.endTime);
                                     let status = "Upcoming";
-                                    let statusClass = "bg-blue-100 text-blue-800";
+                                    let statusClass = "bg-slate-100 text-slate-700 border-slate-200";
                                     
                                     if (now > end) {
                                         status = "Completed";
-                                        statusClass = "bg-gray-100 text-gray-800";
+                                        statusClass = "bg-slate-50 text-slate-400 border-slate-100";
                                     } else if (now >= start && now <= end) {
                                         status = "Active";
-                                        statusClass = "bg-green-100 text-green-800";
+                                        statusClass = "bg-green-50 text-green-700 border-green-200";
                                     }
 
                                     return (
-                                        <tr key={round.id} className="hover:bg-gray-50 transition-colors">
+                                        <tr key={round.id} className="hover:bg-slate-50/50 transition-colors">
                                             <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-gray-900">{round.name}</div>
-                                                <div className="text-sm text-gray-500 max-w-xs truncate">{round.description}</div>
+                                                <div className="text-sm font-semibold text-on-surface">{round.name}</div>
+                                                <div className="text-xs text-on-surface-variant max-w-xs truncate mt-0.5">{round.description}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-xs text-gray-900 flex flex-col gap-1">
-                                                    <span className="flex items-center gap-1">
-                                                        <Calendar size={12} className="text-gray-400" />
+                                                <div className="text-xs text-on-surface font-medium flex flex-col gap-1.5 font-mono">
+                                                    <span className="flex items-center gap-1.5 text-on-surface-variant">
+                                                        <Calendar size={13} className="text-primary-container shrink-0" />
                                                         {start.toLocaleDateString()}
                                                     </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock size={12} className="text-gray-400" />
+                                                    <span className="flex items-center gap-1.5 text-on-surface-variant">
+                                                        <Clock size={13} className="text-primary-container shrink-0" />
                                                         {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}`}>
+                                                <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${statusClass}`}>
                                                     {status}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                                                <Authorizable allowedRoles={[Role.ADMIN, Role.ORGANIZER]} fallback={<span className="text-gray-400 italic text-xs">View Only</span>}>
-                                                    <button onClick={() => toast('Edit functionality coming soon!', { icon: '🚧' })} className="hover:text-blue-900 flex items-center gap-1">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <Authorizable allowedRoles={[Role.ADMIN, Role.ORGANIZER]} fallback={<span className="text-slate-400 italic text-xs">View Only</span>}>
+                                                    <button onClick={() => toast('Edit functionality coming soon!', { icon: '🚧' })} className="text-primary-container hover:text-primary transition-colors flex items-center gap-1 cursor-pointer">
                                                         <Edit2 size={14} />
                                                         Edit
                                                     </button>

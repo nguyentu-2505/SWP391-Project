@@ -41,4 +41,28 @@ public class ExportController {
         
         return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
     }
+
+    @GetMapping("/teams/csv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<byte[]> exportTeamsCsv() {
+        byte[] csvData = exportService.exportTeamsCsv();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv; charset=utf-8"));
+        headers.setContentDispositionFormData("attachment", "all_teams.csv");
+
+        return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/participants/csv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<byte[]> exportParticipantsCsv() {
+        byte[] csvData = exportService.exportParticipantsCsv();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv; charset=utf-8"));
+        headers.setContentDispositionFormData("attachment", "all_participants.csv");
+
+        return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+    }
 }

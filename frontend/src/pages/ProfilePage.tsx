@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { User, Link, BookOpen, School, Hash, Loader2, Save } from 'lucide-react';
+import Skeleton from '../components/Skeleton';
 
 interface ProfileData {
     username: string;
@@ -66,37 +67,45 @@ const ProfilePage: React.FC = () => {
         } catch {
             toast.error('Failed to update profile.');
         } finally {
+            setForm(f => ({
+                ...f,
+                fullName: form.fullName,
+                fptStudentId: form.fptStudentId,
+                schoolName: form.schoolName,
+                githubUrl: form.githubUrl,
+                skills: form.skills
+            }));
             setSaving(false);
         }
     };
 
     if (loading) return (
-        <div className="flex justify-center items-center py-24">
-            <Loader2 className="animate-spin text-blue-500" size={32} />
+        <div className="max-w-3xl mx-auto space-y-6">
+            <Skeleton type="card" lines={3} className="h-64" />
         </div>
     );
 
     const roleColors: Record<string, string> = {
-        ADMIN: 'bg-red-100 text-red-700',
-        ORGANIZER: 'bg-purple-100 text-purple-700',
-        JUDGE: 'bg-yellow-100 text-yellow-700',
-        MENTOR: 'bg-teal-100 text-teal-700',
-        PARTICIPANT: 'bg-blue-100 text-blue-700',
+        ADMIN: 'bg-red-50 text-red-700 border-red-200',
+        ORGANIZER: 'bg-purple-50 text-purple-700 border-purple-200',
+        JUDGE: 'bg-amber-50 text-amber-700 border-amber-200',
+        MENTOR: 'bg-teal-50 text-teal-700 border-teal-200',
+        PARTICIPANT: 'bg-blue-50 text-blue-700 border-blue-200',
     };
 
     return (
         <div className="max-w-3xl mx-auto space-y-6">
             {/* Profile header card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white border border-outline-variant rounded-xl p-6 shadow-sm">
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-container to-primary flex items-center justify-center text-white font-bold text-2xl shrink-0">
                         {profile?.username?.[0]?.toUpperCase() ?? 'U'}
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900">{profile?.username}</h1>
-                        <p className="text-sm text-gray-500">{profile?.email}</p>
+                        <h1 className="text-xl font-bold text-on-surface">{profile?.username}</h1>
+                        <p className="text-sm text-on-surface-variant">{profile?.email}</p>
                         {profile?.role && (
-                            <span className={`mt-1 inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${roleColors[profile.role] ?? 'bg-gray-100 text-gray-600'}`}>
+                            <span className={`mt-2 inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full border ${roleColors[profile.role] ?? 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                 {profile.role}
                             </span>
                         )}
@@ -105,12 +114,13 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Edit form */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-5">Edit Profile</h2>
+            <div className="bg-white border border-outline-variant rounded-xl p-6 md:p-8 shadow-sm">
+                <h2 className="text-lg font-bold text-on-surface border-b border-slate-100 pb-3 mb-5">Edit Profile Information</h2>
+                
                 <form onSubmit={handleSubmit} className="space-y-5">
                     {/* Full Name */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
                             <span className="flex items-center gap-1.5"><User size={14} /> Full Name</span>
                         </label>
                         <input
@@ -118,14 +128,14 @@ const ProfilePage: React.FC = () => {
                             value={form.fullName}
                             onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))}
                             placeholder="Your full name"
-                            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all placeholder-slate-400"
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* FPT Student ID */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
                                 <span className="flex items-center gap-1.5"><Hash size={14} /> FPT Student ID</span>
                             </label>
                             <input
@@ -133,13 +143,13 @@ const ProfilePage: React.FC = () => {
                                 value={form.fptStudentId}
                                 onChange={e => setForm(f => ({ ...f, fptStudentId: e.target.value }))}
                                 placeholder="e.g. SE170001"
-                                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all placeholder-slate-400"
                             />
                         </div>
 
                         {/* School Name */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
                                 <span className="flex items-center gap-1.5"><School size={14} /> School / University</span>
                             </label>
                             <input
@@ -147,14 +157,14 @@ const ProfilePage: React.FC = () => {
                                 value={form.schoolName}
                                 onChange={e => setForm(f => ({ ...f, schoolName: e.target.value }))}
                                 placeholder="e.g. FPT University"
-                                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all placeholder-slate-400"
                             />
                         </div>
                     </div>
 
                     {/* GitHub URL */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
                             <span className="flex items-center gap-1.5"><Link size={14} /> GitHub URL</span>
                         </label>
                         <input
@@ -162,23 +172,23 @@ const ProfilePage: React.FC = () => {
                             value={form.githubUrl}
                             onChange={e => setForm(f => ({ ...f, githubUrl: e.target.value }))}
                             placeholder="https://github.com/yourusername"
-                            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all placeholder-slate-400"
                         />
                         {form.githubUrl && (
                             <a
                                 href={form.githubUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-blue-600 hover:underline mt-1 inline-block"
+                                className="text-xs text-primary-container font-semibold hover:underline mt-1.5 inline-block"
                             >
-                                View profile ↗
+                                View GitHub Profile ↗
                             </a>
                         )}
                     </div>
 
                     {/* Skills */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
                             <span className="flex items-center gap-1.5"><BookOpen size={14} /> Skills</span>
                         </label>
                         <textarea
@@ -186,27 +196,27 @@ const ProfilePage: React.FC = () => {
                             value={form.skills}
                             onChange={e => setForm(f => ({ ...f, skills: e.target.value }))}
                             placeholder="e.g. React, Spring Boot, Machine Learning, UI/UX Design"
-                            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            className="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all placeholder-slate-400 resize-none"
                         />
-                        <p className="text-xs text-gray-400 mt-1">Separate skills with commas. This helps teams find the right collaborators.</p>
+                        <p className="text-xs text-on-surface-variant mt-1.5">Separate skills with commas. This helps teams find the right collaborators.</p>
                     </div>
 
                     {/* Skills Preview */}
                     {form.skills && (
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1.5 pt-1">
                             {form.skills.split(',').map(s => s.trim()).filter(Boolean).map(skill => (
-                                <span key={skill} className="text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
+                                <span key={skill} className="text-xs px-2.5 py-1 bg-primary-container/5 text-primary rounded-full border border-primary-container/20">
                                     {skill}
                                 </span>
                             ))}
                         </div>
                     )}
 
-                    <div className="flex justify-end pt-2">
+                    <div className="flex justify-end pt-4 border-t border-slate-100">
                         <button
                             type="submit"
                             disabled={saving}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-sm"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-container hover:bg-[#d9611b] text-white text-sm font-semibold rounded-lg shadow-sm transition-colors cursor-pointer disabled:opacity-50"
                         >
                             {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                             {saving ? 'Saving...' : 'Save Changes'}

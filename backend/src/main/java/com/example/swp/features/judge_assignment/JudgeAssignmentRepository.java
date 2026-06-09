@@ -8,5 +8,6 @@ import java.util.List;
 @Repository
 public interface JudgeAssignmentRepository extends JpaRepository<JudgeAssignment, Long> {
     List<JudgeAssignment> findByJudgeId(Long judgeId);
+    List<JudgeAssignment> findBySubmissionRoundId(Long roundId);
     boolean existsByJudgeIdAndSubmissionId(Long judgeId, Long submissionId);
 }

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Code, ArrowRight, CheckCircle2, Key } from 'lucide-react';
 import api from '../services/api';
+import AuthLayout from '../components/AuthLayout';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 
 const VerifyOtpPage: React.FC = () => {
     const [otp, setOtp] = useState('');
@@ -28,7 +32,8 @@ const VerifyOtpPage: React.FC = () => {
         setLoading(true);
 
         try {
-            await api.post('/auth/verify-otp', { email, otpCode: otp });
+            // Fix: send 'otp' instead of 'otpCode' to match the backend VerifyOtpRequest DTO
+            await api.post('/auth/verify-otp', { email, otp });
             setSuccess('Account verified successfully! You can now log in.');
             setTimeout(() => navigate('/login'), 3000);
         } catch (err: any) {
@@ -37,54 +42,60 @@ const VerifyOtpPage: React.FC = () => {
             setLoading(false);
         }
     };
-    
-    // TODO: Add a "Resend OTP" button and functionality in a later task
 
     return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-            <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-                <div className="text-center">
-                    <h2 className="text-3xl font-extrabold text-gray-900">Verify Your Account</h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                        An OTP has been sent to <strong>{email}</strong>. Please enter it below.
-                    </p>
-                </div>
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                    <div>
-                        <label htmlFor="otp" className="block text-sm font-medium text-gray-700">One-Time Password (OTP)</label>
-                        <input
-                            id="otp"
-                            name="otp"
-                            type="text"
-                            required
-                            maxLength={6}
-                            className="w-full px-3 py-2 mt-1 text-center tracking-widest font-bold text-lg border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            value={otp}
-                            onChange={(e) => setOtp(e.target.value)}
-                        />
-                    </div>
-                    
-                    {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-                    {success && <p className="text-sm text-green-600 text-center">{success}</p>}
-
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={loading || !otp || !!success}
-                            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                        >
-                            {loading ? 'Verifying...' : 'Verify Account'}
-                        </button>
-                    </div>
-                </form>
-                 <p className="text-sm text-center text-gray-600">
-                    Didn't receive the code?{' '}
-                    <button className="font-medium text-blue-600 hover:text-blue-500 disabled:text-gray-400" disabled>
-                        Resend OTP
-                    </button>
+        <AuthLayout>
+            <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-on-surface">Verify Your Account</h2>
+                <p className="mt-2 text-sm text-on-surface-variant">
+                    An OTP has been sent to <strong className="text-primary">{email}</strong>. Please enter it below.
                 </p>
             </div>
-        </div>
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
+                {/* OTP Field */}
+                <Input 
+                    label="One-Time Password (OTP)"
+                    id="otp"
+                    name="otp"
+                    placeholder="000000"
+                    required
+                    maxLength={6}
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    leftIcon={<Key size={18} />}
+                    className="text-center tracking-widest font-bold text-2xl"
+                />
+
+                {/* Messages */}
+                {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-lg text-center">{error}</p>}
+                {success && (
+                    <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 border border-green-200 p-3 rounded-lg justify-center">
+                        <CheckCircle2 size={18} />
+                        <span>{success}</span>
+                    </div>
+                )}
+
+                {/* Main Action */}
+                <Button 
+                    type="submit"
+                    className="w-full"
+                    disabled={!otp || !!success}
+                    isLoading={loading}
+                    rightIcon={<ArrowRight size={18} />}
+                >
+                    Verify Account
+                </Button>
+            </form>
+
+            <p className="text-sm text-center text-on-surface-variant mt-6">
+                Didn't receive the code?{' '}
+                <button className="font-semibold text-primary hover:underline disabled:text-slate-300 disabled:no-underline cursor-pointer" disabled>
+                    Resend OTP
+                </button>
+            </p>
+        </AuthLayout>
     );
 };
 

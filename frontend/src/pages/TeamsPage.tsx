@@ -30,22 +30,22 @@ const TeamsPage: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto">
-            <div className="flex justify-between items-center mb-6">
+        <div className="space-y-6 max-w-[1440px] mx-auto">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 border border-outline-variant rounded-xl shadow-sm">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <Users className="text-blue-600" />
+                    <h1 className="text-2xl md:text-3xl font-bold text-on-surface tracking-tight flex items-center gap-2">
+                        <Users className="text-primary-container" />
                         Teams
                     </h1>
-                    <p className="text-gray-500 text-sm mt-1">Manage competing teams and their members.</p>
+                    <p className="text-sm text-on-surface-variant mt-1">Manage competing teams and their members.</p>
                 </div>
                 
-                <Authorizable allowedRoles={[Role.ADMIN, Role.ORGANIZER, Role.TEAM_MEMBER]}>
+                <Authorizable allowedRoles={[Role.PARTICIPANT]}>
                     <button
                         onClick={() => toast('Create functionality coming soon!', { icon: '🚧' })}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors"
+                        className="bg-primary-container hover:bg-[#d9611b] text-white font-semibold py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors cursor-pointer text-sm"
                     >
-                        <Plus size={18} />
+                        <Plus size={16} />
                         Create Team
                     </button>
                 </Authorizable>
@@ -53,51 +53,51 @@ const TeamsPage: React.FC = () => {
 
             {loading ? (
                 <div className="flex justify-center items-center py-20">
-                    <Loader2 className="animate-spin text-blue-600" size={32} />
+                    <Loader2 className="animate-spin text-primary-container" size={32} />
                 </div>
             ) : teams.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-                    <Users className="mx-auto h-12 w-12 text-gray-300" />
-                    <h3 className="mt-2 text-sm font-semibold text-gray-900">No teams</h3>
-                    <p className="mt-1 text-sm text-gray-500">There are no teams registered yet.</p>
+                <div className="bg-white border border-outline-variant rounded-xl p-16 text-center max-w-2xl mx-auto shadow-sm">
+                    <Users className="mx-auto h-16 w-16 text-slate-300 mb-4" />
+                    <h3 className="text-lg font-bold text-on-surface mb-1">No Teams Registered</h3>
+                    <p className="text-sm text-on-surface-variant">There are no teams registered yet for this track.</p>
                 </div>
             ) : (
-                <div className="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
+                <div className="bg-white border border-outline-variant rounded-xl overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-slate-100">
+                            <thead className="bg-slate-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">ID</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Name</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Description</th>
+                                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white divide-y divide-slate-100">
                                 {teams.map((team) => (
-                                    <tr key={team.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{team.id}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{team.name}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{team.description}</td>
+                                    <tr key={team.id} className="hover:bg-slate-50/50 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-on-surface-variant">{team.id}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-on-surface">{team.name}</td>
+                                        <td className="px-6 py-4 text-sm text-on-surface-variant max-w-xs truncate">{team.description || 'No description provided'}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <Authorizable 
                                                 allowedRoles={[Role.ADMIN, Role.ORGANIZER]} 
-                                                fallback={<span className="text-gray-400 text-xs italic">View Only</span>}
+                                                fallback={<span className="text-slate-400 text-xs italic">View Only</span>}
                                             >
                                                 <div className="flex space-x-3">
                                                     <button
                                                         onClick={() => toast('Edit functionality coming soon!', { icon: '🚧' })}
-                                                        className="text-blue-600 hover:text-blue-900 transition-colors"
+                                                        className="text-primary-container hover:text-primary transition-colors cursor-pointer"
                                                         title="Edit"
                                                     >
-                                                        <Edit2 size={18} />
+                                                        <Edit2 size={16} />
                                                     </button>
                                                     <button
                                                         onClick={() => toast('Delete functionality coming soon!', { icon: '🚧' })}
-                                                        className="text-red-600 hover:text-red-900 transition-colors"
+                                                        className="text-red-500 hover:text-red-700 transition-colors cursor-pointer"
                                                         title="Delete"
                                                     >
-                                                        <Trash2 size={18} />
+                                                        <Trash2 size={16} />
                                                     </button>
                                                 </div>
                                             </Authorizable>

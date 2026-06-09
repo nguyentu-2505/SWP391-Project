@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from './api';
 
 const API_URL = '/teams';
 
@@ -17,30 +17,18 @@ export interface CreateTeamRequest {
 }
 
 const createTeam = async (team: CreateTeamRequest): Promise<Team> => {
-    const response = await axios.post(API_URL, team, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
-    return response.data;
+    const response = await api.post(API_URL, team);
+    return response.data.data;
 };
 
 const getTeamById = async (id: number): Promise<Team> => {
-    const response = await axios.get(`${API_URL}/${id}`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
-    return response.data;
+    const response = await api.get(`${API_URL}/${id}`);
+    return response.data.data;
 };
 
 const getTeamsByTrack = async (trackId: number): Promise<Team[]> => {
-    const response = await axios.get(`${API_URL}/track/${trackId}`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
-    return response.data;
+    const response = await api.get(`${API_URL}/track/${trackId}`);
+    return response.data.data;
 };
 
 export const TeamService = {

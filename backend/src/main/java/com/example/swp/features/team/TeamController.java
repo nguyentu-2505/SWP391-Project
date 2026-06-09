@@ -38,6 +38,19 @@ public class TeamController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<List<TeamResponse>>> getAllTeams(org.springframework.data.domain.Pageable pageable) {
+        org.springframework.data.domain.Page<TeamResponse> responses = teamService.getAllTeams(pageable);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @GetMapping("/track/{trackId}")
+    public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsByTrack(@PathVariable Long trackId) {
+        List<TeamResponse> responses = teamService.getTeamsByTrack(trackId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
     @GetMapping("/my-team/event/{eventId}")
     @PreAuthorize("hasRole('PARTICIPANT')")
     public ResponseEntity<ApiResponse<TeamResponse>> getMyTeamForEvent(@PathVariable Long eventId) {
@@ -50,5 +63,12 @@ public class TeamController {
     public ResponseEntity<ApiResponse<Void>> disqualifyTeam(@PathVariable Long id, @Valid @RequestBody com.example.swp.features.team.dto.request.DisqualifyTeamRequest request) {
         teamService.disqualifyTeam(id, request);
         return ResponseEntity.ok(ApiResponse.success(null, "Team disqualified successfully."));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<TeamResponse>> updateTeam(@PathVariable Long id, @Valid @RequestBody com.example.swp.features.team.dto.request.UpdateTeamRequest request) {
+        TeamResponse response = teamService.updateTeam(id, request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Team updated successfully."));
     }
 }

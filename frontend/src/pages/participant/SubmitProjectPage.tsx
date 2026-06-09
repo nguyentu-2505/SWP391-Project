@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { UploadCloud, Link as LinkIcon, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { UploadCloud, Link as LinkIcon, AlertCircle, CheckCircle2, ChevronLeft, ArrowLeft, Send } from 'lucide-react';
 
 interface Round {
     id: number;
@@ -125,7 +125,7 @@ const SubmitProjectPage: React.FC = () => {
     if (loadingData) {
         return (
             <div className="max-w-3xl mx-auto flex justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-container"></div>
             </div>
         );
     }
@@ -134,9 +134,9 @@ const SubmitProjectPage: React.FC = () => {
         return (
             <div className="max-w-3xl mx-auto mt-10 p-6 bg-red-50 border border-red-200 rounded-xl text-center">
                 <AlertCircle className="mx-auto h-12 w-12 text-red-400 mb-4" />
-                <h3 className="text-lg font-medium text-red-800 mb-2">Cannot Submit Project</h3>
-                <p className="text-red-600 mb-6">{error}</p>
-                <Link to="/dashboard" className="inline-flex items-center text-red-700 font-medium hover:underline">
+                <h3 className="text-lg font-bold text-red-800 mb-2">Cannot Submit Project</h3>
+                <p className="text-red-600 mb-6 text-sm">{error}</p>
+                <Link to="/dashboard" className="inline-flex items-center text-primary-container font-semibold hover:underline text-sm">
                     <ChevronLeft size={16} className="mr-1" /> Back to Dashboard
                 </Link>
             </div>
@@ -144,48 +144,59 @@ const SubmitProjectPage: React.FC = () => {
     }
 
     return (
-        <div className="max-w-3xl mx-auto">
-            <div className="mb-8">
-                <Link to="/dashboard" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 mb-4 transition-colors">
-                    <ChevronLeft size={16} className="mr-1" />
-                    Back
-                </Link>
-                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Submit Project</h1>
-                <p className="text-gray-500 mt-2">Submit your team's work for evaluation by the judges.</p>
-            </div>
+        <div className="max-w-3xl mx-auto space-y-6">
+            <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors mb-2">
+                <ArrowLeft size={16} />
+                Back to Dashboard
+            </Link>
 
-            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-white p-6 md:p-8 rounded-xl border border-outline-variant shadow-sm space-y-6">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-on-surface tracking-tight flex items-center gap-2">
+                        <UploadCloud size={28} className="text-primary-container" />
+                        Submit Project
+                    </h1>
+                    <p className="text-sm text-on-surface-variant mt-1">Submit your team's project repository and demo links for evaluation.</p>
+                </div>
+
                 {/* Team Info Banner */}
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-8 flex items-start gap-3">
-                    <CheckCircle2 className="text-blue-600 mt-0.5 flex-shrink-0" size={20} />
+                <div className="bg-primary-container/5 border border-primary-container/20 rounded-xl p-4 flex items-start gap-3 text-primary">
+                    <CheckCircle2 className="mt-0.5 shrink-0" size={20} />
                     <div>
-                        <p className="text-sm font-medium text-blue-900">Submitting on behalf of team:</p>
-                        <p className="text-blue-700 font-bold text-lg">{myTeam?.name}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Submitting on behalf of:</p>
+                        <p className="font-bold text-lg text-on-surface mt-1">{myTeam?.name}</p>
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Round Selection */}
                     <div>
-                        <label htmlFor="round" className="block text-sm font-semibold text-gray-900 mb-1.5">
+                        <label htmlFor="round" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
                             Select Round <span className="text-red-500">*</span>
                         </label>
-                        <select
-                            id="round"
-                            value={roundId}
-                            onChange={(e) => {
-                                setRoundId(Number(e.target.value));
-                                setError('');
-                            }}
-                            className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-shadow ${
-                                !roundId && error ? 'border-red-300 focus:ring-red-500 bg-red-50' : 'border-gray-300 focus:ring-blue-500 bg-white'
-                            }`}
-                        >
-                            <option value="" disabled>-- Select the round you are submitting for --</option>
-                            {rounds.map(round => (
-                                <option key={round.id} value={round.id}>{round.name}</option>
-                            ))}
-                        </select>
+                        <div className="relative">
+                            <select
+                                id="round"
+                                value={roundId}
+                                onChange={(e) => {
+                                    setRoundId(Number(e.target.value));
+                                    setError('');
+                                }}
+                                className={`w-full px-3 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all appearance-none cursor-pointer ${
+                                    !roundId && error ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
+                                }`}
+                            >
+                                <option value="" disabled>-- Select the round you are submitting for --</option>
+                                {rounds.map(round => (
+                                    <option key={round.id} value={round.id}>{round.name}</option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                                </svg>
+                            </div>
+                        </div>
                         {rounds.length === 0 && (
                             <p className="mt-1.5 text-xs text-amber-600 font-medium flex items-center gap-1">
                                 <AlertCircle size={12} /> No rounds available for this event yet.
@@ -195,12 +206,12 @@ const SubmitProjectPage: React.FC = () => {
 
                     {/* Repository URL */}
                     <div>
-                        <label htmlFor="repoUrl" className="block text-sm font-semibold text-gray-900 mb-1.5">
+                        <label htmlFor="repoUrl" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
                             Repository URL <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                <LinkIcon size={16} className="text-gray-400" />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <LinkIcon size={16} />
                             </div>
                             <input
                                 id="repoUrl"
@@ -211,22 +222,22 @@ const SubmitProjectPage: React.FC = () => {
                                     setRepositoryUrl(e.target.value);
                                     if (repoError) validateForm();
                                 }}
-                                className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-shadow ${
-                                    repoError ? 'border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50' : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
+                                className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all ${
+                                    repoError ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
                                 }`}
                             />
                         </div>
-                        {repoError && <p className="mt-1.5 text-sm text-red-600 font-medium">{repoError}</p>}
+                        {repoError && <p className="mt-1.5 text-xs text-red-600 font-medium">{repoError}</p>}
                     </div>
 
                     {/* Demo URL */}
                     <div>
-                        <label htmlFor="demoUrl" className="block text-sm font-semibold text-gray-900 mb-1.5">
-                            Demo URL <span className="text-gray-400 font-normal">(Optional)</span>
+                        <label htmlFor="demoUrl" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                            Demo URL <span className="text-slate-400 font-normal normal-case">(Optional)</span>
                         </label>
                         <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                <UploadCloud size={16} className="text-gray-400" />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <LinkIcon size={16} />
                             </div>
                             <input
                                 id="demoUrl"
@@ -237,38 +248,41 @@ const SubmitProjectPage: React.FC = () => {
                                     setDemoUrl(e.target.value);
                                     if (demoError) validateForm();
                                 }}
-                                className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-shadow ${
-                                    demoError ? 'border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50' : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
+                                className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all ${
+                                    demoError ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
                                 }`}
                             />
                         </div>
                         {demoError ? (
-                            <p className="mt-1.5 text-sm text-red-600 font-medium">{demoError}</p>
+                            <p className="mt-1.5 text-xs text-red-600 font-medium">{demoError}</p>
                         ) : (
-                            <p className="mt-1.5 text-xs text-gray-500">Provide a link to a live demo, video, or presentation if available.</p>
+                            <p className="mt-1.5 text-xs text-on-surface-variant">Provide a link to a live demo, video, or presentation if available.</p>
                         )}
                     </div>
 
                     {error && !repoError && !demoError && (
-                        <div className="p-3 bg-red-50 text-red-700 text-sm font-medium rounded-lg border border-red-100 flex items-center gap-2">
-                            <AlertCircle size={16} />
-                            {error}
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-600">
+                            <AlertCircle size={16} className="shrink-0" />
+                            <span>{error}</span>
                         </div>
                     )}
 
-                    <div className="pt-4 border-t border-gray-100">
+                    <div className="pt-4 border-t border-slate-100 flex justify-end">
                         <button
                             type="submit"
                             disabled={submitting || !myTeam || rounds.length === 0}
-                            className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            className="w-full flex items-center justify-center gap-2 py-2.5 px-6 rounded-lg font-bold text-sm text-white bg-primary-container hover:bg-[#d9611b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-container disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
                         >
                             {submitting ? (
                                 <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                     Submitting...
                                 </>
                             ) : (
-                                'Submit Project'
+                                <>
+                                    <Send size={16} />
+                                    Submit Project
+                                </>
                             )}
                         </button>
                     </div>

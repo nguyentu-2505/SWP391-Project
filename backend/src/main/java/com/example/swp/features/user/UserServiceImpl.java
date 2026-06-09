@@ -52,8 +52,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponse> getUsersByRole(UserRole role) {
-        return userRepository.findByRole(Role.valueOf(role.name())).stream()
+    public List<UserResponse> getUsersByRole(Role role) {
+        return userRepository.findByRole(role).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -113,5 +113,48 @@ public class UserServiceImpl implements UserService {
                 .approved(user.isApproved())
                 .isActive(user.isActive())
                 .build();
+    }
+
+    private User getCurrentUser() {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+    }
+
+    @Override
+    public UserResponse getMyProfile() {
+        return mapToResponse(getCurrentUser());
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateProfile(com.example.swp.features.user.dto.request.UpdateProfileRequest request) {
+        User user = getCurrentUser();
+        
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getPhone() != null) user.setPhone(request.getPhone());
+        if (request.getBio() != null) user.setBio(request.getBio());
+        if (request.getFptStudentId() != null) user.setFptStudentId(request.getFptStudentId());
+        if (request.getSchoolName() != null) user.setSchoolName(request.getSchoolName());
+        if (request.getGithubUrl() != null) user.setGithubUrl(request.getGithubUrl());
+
+        User updatedUser = userRepository.save(user);
+        auditLogService.logAction("UPDATE_PROFILE", "USER", user.getId(), null, user.getUsername());
+        return mapToResponse(updatedUser);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(com.example.swp.features.user.dto.request.ChangePasswordRequest request) {
+        User user = getCurrentUser();
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new com.example.swp.exception.BadRequestException("Incorrect old password");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        auditLogService.logAction("CHANGE_PASSWORD", "USER", user.getId(), null, user.getUsername());
     }
 }

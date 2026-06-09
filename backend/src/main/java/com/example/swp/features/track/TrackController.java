@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/tracks")
+@RequestMapping("/api/v1/tracks")
 @RequiredArgsConstructor
 public class TrackController {
 
@@ -23,51 +23,41 @@ public class TrackController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<TrackResponse> createTrack(@Valid @RequestBody CreateTrackRequest request) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<TrackResponse>> createTrack(@Valid @RequestBody CreateTrackRequest request) {
         TrackResponse response = trackService.createTrack(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(com.example.swp.common.ApiResponse.success(response, "Track created successfully."), HttpStatus.CREATED);
     }
 
     @GetMapping("/hackathon/{hackathonEventId}")
-    public ResponseEntity<List<TrackResponse>> getTracksByHackathonEvent(@PathVariable Long hackathonEventId) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<List<TrackResponse>>> getTracksByHackathonEvent(@PathVariable Long hackathonEventId) {
         List<TrackResponse> responses = trackService.getTracksByHackathonEvent(hackathonEventId);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses));
     }
 
     // ── Track-Mentor assignment endpoints (Phase 1) ───────────────────────────
 
-    /**
-     * Assign a mentor/internal-judge to a track.
-     * This creates the record used for conflict-of-interest validation.
-     */
     @PostMapping("/{trackId}/mentors/{mentorUserId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<TrackMentorResponse> assignMentor(
+    public ResponseEntity<com.example.swp.common.ApiResponse<TrackMentorResponse>> assignMentor(
             @PathVariable Long trackId,
             @PathVariable Long mentorUserId) {
         TrackMentorResponse response = trackService.assignMentor(trackId, mentorUserId);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(com.example.swp.common.ApiResponse.success(response, "Mentor assigned successfully."), HttpStatus.CREATED);
     }
 
-    /**
-     * Remove a mentor from a track.
-     */
     @DeleteMapping("/{trackId}/mentors/{mentorUserId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<Void> removeMentor(
+    public ResponseEntity<com.example.swp.common.ApiResponse<Void>> removeMentor(
             @PathVariable Long trackId,
             @PathVariable Long mentorUserId) {
         trackService.removeMentor(trackId, mentorUserId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(null, "Mentor removed successfully."));
     }
 
-    /**
-     * List all mentors assigned to a track.
-     */
     @GetMapping("/{trackId}/mentors")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<List<TrackMentorResponse>> getMentorsByTrack(@PathVariable Long trackId) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<List<TrackMentorResponse>>> getMentorsByTrack(@PathVariable Long trackId) {
         List<TrackMentorResponse> responses = trackService.getMentorsByTrack(trackId);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses));
     }
 }

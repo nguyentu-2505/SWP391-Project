@@ -35,6 +35,13 @@ public class HackathonEventController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<List<HackathonEventResponse>>> getAllEventsForAdmin(Pageable pageable) {
+        Page<HackathonEventResponse> responses = hackathonEventService.getAllEventsForAdmin(pageable);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
     @GetMapping("/my-events")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<ApiResponse<List<HackathonEventResponse>>> getMyHackathonEvents() {

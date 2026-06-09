@@ -28,6 +28,8 @@ public class ExportService {
     private final RoundRepository roundRepository;
     private final SubmissionRepository submissionRepository;
     private final ScoreRepository scoreRepository;
+    private final com.example.swp.features.team.TeamRepository teamRepository;
+    private final com.example.swp.features.user.UserRepository userRepository;
     private final AuditLogService auditLogService;
 
     public byte[] exportRankingCsv(Long roundId) {
@@ -88,6 +90,59 @@ public class ExportService {
             }
 
             auditLogService.logAction("EXPORT_CSV", "ROUND", roundId, "0", "Exported anonymized scoring CSV for round " + round.getName());
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to generate CSV", e);
+        }
+    }
+
+    public byte[] exportTeamsCsv() {
+        List<com.example.swp.features.team.Team> teams = teamRepository.findAll();
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            out.write(CsvExportUtils.UTF8_BOM);
+
+            String header = "Team ID,Team Name,Project Name,Track Name,Status\n";
+            out.write(header.getBytes(StandardCharsets.UTF_8));
+
+            for (com.example.swp.features.team.Team t : teams) {
+                String line = String.format("%d,%s,%s,%s,%s\n",
+                        t.getId(),
+                        CsvExportUtils.escapeCsvField(t.getName()),
+                        CsvExportUtils.escapeCsvField(t.getProjectName()),
+                        CsvExportUtils.escapeCsvField(t.getTrack() != null ? t.getTrack().getName() : "None"),
+                        t.getStatus()
+                );
+                out.write(line.getBytes(StandardCharsets.UTF_8));
+            }
+
+            auditLogService.logAction("EXPORT_CSV", "TEAM", null, "0", "Exported all teams CSV");
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to generate CSV", e);
+        }
+    }
+
+    public byte[] exportParticipantsCsv() {
+        List<com.example.swp.features.user.User> users = userRepository.findByRole(com.example.swp.features.user.Role.PARTICIPANT);
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            out.write(CsvExportUtils.UTF8_BOM);
+
+            String header = "User ID,Username,Email,Full Name,FPT Student ID,School Name\n";
+            out.write(header.getBytes(StandardCharsets.UTF_8));
+
+            for (com.example.swp.features.user.User u : users) {
+                String line = String.format("%d,%s,%s,%s,%s,%s\n",
+                        u.getId(),
+                        CsvExportUtils.escapeCsvField(u.getUsername()),
+                        CsvExportUtils.escapeCsvField(u.getEmail()),
+                        CsvExportUtils.escapeCsvField(u.getFullName()),
+                        CsvExportUtils.escapeCsvField(u.getFptStudentId()),
+                        CsvExportUtils.escapeCsvField(u.getSchoolName())
+                );
+                out.write(line.getBytes(StandardCharsets.UTF_8));
+            }
+
+            auditLogService.logAction("EXPORT_CSV", "USER", null, "0", "Exported all participants CSV");
             return out.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException("Failed to generate CSV", e);

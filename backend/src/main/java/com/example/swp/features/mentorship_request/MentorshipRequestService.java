@@ -127,6 +127,55 @@ public class MentorshipRequestService {
         return mapToResponse(updatedRequest);
     }
 
+    @Transactional
+    public MentorshipRequestResponse rejectRequest(Long requestId) {
+        User mentor = getCurrentUser();
+
+        MentorshipRequest request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Mentorship request not found"));
+
+        if (!request.getMentor().getId().equals(mentor.getId())) {
+            throw new AccessDeniedException("You are not the mentor assigned to this request.");
+        }
+
+        if (request.getStatus() != MentorshipRequestStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Only in-progress requests can be rejected.");
+        }
+
+        request.setStatus(MentorshipRequestStatus.OPEN);
+        request.setMentor(null);
+        
+        MentorshipRequest updatedRequest = requestRepository.save(request);
+
+        User teamLeader = findTeamLeader(request.getTeam());
+        if (teamLeader != null) {
+            notificationService.createNotification(
+                teamLeader,
+                "Mentorship Rejected",
+                "Mentor " + mentor.getUsername() + " has backed out of your request. It is now open again.",
+                "MENTORSHIP_REJECTED",
+                "MentorshipRequest",
+                updatedRequest.getId()
+            );
+        }
+
+        return mapToResponse(updatedRequest);
+    }
+
+    @Transactional
+    public void cancelRequest(Long requestId) {
+        User currentUser = getCurrentUser();
+        MentorshipRequest request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Mentorship request not found"));
+
+        boolean isLeaderOfTeam = findTeamLeader(request.getTeam()).getId().equals(currentUser.getId());
+        if (!isLeaderOfTeam && currentUser.getRole() != Role.ADMIN && currentUser.getRole() != Role.ORGANIZER) {
+            throw new AccessDeniedException("Only the team leader or an admin can cancel this request.");
+        }
+
+        requestRepository.delete(request);
+    }
+
     public List<MentorshipRequestResponse> getOpenRequests() {
         return requestRepository.findByStatus(MentorshipRequestStatus.OPEN).stream()
             .map(this::mapToResponse).collect(Collectors.toList());

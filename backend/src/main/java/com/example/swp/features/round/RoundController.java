@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/rounds")
+@RequestMapping("/api/v1/rounds")
 @RequiredArgsConstructor
 public class RoundController {
 
@@ -20,14 +20,14 @@ public class RoundController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<RoundResponse> createRound(@Valid @RequestBody CreateRoundRequest request) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<RoundResponse>> createRound(@Valid @RequestBody CreateRoundRequest request) {
         RoundResponse response = roundService.createRound(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(com.example.swp.common.ApiResponse.success(response, "Round created successfully."), HttpStatus.CREATED);
     }
 
     @GetMapping("/hackathon/{hackathonEventId}")
-    public ResponseEntity<List<RoundResponse>> getRoundsByHackathonEvent(@PathVariable Long hackathonEventId) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<List<RoundResponse>>> getRoundsByHackathonEvent(@PathVariable Long hackathonEventId) {
         List<RoundResponse> responses = roundService.getRoundsByHackathonEvent(hackathonEventId);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses));
     }
 }

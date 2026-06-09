@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from './api';
 
 const API_URL = '/hackathon-events';
 
@@ -26,47 +26,32 @@ export interface UpdateHackathonEventRequest {
 }
 
 const createHackathonEvent = async (event: CreateHackathonEventRequest): Promise<HackathonEvent> => {
-    const response = await axios.post(API_URL, event, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
-    return response.data;
+    const response = await api.post(API_URL, event);
+    return response.data.data;
 };
 
-const getHackathonEvents = async (): Promise<HackathonEvent[]> => {
-    const response = await axios.get(API_URL, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
-    return response.data;
+const getHackathonEvents = async (page: number = 0, size: number = 100): Promise<HackathonEvent[]> => {
+    // Note: The backend returns a Page<HackathonEventResponse>. We extract .content
+    const response = await api.get(`${API_URL}?page=${page}&size=${size}`);
+    const data = response.data.data;
+    if (data && data.content) {
+        return data.content;
+    }
+    return data || [];
 };
 
 const getHackathonEventBySlug = async (slug: string): Promise<HackathonEvent> => {
-    const response = await axios.get(`${API_URL}/${slug}`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
-    return response.data;
+    const response = await api.get(`${API_URL}/${slug}`);
+    return response.data.data;
 };
 
 const updateHackathonEvent = async (id: number, event: UpdateHackathonEventRequest): Promise<HackathonEvent> => {
-    const response = await axios.put(`${API_URL}/${id}`, event, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
-    return response.data;
+    const response = await api.put(`${API_URL}/${id}`, event);
+    return response.data.data;
 };
 
 const deleteHackathonEvent = async (id: number): Promise<void> => {
-    await axios.delete(`${API_URL}/${id}`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
+    await api.delete(`${API_URL}/${id}`);
 };
 
 export const HackathonEventService = {
