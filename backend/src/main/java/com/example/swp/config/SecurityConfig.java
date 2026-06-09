@@ -83,6 +83,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/hackathon-events/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/CategoryCustomers/**").permitAll()
+                        .requestMatchers("/api/v1/rankings/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 );

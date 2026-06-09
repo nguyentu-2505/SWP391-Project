@@ -47,8 +47,14 @@ const getPendingUsers = async (page: number = 0, size: number = 10): Promise<Pag
     return response.data.data;
 };
 
+const createUser = async (userData: any): Promise<User> => {
+    const response = await api.post('/users', userData);
+    return response.data.data;
+};
+
 export const UserService = {
     getUsers,
     approveUser,
     getPendingUsers,
+    createUser,
 };

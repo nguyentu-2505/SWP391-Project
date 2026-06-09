@@ -14,4 +14,6 @@ public interface AuthService {
     void verifyOtp(VerifyOtpRequest request);
     /** Creates a temporary Guest Judge account directly (no OTP). Organizer-only. */
     void createGuestJudge(CreateGuestJudgeRequest request);
+    void forgotPassword(com.example.swp.features.auth.dto.request.ForgotPasswordRequest request);
+    void resetPassword(com.example.swp.features.auth.dto.request.ResetPasswordRequest request);
 }

@@ -53,4 +53,18 @@ public class MentorshipRequestController {
         MentorshipRequestResponse response = requestService.resolveRequest(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Request marked as resolved."));
     }
+
+    @PatchMapping("/{id}/reject")
+    @PreAuthorize("hasRole('MENTOR')")
+    public ResponseEntity<ApiResponse<MentorshipRequestResponse>> rejectRequest(@PathVariable Long id) {
+        MentorshipRequestResponse response = requestService.rejectRequest(id);
+        return ResponseEntity.ok(ApiResponse.success(response, "Request rejected and is open again."));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PARTICIPANT', 'ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<Void>> cancelRequest(@PathVariable Long id) {
+        requestService.cancelRequest(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Mentorship request cancelled successfully."));
+    }
 }

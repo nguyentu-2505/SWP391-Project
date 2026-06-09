@@ -1,6 +1,7 @@
 package com.example.swp.features.team_invitation;
 
 import com.example.swp.exception.ResourceNotFoundException;
+import com.example.swp.exception.BadRequestException;
 import com.example.swp.features.notification.NotificationService;
 import com.example.swp.features.team.Team;
 import com.example.swp.features.team.TeamRepository;
@@ -83,6 +84,9 @@ public class TeamInvitationService {
         TeamInvitation invitation = invitationRepository.findById(invitationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invitation not found"));
 
+        User invitee = userRepository.findByEmail(invitation.getInviteeEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         if (!invitation.getInviteeEmail().equals(currentUser.getEmail())) {
             throw new IllegalStateException("You are not authorized to respond to this invitation.");
         }
@@ -95,8 +99,12 @@ public class TeamInvitationService {
 
         if (response == InvitationStatus.ACCEPTED) {
             
-            if (isUserInAnotherTeamInEvent(currentUser, team.getEvent().getId())) {
+            if (isUserInAnotherTeamInEvent(invitee, team.getEvent().getId())) {
                 throw new IllegalStateException("You are already in another team for this hackathon.");
+            }
+            
+            if (teamMemberRepository.existsByTeamIdAndUserId(team.getId(), invitee.getId())) {
+                throw new BadRequestException("User is already a member of this team");
             }
             
             long currentSize = teamMemberRepository.countByTeamId(team.getId());
@@ -110,7 +118,7 @@ public class TeamInvitationService {
             
             TeamMember newMember = TeamMember.builder()
                     .team(team)
-                    .user(currentUser)
+                    .user(invitee)
                     .isLeader(false)
                     .build();
             teamMemberRepository.save(newMember);

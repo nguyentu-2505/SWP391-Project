@@ -69,6 +69,8 @@ public class TeamServiceImpl implements TeamService {
                 .status(TeamStatus.ACTIVE)
                 .build();
         Team savedTeam = teamRepository.save(team);
+        
+        auditLogService.logAction("CREATE_TEAM", "Team", savedTeam.getId(), null, "Created team: " + savedTeam.getName());
 
         TeamMember leader = TeamMember.builder()
                 .team(savedTeam)
@@ -91,6 +93,18 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
+    public org.springframework.data.domain.Page<TeamResponse> getAllTeams(org.springframework.data.domain.Pageable pageable) {
+        return teamRepository.findAll(pageable).map(this::mapToResponse);
+    }
+
+    @Override
+    public List<TeamResponse> getTeamsByTrack(Long trackId) {
+        return teamRepository.findByTrackId(trackId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<TeamResponse> getTeamsByEvent(Long eventId) {
         return teamRepository.findByEventId(eventId).stream()
                 .map(this::mapToResponse)
@@ -106,7 +120,7 @@ public class TeamServiceImpl implements TeamService {
         TeamMember membership = teamMemberRepository.findByUserId(currentUser.getId()).stream()
                 .filter(m -> m.getTeam().getEvent().getId().equals(eventId))
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("You are not in a team for this event."));
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found for this event"));
         
         Team team = teamRepository.findById(membership.getTeam().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
@@ -156,6 +170,40 @@ public class TeamServiceImpl implements TeamService {
                     team.getId()
             );
         }
+    }
+
+    @Override
+    @Transactional
+    public TeamResponse updateTeam(Long teamId, com.example.swp.features.team.dto.request.UpdateTeamRequest request) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+
+        boolean isCurrentUserAdmin = currentUser.getRole() == com.example.swp.features.user.Role.ADMIN || currentUser.getRole() == com.example.swp.features.user.Role.ORGANIZER;
+        boolean isCurrentUserLeader = teamMemberRepository.existsByTeamIdAndUserIdAndIsLeaderTrue(teamId, currentUser.getId());
+
+        if (!isCurrentUserAdmin && !isCurrentUserLeader) {
+            throw new com.example.swp.exception.BadRequestException("Only Team Leader or Admin can edit team details");
+        }
+
+        if (request.getName() != null) team.setName(request.getName());
+        if (request.getProjectName() != null) team.setProjectName(request.getProjectName());
+        if (request.getProjectDescription() != null) team.setProjectDescription(request.getProjectDescription());
+        
+        if (request.getTrackId() != null) {
+            Track track = trackRepository.findById(request.getTrackId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Track not found"));
+            team.setTrack(track);
+        }
+
+        Team updatedTeam = teamRepository.save(team);
+        
+        auditLogService.logAction("UPDATE_TEAM", "TEAM", updatedTeam.getId(), null, "Team updated by " + currentUser.getUsername());
+        
+        return mapToResponse(updatedTeam);
     }
 
     private boolean isUserInAnotherTeamInEvent(User user, Long eventId) {

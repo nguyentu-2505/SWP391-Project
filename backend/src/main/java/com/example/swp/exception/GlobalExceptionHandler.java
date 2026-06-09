@@ -33,10 +33,18 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST
         );
     }
-    @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
+    @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class, BadRequestException.class})
     public ResponseEntity<ApiResponse<Void>> handleIllegalStateAndArgument(RuntimeException ex) {
         return new ResponseEntity<>(
                 ApiResponse.error("BAD_REQUEST", ex.getMessage()),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex) {
+        return new ResponseEntity<>(
+                ApiResponse.error("BAD_REQUEST", "Database constraint violation: Username or email already exists."),
                 HttpStatus.BAD_REQUEST
         );
     }

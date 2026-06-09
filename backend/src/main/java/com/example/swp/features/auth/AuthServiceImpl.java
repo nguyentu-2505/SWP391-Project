@@ -1,5 +1,6 @@
 package com.example.swp.features.auth;
 
+import com.example.swp.exception.BadRequestException;
 import com.example.swp.features.auth.dto.request.CreateGuestJudgeRequest;
 import com.example.swp.features.auth.dto.request.LoginRequest;
 import com.example.swp.features.auth.dto.request.RefreshTokenRequest;
@@ -40,6 +41,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final AuditLogService auditLogService;
+    private final RefreshTokenService refreshTokenService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -70,40 +73,37 @@ public class AuthServiceImpl implements AuthService {
         log.info("User logged in successfully: {}", user.getUsername());
 
         String accessToken = jwtTokenProvider.generateAccessToken(user);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+        RefreshToken refreshTokenEntity = refreshTokenService.createRefreshToken(user.getId());
 
         return LoginResponse.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
+                .refreshToken(refreshTokenEntity.getToken())
                 .build();
     }
 
     @Override
     public LoginResponse refreshToken(RefreshTokenRequest request) {
-        String username = jwtTokenProvider.getUsernameFromJWT(request.getRefreshToken());
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        if (jwtTokenProvider.validateToken(request.getRefreshToken())) {
-            String accessToken = jwtTokenProvider.generateAccessToken(user);
-            String refreshToken = jwtTokenProvider.generateRefreshToken(user);
-
-            return LoginResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .build();
-        }
-        throw new RuntimeException("Invalid refresh token");
+        return refreshTokenService.findByToken(request.getRefreshToken())
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String accessToken = jwtTokenProvider.generateAccessToken(user);
+                    return LoginResponse.builder()
+                            .accessToken(accessToken)
+                            .refreshToken(request.getRefreshToken())
+                            .build();
+                })
+                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
 
     @Override
     public void register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Error: Username is already taken!");
+            throw new BadRequestException("Error: Username is already taken!");
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Error: Email is already in use!");
+            throw new BadRequestException("Error: Email is already in use!");
         }
 
         User user = new User();
@@ -119,11 +119,21 @@ public class AuthServiceImpl implements AuthService {
         user.setOtpCode(otp);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
 
-        userRepository.save(user);
-        log.info("New user registered successfully: {}", user.getUsername());
+        try {
+            userRepository.save(user);
+            log.info("New user registered successfully: {}", user.getUsername());
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            log.error("Database constraint violation during registration: {}", ex.getMessage());
+            throw new BadRequestException("Username or Email is already registered");
+        }
 
-        String emailBody = "Your OTP for Hackathon registration is: " + otp;
-        emailService.sendSimpleMessage(user.getEmail(), "Hackathon Registration OTP", emailBody);
+        try {
+            String emailBody = "Your OTP for Hackathon registration is: " + otp;
+            emailService.sendSimpleMessage(user.getEmail(), "Hackathon Registration OTP", emailBody);
+        } catch (Exception ex) {
+            log.error("Failed to send verification email to {}: {}", user.getEmail(), ex.getMessage());
+            throw new BadRequestException("Failed to send verification email. Please check your email configuration.");
+        }
     }
 
     @Override
@@ -132,15 +142,15 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + request.getEmail()));
 
         if (user.isVerified()) {
-            throw new RuntimeException("User is already verified.");
+            throw new BadRequestException("User is already verified.");
         }
 
         if (user.getOtpCode() == null || !user.getOtpCode().equals(request.getOtp())) {
-            throw new RuntimeException("Invalid OTP.");
+            throw new BadRequestException("Invalid OTP.");
         }
 
         if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP has expired.");
+            throw new BadRequestException("OTP has expired.");
         }
 
         user.setVerified(true);
@@ -214,5 +224,48 @@ public class AuthServiceImpl implements AuthService {
             sb.append(TEMP_PASSWORD_CHARS.charAt(SECURE_RANDOM.nextInt(TEMP_PASSWORD_CHARS.length())));
         }
         return sb.toString();
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(com.example.swp.features.auth.dto.request.ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadRequestException("User not found with this email"));
+
+        passwordResetTokenRepository.deleteByUser(user);
+
+        String token = java.util.UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusMinutes(15))
+                .build();
+
+        passwordResetTokenRepository.save(resetToken);
+
+        String emailBody = "Your password reset token is: " + token + "\nIt will expire in 15 minutes.";
+        emailService.sendSimpleMessage(user.getEmail(), "Password Reset Request", emailBody);
+        
+        auditLogService.logAction("FORGOT_PASSWORD_REQUESTED", "USER", user.getId(), null, user.getUsername());
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(com.example.swp.features.auth.dto.request.ResetPasswordRequest request) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new BadRequestException("Invalid reset token"));
+
+        if (resetToken.isExpired()) {
+            passwordResetTokenRepository.delete(resetToken);
+            throw new BadRequestException("Reset token has expired");
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        passwordResetTokenRepository.delete(resetToken);
+
+        auditLogService.logAction("PASSWORD_RESET_SUCCESS", "USER", user.getId(), null, user.getUsername());
     }
 }

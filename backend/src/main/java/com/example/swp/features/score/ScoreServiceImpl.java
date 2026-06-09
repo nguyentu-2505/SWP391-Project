@@ -108,6 +108,47 @@ public class ScoreServiceImpl implements ScoreService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    @Transactional
+    public ScoreResponse updateScore(Long scoreId, com.example.swp.features.score.dto.request.UpdateScoreRequest request) {
+        User judge = getCurrentUser();
+
+        Score score = scoreRepository.findById(scoreId)
+                .orElseThrow(() -> new ResourceNotFoundException("Score not found"));
+
+        if (!score.getJudge().getId().equals(judge.getId())) {
+            boolean isAdmin = judge.getRole() == com.example.swp.features.user.Role.ADMIN || judge.getRole() == com.example.swp.features.user.Role.ORGANIZER;
+            if (!isAdmin) {
+                throw new AccessDeniedException("You can only edit your own scores.");
+            }
+        }
+
+        if (score.isFinalized()) {
+            throw new IllegalStateException("Round is finalized. Cannot edit score.");
+        }
+
+        Criterion criterion = score.getCriterion();
+        if (request.getScoreValue() != null) {
+            if (request.getScoreValue() < 0 || request.getScoreValue() > criterion.getMaxScore()) {
+                throw new IllegalArgumentException(
+                    "Score for criterion '" + criterion.getName() + "' must be between 0 and " + criterion.getMaxScore()
+                );
+            }
+            score.setScoreValue(request.getScoreValue());
+        }
+
+        if (request.getComment() != null) {
+            score.setComment(request.getComment());
+        }
+
+        score.setScoredAt(LocalDateTime.now());
+        Score updatedScore = scoreRepository.save(score);
+
+        auditLogService.logAction("UPDATE_SCORE", "SCORE", score.getId(), null, "Score updated by " + judge.getUsername());
+
+        return mapToResponse(updatedScore);
+    }
     
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();

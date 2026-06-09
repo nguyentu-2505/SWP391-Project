@@ -46,4 +46,11 @@ public class ScoreController {
         scoreService.finalizeScores(roundId);
         return ResponseEntity.ok(ApiResponse.success(null, "Scores for the round have been finalized."));
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('JUDGE', 'GUEST_JUDGE', 'ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<ScoreResponse>> updateScore(@PathVariable Long id, @Valid @RequestBody com.example.swp.features.score.dto.request.UpdateScoreRequest request) {
+        ScoreResponse response = scoreService.updateScore(id, request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Score updated successfully."));
+    }
 }

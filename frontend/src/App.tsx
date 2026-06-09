@@ -3,12 +3,21 @@ import { Toaster } from 'react-hot-toast';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import VerifyOtpPage from './pages/VerifyOtpPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
+import CertificatesPage from './pages/CertificatesPage';
+import NotificationsPage from './pages/NotificationsPage';
+import MentorDirectoryPage from './pages/MentorDirectoryPage';
+import MentorDetailPage from './pages/MentorDetailPage';
+import TeamDetailPage from './pages/TeamDetailPage';
+import AdminMentorProfilePage from './pages/admin/AdminMentorProfilePage';
+import SystemPreferencesPage from './pages/admin/SystemPreferencesPage';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 import PublicLayout from './components/PublicLayout';
 import EventListPage from './pages/EventListPage';
+import LandingPage from './pages/LandingPage';
 import EventDetailPage from './pages/EventDetailPage';
 import PublicLeaderboardPage from './pages/PublicLeaderboardPage';
 // Participant Pages
@@ -46,7 +55,7 @@ import TeamMemberPage from './pages/TeamMemberPage';
 import { Role, isAuthenticated } from './services/authUtils';
 
 const RootRedirect = () => {
-  return isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Navigate to="/events" replace />;
+  return isAuthenticated() ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 };
 
 function App() {
@@ -59,22 +68,26 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
           {/* Public facing routes with PublicLayout */}
           <Route element={<PublicLayout />}>
+            <Route path="/" element={<RootRedirect />} />
             <Route path="/events" element={<EventListPage />} />
             <Route path="/events/:slug" element={<EventDetailPage />} />
             <Route path="/leaderboard/round/:roundId" element={<PublicLeaderboardPage />} />
           </Route>
-
-          {/* Redirect root based on auth status */}
-          <Route path="/" element={<RootRedirect />} />
           
           {/* Protected Routes with main app Layout */}
           <Route element={<PrivateRoute />}>
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/certificates" element={<CertificatesPage />} />
+              <Route path="/mentors" element={<MentorDirectoryPage />} />
+              <Route path="/mentors/:mentorId" element={<MentorDetailPage />} />
+              <Route path="/teams/:teamId" element={<TeamDetailPage />} />
               
               {/* Participant Routes */}
               <Route element={<PrivateRoute allowedRoles={[Role.PARTICIPANT]} />}>
@@ -126,6 +139,8 @@ function App() {
                 <Route path="/admin/users" element={<UsersPage />} />
                 <Route path="/admin/pending-approvals" element={<AdminPendingApprovalsPage />} />
                 <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+                <Route path="/admin/preferences" element={<SystemPreferencesPage />} />
+                <Route path="/admin/mentors/:mentorId" element={<AdminMentorProfilePage />} />
               </Route>
             </Route>
           </Route>

@@ -12,29 +12,48 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/team-members")
+@RequestMapping("/api/v1/team-members")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class TeamMemberController {
 
     private final TeamMemberService teamMemberService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<TeamMemberResponse> addTeamMember(@Valid @RequestBody AddTeamMemberRequest request) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<TeamMemberResponse>> addTeamMember(@Valid @RequestBody AddTeamMemberRequest request) {
         TeamMemberResponse response = teamMemberService.addTeamMember(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(com.example.swp.common.ApiResponse.success(response, "Team member added."), HttpStatus.CREATED);
     }
 
     @GetMapping("/team/{teamId}")
-    public ResponseEntity<List<TeamMemberResponse>> getTeamMembers(@PathVariable Long teamId) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<List<TeamMemberResponse>>> getTeamMembers(@PathVariable Long teamId) {
         List<TeamMemberResponse> responses = teamMemberService.getTeamMembers(teamId);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses));
     }
 
     @DeleteMapping("/{teamMemberId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<Void> removeTeamMember(@PathVariable Long teamMemberId) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<Void>> removeTeamMember(@PathVariable Long teamMemberId) {
         teamMemberService.removeTeamMember(teamMemberId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(null, "Team member removed."));
+    }
+
+    @DeleteMapping("/{userId}/kick/{teamId}")
+    public ResponseEntity<com.example.swp.common.ApiResponse<Void>> kickMember(@PathVariable Long userId, @PathVariable Long teamId) {
+        teamMemberService.kickMember(userId, teamId);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(null, "Member kicked successfully."));
+    }
+
+    @PostMapping("/leave/{teamId}")
+    public ResponseEntity<com.example.swp.common.ApiResponse<Void>> leaveTeam(@PathVariable Long teamId) {
+        teamMemberService.leaveTeam(teamId);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(null, "Successfully left the team."));
+    }
+
+    @PutMapping("/transfer-leadership")
+    public ResponseEntity<com.example.swp.common.ApiResponse<Void>> transferLeadership(@Valid @RequestBody com.example.swp.features.team_member.dto.request.TransferLeadershipRequest request) {
+        teamMemberService.transferLeadership(request);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(null, "Leadership transferred successfully."));
     }
 }

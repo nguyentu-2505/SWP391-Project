@@ -58,4 +58,16 @@ public class AuthController {
         authService.createGuestJudge(request);
         return new ResponseEntity<>(ApiResponse.success(null, "Guest judge account created. Credentials sent via email."), HttpStatus.CREATED);
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody com.example.swp.features.auth.dto.request.ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "If the email is registered, a reset link will be sent."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody com.example.swp.features.auth.dto.request.ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Password has been reset successfully."));
+    }
 }

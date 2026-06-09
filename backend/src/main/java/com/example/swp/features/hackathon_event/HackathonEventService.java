@@ -11,6 +11,7 @@ import java.util.List;
 public interface HackathonEventService {
     HackathonEventResponse createHackathonEvent(CreateHackathonEventRequest request);
     Page<HackathonEventResponse> getAllHackathonEvents(Pageable pageable);
+    Page<HackathonEventResponse> getAllEventsForAdmin(Pageable pageable);
     List<HackathonEventResponse> getMyHackathonEvents();
     HackathonEventResponse getHackathonEventBySlug(String slug);
     HackathonEventResponse updateHackathonEvent(Long id, UpdateHackathonEventRequest request);

@@ -75,6 +75,19 @@ public class JudgeAssignmentService {
         return getAssignmentsForJudge(currentUser.getId());
     }
 
+    public List<JudgeAssignmentResponse> getAssignmentsForRound(Long roundId) {
+        return assignmentRepository.findBySubmissionRoundId(roundId).stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void unassignJudge(Long assignmentId) {
+        JudgeAssignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found"));
+        assignmentRepository.delete(assignment);
+    }
+
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByUsername(username)

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/criteria")
+@RequestMapping("/api/v1/criteria")
 @RequiredArgsConstructor
 public class CriterionController {
 
@@ -21,34 +21,34 @@ public class CriterionController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<CriterionResponse> createCriterion(@RequestBody CreateCriterionRequest request) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<CriterionResponse>> createCriterion(@RequestBody CreateCriterionRequest request) {
         CriterionResponse response = criterionService.createCriterion(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(com.example.swp.common.ApiResponse.success(response, "Criterion created successfully."), HttpStatus.CREATED);
     }
 
     @GetMapping("/event/{hackathonEventId}")
-    public ResponseEntity<List<CriterionResponse>> getCriteriaForEvent(@PathVariable Long hackathonEventId) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<List<CriterionResponse>>> getCriteriaForEvent(@PathVariable Long hackathonEventId) {
         List<CriterionResponse> responses = criterionService.getCriteriaForEvent(hackathonEventId);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses));
     }
 
     @GetMapping("/default")
-    public ResponseEntity<List<CriterionResponse>> getDefaultCriteria() {
+    public ResponseEntity<com.example.swp.common.ApiResponse<List<CriterionResponse>>> getDefaultCriteria() {
         List<CriterionResponse> responses = criterionService.getDefaultCriteria();
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<CriterionResponse> updateCriterion(@PathVariable Long id, @Valid @RequestBody UpdateCriterionRequest request) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<CriterionResponse>> updateCriterion(@PathVariable Long id, @Valid @RequestBody UpdateCriterionRequest request) {
         CriterionResponse response = criterionService.updateCriterion(id, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response, "Criterion updated successfully."));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<Void> deleteCriterion(@PathVariable Long id) {
+    public ResponseEntity<com.example.swp.common.ApiResponse<Void>> deleteCriterion(@PathVariable Long id) {
         criterionService.deleteCriterion(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(null, "Criterion deleted successfully."));
     }
 }
