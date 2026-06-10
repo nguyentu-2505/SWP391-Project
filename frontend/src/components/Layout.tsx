@@ -79,6 +79,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                         {role === Role.ADMIN && (
                             <>
                                 <SidebarItem to="/admin/users" icon={<Users size={18} />} label="User Management" onClick={closeSidebar} />
+                                <SidebarItem to="/admin/pending-approvals" icon={<Users size={18} />} label="Pending Approvals" onClick={closeSidebar} />
                                 <SidebarItem to="/hackathon-events" icon={<Trophy size={18} />} label="Hackathons" onClick={closeSidebar} />
                                 <SidebarItem to="/teams" icon={<Users size={18} />} label="All Teams" onClick={closeSidebar} />
                                 <SidebarItem to="/admin/audit-logs" icon={<Layers size={18} />} label="Audit Logs" onClick={closeSidebar} />

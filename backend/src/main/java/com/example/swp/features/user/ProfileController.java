@@ -11,7 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-@RestController
+@RestController("userProfileController")
 @RequestMapping("/api/v1/profile")
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
