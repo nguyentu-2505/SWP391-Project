@@ -48,17 +48,17 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
         // Pre-check: give specific error messages instead of generic "Bad credentials"
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found with username: " + request.getUsername()));
+                .orElseThrow(() -> new BadRequestException("User not found with username: " + request.getUsername()));
 
         log.info("Login attempt for user: {}, verified={}, approved={}", 
                 user.getUsername(), user.isVerified(), user.isApproved());
 
         if (!user.isVerified()) {
-            throw new RuntimeException("Account email has not been verified. Please verify your OTP first.");
+            throw new BadRequestException("Account email has not been verified. Please verify your OTP first.");
         }
 
         if (!user.isApproved()) {
-            throw new RuntimeException("Account has not been approved by admin yet.");
+            throw new BadRequestException("Account has not been approved by admin yet.");
         }
 
         Authentication authentication = authenticationManager.authenticate(
@@ -113,11 +113,7 @@ public class AuthServiceImpl implements AuthService {
         user.setFptStudentId(request.getFptStudentId());
         user.setRole(Role.PARTICIPANT);
         user.setApproved(false);
-        user.setVerified(false);
-
-        String otp = String.format("%06d", SECURE_RANDOM.nextInt(999999));
-        user.setOtpCode(otp);
-        user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        user.setVerified(true); // Automatically verified, email sending bypassed
 
         try {
             userRepository.save(user);
@@ -125,14 +121,6 @@ public class AuthServiceImpl implements AuthService {
         } catch (org.springframework.dao.DataIntegrityViolationException ex) {
             log.error("Database constraint violation during registration: {}", ex.getMessage());
             throw new BadRequestException("Username or Email is already registered");
-        }
-
-        try {
-            String emailBody = "Your OTP for Hackathon registration is: " + otp;
-            emailService.sendSimpleMessage(user.getEmail(), "Hackathon Registration OTP", emailBody);
-        } catch (Exception ex) {
-            log.error("Failed to send verification email to {}: {}", user.getEmail(), ex.getMessage());
-            throw new BadRequestException("Failed to send verification email. Please check your email configuration.");
         }
     }
 
