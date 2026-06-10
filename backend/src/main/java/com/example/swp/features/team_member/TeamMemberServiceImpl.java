@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import com.example.swp.features.hackathon_event.HackathonStatus;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (team.getEvent().getStatus() != HackathonStatus.REGISTRATION_OPEN) {
+            throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
+        }
 
         // Check if user is already in the team
         if (teamMemberRepository.existsByTeamIdAndUserId(team.getId(), user.getId())) {
@@ -61,6 +66,13 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     @Override
     @org.springframework.transaction.annotation.Transactional
     public void removeTeamMember(Long teamMemberId) {
+        TeamMember member = teamMemberRepository.findById(teamMemberId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team member not found"));
+                
+        if (member.getTeam().getEvent().getStatus() != HackathonStatus.REGISTRATION_OPEN) {
+            throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
+        }
+        
         teamMemberRepository.deleteById(teamMemberId);
     }
 
@@ -76,6 +88,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         User currentUser = getCurrentUser();
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+
+        if (team.getEvent().getStatus() != HackathonStatus.REGISTRATION_OPEN) {
+            throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
+        }
 
         boolean isCurrentUserAdmin = currentUser.getRole() == com.example.swp.features.user.Role.ADMIN || currentUser.getRole() == com.example.swp.features.user.Role.ORGANIZER;
         boolean isCurrentUserLeader = teamMemberRepository.existsByTeamIdAndUserIdAndIsLeaderTrue(teamId, currentUser.getId());
@@ -102,6 +118,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("You are not a member of this team"));
 
+        if (member.getTeam().getEvent().getStatus() != HackathonStatus.REGISTRATION_OPEN) {
+            throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
+        }
+
         if (member.isLeader()) {
             throw new com.example.swp.exception.BadRequestException("Leader cannot leave the team without transferring leadership first");
         }
@@ -116,6 +136,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
 
         TeamMember currentLeader = teamMemberRepository.findByTeamIdAndUserId(request.getTeamId(), currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("You are not a member of this team"));
+
+        if (currentLeader.getTeam().getEvent().getStatus() != HackathonStatus.REGISTRATION_OPEN) {
+            throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
+        }
 
         if (!currentLeader.isLeader()) {
             throw new com.example.swp.exception.BadRequestException("Only the current leader can transfer leadership");

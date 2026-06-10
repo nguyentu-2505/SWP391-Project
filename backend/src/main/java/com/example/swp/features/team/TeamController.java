@@ -71,4 +71,11 @@ public class TeamController {
         TeamResponse response = teamService.updateTeam(id, request);
         return ResponseEntity.ok(ApiResponse.success(response, "Team updated successfully."));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<Void>> deleteTeam(@PathVariable Long id) {
+        teamService.deleteTeam(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Team deleted successfully."));
+    }
 }

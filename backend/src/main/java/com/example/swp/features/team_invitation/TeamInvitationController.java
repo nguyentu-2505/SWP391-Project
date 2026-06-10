@@ -42,4 +42,18 @@ public class TeamInvitationController {
         TeamInvitationResponse response = invitationService.respondToInvitation(invitationId, request.getResponse());
         return ResponseEntity.ok(ApiResponse.success(response, "Successfully responded to the invitation."));
     }
+
+    @DeleteMapping("/{invitationId}/revoke")
+    @PreAuthorize("hasRole('PARTICIPANT')")
+    public ResponseEntity<ApiResponse<Void>> revokeInvitation(@PathVariable Long invitationId) {
+        invitationService.revokeInvitation(invitationId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Invitation revoked successfully."));
+    }
+
+    @GetMapping("/team/{teamId}/sent")
+    @PreAuthorize("hasRole('PARTICIPANT')")
+    public ResponseEntity<ApiResponse<List<TeamInvitationResponse>>> getSentInvitations(@PathVariable Long teamId) {
+        List<TeamInvitationResponse> responses = invitationService.getSentInvitations(teamId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
 }

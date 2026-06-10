@@ -1,43 +1,22 @@
 -- =============================================
 -- SEAL HACKATHON – UNIFIED DATABASE SCRIPT
--- Gộp: database.sql + patch.sql + patch_phase2/3/4.sql
--- Chỉ cần chạy DUY NHẤT file này.
 -- Password mặc định: password123 (BCrypt hash)
 -- =============================================
 
 -- =============================================
--- 1. TẠO DATABASE
+-- 1. XÓA & TẠO LẠI DATABASE
 -- =============================================
-IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'HackathonDB')
+IF EXISTS (SELECT * FROM sys.databases WHERE name = 'HackathonDB')
 BEGIN
-    CREATE DATABASE HackathonDB;
+    ALTER DATABASE HackathonDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE HackathonDB;
 END
 GO
 
-USE HackathonDB;
+CREATE DATABASE HackathonDB;
 GO
 
--- =============================================
--- 2. XÓA BẢNG CŨ (THEO THỨ TỰ RÀNG BUỘC KHÓA NGOẠI)
--- =============================================
-IF OBJECT_ID('audit_log',              'U') IS NOT NULL DROP TABLE audit_log;
-IF OBJECT_ID('mentorship_request',     'U') IS NOT NULL DROP TABLE mentorship_request;
-IF OBJECT_ID('notification',           'U') IS NOT NULL DROP TABLE notification;
-IF OBJECT_ID('team_round_advancement', 'U') IS NOT NULL DROP TABLE team_round_advancement;
-IF OBJECT_ID('judge_assignment',       'U') IS NOT NULL DROP TABLE judge_assignment;
-IF OBJECT_ID('team_invitation',        'U') IS NOT NULL DROP TABLE team_invitation;
-IF OBJECT_ID('prize',                  'U') IS NOT NULL DROP TABLE prize;
-IF OBJECT_ID('score',                  'U') IS NOT NULL DROP TABLE score;
-IF OBJECT_ID('submission',             'U') IS NOT NULL DROP TABLE submission;
-IF OBJECT_ID('team_member',            'U') IS NOT NULL DROP TABLE team_member;
-IF OBJECT_ID('track_mentor',           'U') IS NOT NULL DROP TABLE track_mentor;
-IF OBJECT_ID('team',                   'U') IS NOT NULL DROP TABLE team;
-IF OBJECT_ID('criterion',              'U') IS NOT NULL DROP TABLE criterion;
-IF OBJECT_ID('round',                  'U') IS NOT NULL DROP TABLE round;
-IF OBJECT_ID('track',                  'U') IS NOT NULL DROP TABLE track;
-IF OBJECT_ID('event_registration',     'U') IS NOT NULL DROP TABLE event_registration;
-IF OBJECT_ID('hackathon_event',        'U') IS NOT NULL DROP TABLE hackathon_event;
-IF OBJECT_ID('_user',                  'U') IS NOT NULL DROP TABLE _user;
+USE HackathonDB;
 GO
 
 -- =============================================
@@ -330,17 +309,206 @@ GO
 -- =============================================
 -- 5. SEED DATA
 -- Password mặc định: password123 (BCrypt)
+-- Mỗi bảng có 2-3 dòng mẫu để test
 -- =============================================
-INSERT INTO _user (username, password, email, role, fpt_student_id, school_name, approved, is_verified)
-VALUES
-    ('admin',      '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'admin@fpt.edu.vn',      'ADMIN',       NULL,       'FPT',           1, 1),
-    ('organizer1', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'organizer1@fpt.edu.vn', 'ORGANIZER',   NULL,       'FPT',           1, 1),
-    ('judge1',     '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'judge1@fpt.edu.vn',     'JUDGE',       NULL,       'FPT',           1, 1),
-    ('mentor1',    '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'mentor1@fpt.edu.vn',    'MENTOR',      NULL,       'FPT',           1, 1),
-    ('student1',   '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student1@fpt.edu.vn',   'PARTICIPANT', 'SE170001', 'FPT University', 0, 1);
 
-INSERT INTO hackathon_event (name, slug, description, start_time, end_time, organizer_id)
-VALUES (N'FPT Hackathon 2026', 'fpt-hackathon-2026', N'Cuộc thi khởi nghiệp công nghệ', GETDATE(), DATEADD(day, 30, GETDATE()), 2);
+-- -----------------------------------------------
+-- 5.1 _user (10 users: 1 admin, 2 organizer, 2 judge, 2 mentor, 3 participant)
+-- -----------------------------------------------
+INSERT INTO _user (username, password, email, role, fpt_student_id, school_name, approved, is_verified, full_name, phone, skills, bio, github_url)
+VALUES
+    -- id=1: Admin
+    ('admin',      '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'admin@fpt.edu.vn',      'ADMIN',       NULL,        'FPT University',  1, 1, N'Nguyễn Văn Admin',   '0901000001', NULL, N'Quản trị hệ thống', NULL),
+    -- id=2: Organizer 1
+    ('organizer1', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'organizer1@fpt.edu.vn', 'ORGANIZER',   NULL,        'FPT University',  1, 1, N'Trần Thị Organizer', '0901000002', NULL, N'Ban tổ chức sự kiện', NULL),
+    -- id=3: Organizer 2
+    ('organizer2', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'organizer2@fpt.edu.vn', 'ORGANIZER',   NULL,        'FPT University',  1, 1, N'Lê Văn Organizer',   '0901000003', NULL, N'Điều phối cuộc thi', NULL),
+    -- id=4: Judge 1
+    ('judge1',     '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'judge1@fpt.edu.vn',     'JUDGE',       NULL,        'FPT University',  1, 1, N'Phạm Minh Judge',    '0901000004', N'AI, Machine Learning', N'Giám khảo chuyên ngành AI', NULL),
+    -- id=5: Judge 2
+    ('judge2',     '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'judge2@fpt.edu.vn',     'JUDGE',       NULL,        'FPT University',  1, 1, N'Hoàng Thị Judge',    '0901000005', N'Web Development, Cloud', N'Giám khảo chuyên ngành Web', NULL),
+    -- id=6: Mentor 1
+    ('mentor1',    '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'mentor1@fpt.edu.vn',    'MENTOR',      NULL,        'FPT University',  1, 1, N'Đỗ Văn Mentor',      '0901000006', N'Java, Spring Boot', N'Mentor chuyên backend', 'https://github.com/mentor1'),
+    -- id=7: Mentor 2
+    ('mentor2',    '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'mentor2@fpt.edu.vn',    'MENTOR',      NULL,        'FPT University',  1, 1, N'Vũ Thị Mentor',      '0901000007', N'React, TypeScript', N'Mentor chuyên frontend', 'https://github.com/mentor2'),
+    -- id=8: Participant 1 (team leader)
+    ('student1',   '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student1@fpt.edu.vn',   'PARTICIPANT', 'SE170001', 'FPT University',  0, 1, N'Nguyễn Minh Sinh',    '0901000008', N'Java, React, SQL', N'Sinh viên SE năm 3', 'https://github.com/student1'),
+    -- id=9: Participant 2
+    ('student2',   '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student2@fpt.edu.vn',   'PARTICIPANT', 'SE170002', 'FPT University',  0, 1, N'Trần Hồng Hà',       '0901000009', N'Python, Flask, Docker', N'Sinh viên SE năm 4', 'https://github.com/student2'),
+    -- id=10: Participant 3
+    ('student3',   '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student3@fpt.edu.vn',   'PARTICIPANT', 'SE170003', 'FPT University',  0, 1, N'Lê Quốc Dũng',       '0901000010', N'C#, .NET, Azure', N'Sinh viên SE năm 3', 'https://github.com/student3');
+
+-- -----------------------------------------------
+-- 5.2 hackathon_event (2 events)
+-- -----------------------------------------------
+INSERT INTO hackathon_event (name, slug, description, status, registration_start, registration_end, start_time, end_time, max_team_size, min_team_size, rules, organizer_id)
+VALUES
+    -- event id=1: đang diễn ra
+    (N'FPT Hackathon 2026',   'fpt-hackathon-2026',   N'Cuộc thi khởi nghiệp công nghệ dành cho sinh viên FPT toàn quốc',
+     'ONGOING',
+     DATEADD(day, -15, GETDATE()), DATEADD(day, -1, GETDATE()),
+     GETDATE(), DATEADD(day, 30, GETDATE()),
+     5, 2, N'Mỗi đội 2-5 thành viên. Nộp bài qua GitHub. Không sử dụng code có sẵn.', 2),
+    -- event id=2: nháp
+    (N'FPTU Innovation Challenge', 'fptu-innovation-2026', N'Thử thách đổi mới sáng tạo lần 2 – chủ đề GreenTech',
+     'DRAFT',
+     DATEADD(day, 10, GETDATE()), DATEADD(day, 25, GETDATE()),
+     DATEADD(day, 30, GETDATE()), DATEADD(day, 60, GETDATE()),
+     4, 2, N'Chủ đề: Công nghệ xanh. Ưu tiên giải pháp thực tiễn.', 3);
+
+-- -----------------------------------------------
+-- 5.3 track (3 tracks cho event 1, 2 tracks cho event 2)
+-- -----------------------------------------------
+INSERT INTO track (name, description, hackathon_event_id) VALUES
+    -- event 1
+    (N'AI & Machine Learning',    N'Ứng dụng trí tuệ nhân tạo và học máy vào giải quyết vấn đề thực tế',     1),  -- track id=1
+    (N'Web & Mobile Development', N'Phát triển ứng dụng web hoặc mobile với UI/UX xuất sắc',                   1),  -- track id=2
+    (N'IoT & Embedded Systems',   N'Giải pháp Internet of Things kết hợp phần cứng và phần mềm',              1),  -- track id=3
+    -- event 2
+    (N'Green Energy Solutions',   N'Công nghệ tiết kiệm năng lượng và năng lượng tái tạo',                    2),  -- track id=4
+    (N'Smart Agriculture',        N'Ứng dụng công nghệ vào nông nghiệp thông minh',                           2);  -- track id=5
+
+-- -----------------------------------------------
+-- 5.4 event_registration (6 registrations cho event 1)
+-- -----------------------------------------------
+INSERT INTO event_registration (event_id, user_id, status) VALUES
+    (1, 8,  'REGISTERED'),  -- student1
+    (1, 9,  'REGISTERED'),  -- student2
+    (1, 10, 'REGISTERED'),  -- student3
+    (1, 4,  'REGISTERED'),  -- judge1 (đăng ký tham gia với tư cách judge)
+    (1, 5,  'REGISTERED'),  -- judge2
+    (1, 6,  'REGISTERED');  -- mentor1
+
+-- -----------------------------------------------
+-- 5.5 round (3 rounds cho event 1, 2 rounds cho event 2)
+-- -----------------------------------------------
+INSERT INTO round (name, description, start_time, end_time, hackathon_event_id, submission_deadline, advancement_slots, round_order) VALUES
+    -- event 1
+    (N'Vòng Ý tưởng',       N'Nộp bản mô tả ý tưởng và kế hoạch thực hiện',
+     GETDATE(), DATEADD(day, 7, GETDATE()),  1, DATEADD(day, 6, GETDATE()), 10, 1),   -- round id=1
+    (N'Vòng Prototype',     N'Demo sản phẩm prototype và trình bày kỹ thuật',
+     DATEADD(day, 8, GETDATE()), DATEADD(day, 20, GETDATE()), 1, DATEADD(day, 19, GETDATE()), 5, 2),   -- round id=2
+    (N'Vòng Chung kết',     N'Thuyết trình trước hội đồng giám khảo',
+     DATEADD(day, 21, GETDATE()), DATEADD(day, 30, GETDATE()), 1, DATEADD(day, 29, GETDATE()), NULL, 3), -- round id=3
+    -- event 2
+    (N'Vòng Sơ loại',       N'Nộp đề xuất giải pháp GreenTech',
+     DATEADD(day, 30, GETDATE()), DATEADD(day, 45, GETDATE()), 2, DATEADD(day, 44, GETDATE()), 8, 1),   -- round id=4
+    (N'Vòng Chung kết',     N'Trình bày giải pháp hoàn chỉnh',
+     DATEADD(day, 46, GETDATE()), DATEADD(day, 60, GETDATE()), 2, DATEADD(day, 59, GETDATE()), NULL, 2); -- round id=5
+
+-- -----------------------------------------------
+-- 5.6 criterion (3 criteria cho event 1)
+-- -----------------------------------------------
+INSERT INTO criterion (name, description, max_score, weight, hackathon_event_id) VALUES
+    (N'Tính sáng tạo',       N'Ý tưởng mới lạ, khác biệt so với giải pháp hiện có',              10, 3, 1),  -- criterion id=1
+    (N'Tính khả thi',        N'Khả năng triển khai thực tế, mô hình kinh doanh rõ ràng',          10, 3, 1),  -- criterion id=2
+    (N'Chất lượng kỹ thuật', N'Code sạch, kiến trúc tốt, performance, test coverage',             10, 4, 1);  -- criterion id=3
+
+-- -----------------------------------------------
+-- 5.7 team (3 teams cho event 1)
+-- -----------------------------------------------
+INSERT INTO team (name, project_name, project_description, track_id, event_id, status) VALUES
+    (N'Team Alpha',   N'SmartStudy AI',     N'Ứng dụng AI hỗ trợ sinh viên lập kế hoạch học tập cá nhân hóa',               1, 1, 'ACTIVE'),        -- team id=1
+    (N'Team Beta',    N'CampusConnect',     N'Nền tảng web kết nối sinh viên, câu lạc bộ và sự kiện trong trường',           2, 1, 'ACTIVE'),        -- team id=2
+    (N'Team Gamma',   N'GreenSense IoT',    N'Hệ thống IoT giám sát chất lượng không khí và cảnh báo ô nhiễm',              3, 1, 'ACTIVE');        -- team id=3
+
+-- -----------------------------------------------
+-- 5.8 track_mentor (phân công mentor/judge cho track)
+-- -----------------------------------------------
+INSERT INTO track_mentor (track_id, user_id, event_id, assigned_by) VALUES
+    (1, 6, 1, 2),   -- mentor1 → track AI, assigned by organizer1
+    (2, 7, 1, 2),   -- mentor2 → track Web, assigned by organizer1
+    (1, 4, 1, 2);   -- judge1  → track AI, assigned by organizer1
+
+-- -----------------------------------------------
+-- 5.9 team_member (phân bổ 3 students vào 3 teams)
+-- -----------------------------------------------
+INSERT INTO team_member (team_id, user_id, is_leader) VALUES
+    (1, 8, 1),  -- student1 là leader Team Alpha
+    (1, 9, 0),  -- student2 là member Team Alpha
+    (2, 10, 1), -- student3 là leader Team Beta
+    (3, 9, 0);  -- student2 cũng tham gia Team Gamma (multi-team test case)
+
+-- -----------------------------------------------
+-- 5.10 team_invitation (2 lời mời pending, 1 accepted)
+-- -----------------------------------------------
+INSERT INTO team_invitation (team_id, inviter_id, invitee_email, status, expires_at) VALUES
+    (2, 10, 'student1@fpt.edu.vn', 'PENDING',  DATEADD(day, 7, GETDATE())),   -- Team Beta mời student1
+    (3, 9,  'student3@fpt.edu.vn', 'PENDING',  DATEADD(day, 7, GETDATE())),   -- Team Gamma mời student3
+    (1, 8,  'student2@fpt.edu.vn', 'ACCEPTED', DATEADD(day, 7, GETDATE()));   -- Team Alpha đã mời student2 (accepted)
+
+-- -----------------------------------------------
+-- 5.11 submission (mỗi team nộp bài cho vòng 1)
+-- -----------------------------------------------
+INSERT INTO submission (team_id, round_id, repository_url, demo_url, report_url, version) VALUES
+    (1, 1, 'https://github.com/team-alpha/smartstudy-ai',    'https://smartstudy.demo.fpt.edu.vn',    'https://docs.google.com/team-alpha-report',    1),  -- submission id=1
+    (2, 1, 'https://github.com/team-beta/campusconnect',     'https://campusconnect.demo.fpt.edu.vn', 'https://docs.google.com/team-beta-report',     1),  -- submission id=2
+    (3, 1, 'https://github.com/team-gamma/greensense-iot',   'https://greensense.demo.fpt.edu.vn',    'https://docs.google.com/team-gamma-report',    1);  -- submission id=3
+
+-- -----------------------------------------------
+-- 5.12 judge_assignment (phân công judge chấm bài)
+-- -----------------------------------------------
+INSERT INTO judge_assignment (judge_id, submission_id, assigned_by_organizer_id, status) VALUES
+    (4, 1, 2, 'ASSIGNED'),    -- judge1 chấm submission Team Alpha
+    (4, 2, 2, 'ASSIGNED'),    -- judge1 chấm submission Team Beta
+    (5, 2, 2, 'ASSIGNED'),    -- judge2 cũng chấm submission Team Beta (cross-review)
+    (5, 3, 2, 'ASSIGNED');    -- judge2 chấm submission Team Gamma
+
+-- -----------------------------------------------
+-- 5.13 score (judge1 đã chấm Team Alpha, judge2 đã chấm Team Gamma)
+-- -----------------------------------------------
+INSERT INTO score (judge_id, submission_id, criterion_id, score_value, comment, is_finalized) VALUES
+    -- judge1 chấm Team Alpha (submission 1) — đã finalize
+    (4, 1, 1, 9,  N'Ý tưởng rất sáng tạo, ứng dụng AI vào giáo dục',                 1),
+    (4, 1, 2, 8,  N'Khả thi nhưng cần thêm kế hoạch monetization',                     1),
+    (4, 1, 3, 7,  N'Code sạch nhưng chưa có unit test',                                1),
+    -- judge2 chấm Team Gamma (submission 3) — chưa finalize
+    (5, 3, 1, 7,  N'Ý tưởng IoT khá phổ biến nhưng cách tiếp cận hay',                0),
+    (5, 3, 2, 8,  N'Có prototype hardware, tính thực tiễn cao',                        0),
+    (5, 3, 3, 6,  N'Cần cải thiện kiến trúc phần mềm',                                0);
+
+-- -----------------------------------------------
+-- 5.14 prize (3 giải thưởng cho event 1)
+-- -----------------------------------------------
+INSERT INTO prize (name, description, hackathon_event_id, track_id, winning_team_id, rank) VALUES
+    (N'Giải Nhất',          N'50 triệu VNĐ + Cơ hội thực tập tại FPT Software',   1, NULL, NULL, 1),
+    (N'Giải Nhì',           N'30 triệu VNĐ + Voucher khóa học Coursera',           1, NULL, NULL, 2),
+    (N'Best AI Solution',   N'20 triệu VNĐ – Giải đặc biệt cho track AI',         1, 1,    NULL, NULL);
+
+-- -----------------------------------------------
+-- 5.15 mentorship_request (2 yêu cầu hỗ trợ)
+-- -----------------------------------------------
+INSERT INTO mentorship_request (team_id, mentor_id, title, description, status, resolved_at) VALUES
+    (1, 6, N'Hỗ trợ thiết kế database',     N'Team cần tư vấn thiết kế ERD cho module AI recommendation', 'RESOLVED', GETDATE()),
+    (1, NULL, N'Review kiến trúc microservice', N'Cần mentor review kiến trúc backend trước khi bắt đầu code', 'OPEN', NULL),
+    (3, 7, N'Tư vấn chọn framework frontend', N'Đang phân vân giữa React và Vue cho dashboard IoT',       'IN_PROGRESS', NULL);
+
+-- -----------------------------------------------
+-- 5.16 notification (sample notifications)
+-- -----------------------------------------------
+INSERT INTO notification (user_id, title, message, is_read, type, reference_type, reference_id) VALUES
+    (8,  N'Chào mừng đến FPT Hackathon 2026',           N'Bạn đã đăng ký thành công. Hãy tạo team và bắt đầu!',                 1, 'INFO',    'EVENT',       1),
+    (8,  N'Bạn đã được mời vào Team Beta',               N'student3 đã gửi lời mời tham gia Team Beta. Xem và phản hồi ngay.',    0, 'INVITE',  'TEAM',        2),
+    (10, N'Submission deadline sắp đến',                  N'Vòng Ý tưởng sẽ đóng trong 2 ngày. Hãy nộp bài sớm!',                 0, 'WARNING', 'ROUND',       1),
+    (4,  N'Bạn được phân công chấm bài mới',             N'Organizer đã giao cho bạn chấm bài của Team Alpha và Team Beta.',       0, 'TASK',    'SUBMISSION',  1),
+    (6,  N'Yêu cầu mentorship mới từ Team Alpha',        N'Team Alpha cần hỗ trợ thiết kế database. Xem chi tiết.',               1, 'MENTORSHIP', 'TEAM',     1);
+
+-- -----------------------------------------------
+-- 5.17 team_round_advancement (Team Alpha thăng hạng vòng 1 → vòng 2)
+-- -----------------------------------------------
+INSERT INTO team_round_advancement (team_id, from_round_id, to_round_id, advanced_by) VALUES
+    (1, 1, 2, 2),   -- Team Alpha: vòng Ý tưởng → vòng Prototype, do organizer1
+    (2, 1, 2, 2);   -- Team Beta:  vòng Ý tưởng → vòng Prototype, do organizer1
+
+-- -----------------------------------------------
+-- 5.18 audit_log (sample logs)
+-- -----------------------------------------------
+INSERT INTO audit_log (user_id, action, details) VALUES
+    (1, 'USER_APPROVED',        N'Admin đã duyệt tài khoản organizer1 (id=2)'),
+    (2, 'EVENT_CREATED',        N'Organizer1 tạo sự kiện FPT Hackathon 2026 (id=1)'),
+    (2, 'JUDGE_ASSIGNED',       N'Organizer1 phân công judge1 (id=4) chấm submission Team Alpha (id=1)'),
+    (8, 'TEAM_CREATED',         N'Student1 tạo Team Alpha cho event FPT Hackathon 2026'),
+    (4, 'SCORE_SUBMITTED',      N'Judge1 đã chấm điểm submission Team Alpha – Vòng Ý tưởng');
 
 PRINT '=== Unified Database Script chạy thành công! ===';
 GO

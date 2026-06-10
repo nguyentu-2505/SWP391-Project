@@ -37,6 +37,9 @@ public class TeamServiceImpl implements TeamService {
     private final EventRegistrationRepository registrationRepository;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
+    private final com.example.swp.features.mentorship_request.MentorshipRequestRepository mentorshipRequestRepository;
+    private final com.example.swp.features.team_invitation.TeamInvitationRepository teamInvitationRepository;
+    private final com.example.swp.features.submission.SubmissionRepository submissionRepository;
 
     @Override
     @Transactional
@@ -198,6 +201,27 @@ public class TeamServiceImpl implements TeamService {
         auditLogService.logAction("UPDATE_TEAM", "TEAM", updatedTeam.getId(), null, "Team updated by " + currentUser.getUsername());
         
         return mapToResponse(updatedTeam);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTeam(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+        
+        List<com.example.swp.features.mentorship_request.MentorshipRequest> requests = mentorshipRequestRepository.findByTeamId(teamId);
+        mentorshipRequestRepository.deleteAll(requests);
+        
+        List<com.example.swp.features.team_invitation.TeamInvitation> invitations = teamInvitationRepository.findByTeamId(teamId);
+        teamInvitationRepository.deleteAll(invitations);
+        
+        List<com.example.swp.features.submission.Submission> submissions = submissionRepository.findByTeamId(teamId);
+        submissionRepository.deleteAll(submissions);
+        
+        teamRepository.delete(team);
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        auditLogService.logAction("DELETE_TEAM", "TEAM", teamId, "DELETED", "Team '" + team.getName() + "' deleted by " + currentUsername);
     }
 
     private boolean isUserInAnotherTeamInEvent(User user, Long eventId) {
