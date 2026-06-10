@@ -1,0 +1,1017 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>API Test Results</title>
+<style>
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 40px; line-height: 1.6; }
+  h1 { color: #1e3a8a; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 30px; }
+  .api-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px; background-color: #f9fafb; }
+  .method { font-weight: bold; padding: 4px 8px; border-radius: 4px; color: white; display: inline-block; margin-right: 10px; font-family: sans-serif; font-size: 12px; }
+  .GET { background-color: #10b981; }
+  .POST { background-color: #3b82f6; }
+  .PUT { background-color: #f59e0b; }
+  .DELETE { background-color: #ef4444; }
+  .PATCH { background-color: #8b5cf6; }
+  .url { font-family: monospace; font-size: 14px; color: #4b5563; }
+  .status-success { color: #059669; font-weight: bold; margin-top: 10px; font-family: sans-serif; font-size: 14px; }
+  .status-error { color: #dc2626; font-weight: bold; margin-top: 10px; font-family: sans-serif; font-size: 14px; }
+  pre { background-color: #1f2937; color: #f9fafb; padding: 15px; border-radius: 6px; font-family: monospace; overflow-x: auto; margin-top: 10px; font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>API Test Results</h1>  <div class="api-card">
+    <div>
+      <span class="method PUT">PUT</span>
+      <span class="url">1. http://localhost:8080/criteria/5</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:52.731+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/criteria/5"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method DELETE">DELETE</span>
+      <span class="url">2. http://localhost:8080/criteria/5</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:52.812+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/criteria/5"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">3. http://localhost:8080/api/v1/profile/me</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:52.821+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/profile/me"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method PUT">PUT</span>
+      <span class="url">4. http://localhost:8080/api/v1/profile/me</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:52.825+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/profile/me"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method PUT">PUT</span>
+      <span class="url">5. http://localhost:8080/api/v1/hackathon-events/5</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:52.835+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/hackathon-events/5"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method DELETE">DELETE</span>
+      <span class="url">6. http://localhost:8080/api/v1/hackathon-events/5</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:52.839+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/hackathon-events/5"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">7. http://localhost:8080/api/v1/CategoryCustomers/5</span>
+    </div>
+    <div class="status-error">Lỗi: 404</div>
+    <pre>{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:52.9616695",
+    "error":  {
+                  "code":  "RESOURCE_NOT_FOUND",
+                  "message":  "Category customer not found with ID: 5"
+              }
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method PUT">PUT</span>
+      <span class="url">8. http://localhost:8080/api/v1/CategoryCustomers/5</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:52.970+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/CategoryCustomers/5"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method DELETE">DELETE</span>
+      <span class="url">9. http://localhost:8080/api/v1/CategoryCustomers/5</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:52.975+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/CategoryCustomers/5"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">10. http://localhost:8080/tracks</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:52.987+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/tracks"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">11. http://localhost:8080/tracks/1/mentors/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:52.997+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/tracks/1/mentors/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method DELETE">DELETE</span>
+      <span class="url">12. http://localhost:8080/tracks/1/mentors/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.003+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/tracks/1/mentors/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">13. http://localhost:8080/team-members</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.013+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/team-members"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">14. http://localhost:8080/rounds</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.022+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/rounds"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">15. http://localhost:8080/prizes</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.031+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/prizes"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">16. http://localhost:8080/criteria</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.039+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/criteria"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">17. http://localhost:8080/api/v1/users</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.049+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">18. http://localhost:8080/api/v1/users</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.054+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">19. http://localhost:8080/api/v1/teams</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.062+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/teams"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">20. http://localhost:8080/api/v1/teams/5/disqualify</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.070+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/teams/5/disqualify"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">21. http://localhost:8080/api/v1/team-invitations</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.082+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/team-invitations"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">22. http://localhost:8080/api/v1/team-invitations/1/respond</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.090+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/team-invitations/1/respond"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">23. http://localhost:8080/api/v1/submissions</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.098+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/submissions"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">24. http://localhost:8080/api/v1/scores</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.108+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/scores"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">25. http://localhost:8080/api/v1/scores/finalize/round/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.166+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/scores/finalize/round/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">26. http://localhost:8080/api/v1/rounds/5/advance</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.179+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/rounds/5/advance"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">27. http://localhost:8080/api/v1/notifications/read-all</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.191+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/notifications/read-all"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">28. http://localhost:8080/api/v1/mentorship-requests</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.200+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/mentorship-requests"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">29. http://localhost:8080/api/v1/judge-assignments</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.214+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/judge-assignments"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">30. http://localhost:8080/api/v1/hackathon-events</span>
+    </div>
+    <div class="status-success">Thành công: 200</div>
+    <pre>{
+    "success":  true,
+    "data":  [
+
+             ],
+    "pagination":  {
+                       "page":  0,
+                       "size":  20,
+                       "totalElements":  0,
+                       "totalPages":  0
+                   },
+    "message":  "Operation successful",
+    "timestamp":  "2026-05-30T16:15:53.244521"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">31. http://localhost:8080/api/v1/hackathon-events</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.315+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/hackathon-events"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">32. http://localhost:8080/api/v1/event-registrations</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.325+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/event-registrations"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">33. http://localhost:8080/api/v1/auth/verify-otp</span>
+    </div>
+    <div class="status-error">Lỗi: 500</div>
+    <pre>{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:53.3465398",
+    "error":  {
+                  "code":  "INTERNAL_SERVER_ERROR",
+                  "message":  "An unexpected error occurred."
+              }
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">34. http://localhost:8080/api/v1/auth/register</span>
+    </div>
+    <div class="status-error">Lỗi: 500</div>
+    <pre>{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:53.3886257",
+    "error":  {
+                  "code":  "INTERNAL_SERVER_ERROR",
+                  "message":  "An unexpected error occurred."
+              }
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">35. http://localhost:8080/api/v1/auth/refresh</span>
+    </div>
+    <div class="status-error">Lỗi: 500</div>
+    <pre>{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:53.4213451",
+    "error":  {
+                  "code":  "INTERNAL_SERVER_ERROR",
+                  "message":  "An unexpected error occurred."
+              }
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">36. http://localhost:8080/api/v1/auth/login</span>
+    </div>
+    <div class="status-error">Lỗi: 500</div>
+    <pre>{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:53.4740222",
+    "error":  {
+                  "code":  "INTERNAL_SERVER_ERROR",
+                  "message":  "An unexpected error occurred."
+              }
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">37. http://localhost:8080/api/v1/auth/create-guest-judge</span>
+    </div>
+    <div class="status-error">Lỗi: 500</div>
+    <pre>{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:53.5127127",
+    "error":  {
+                  "code":  "INTERNAL_SERVER_ERROR",
+                  "message":  "An unexpected error occurred."
+              }
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">38. http://localhost:8080/api/v1/CategoryCustomers</span>
+    </div>
+    <div class="status-success">Thành công: 200</div>
+    <pre>{
+    "value":  [
+
+              ],
+    "Count":  0
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method POST">POST</span>
+      <span class="url">39. http://localhost:8080/api/v1/CategoryCustomers</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.642+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/CategoryCustomers"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method PATCH">PATCH</span>
+      <span class="url">40. http://localhost:8080/prizes/1/assign</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.654+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/prizes/1/assign"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method PATCH">PATCH</span>
+      <span class="url">41. http://localhost:8080/api/v1/users/5/approve</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.664+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users/5/approve"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method PATCH">PATCH</span>
+      <span class="url">42. http://localhost:8080/api/v1/notifications/5/read</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.673+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/notifications/5/read"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method PATCH">PATCH</span>
+      <span class="url">43. http://localhost:8080/api/v1/mentorship-requests/5/resolve</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.683+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/mentorship-requests/5/resolve"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method PATCH">PATCH</span>
+      <span class="url">44. http://localhost:8080/api/v1/mentorship-requests/5/accept</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.691+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/mentorship-requests/5/accept"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method PATCH">PATCH</span>
+      <span class="url">45. http://localhost:8080/api/v1/hackathon-events/5/status</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.702+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/hackathon-events/5/status"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">46. http://localhost:8080/tracks/1/mentors</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.712+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/tracks/1/mentors"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">47. http://localhost:8080/tracks/hackathon/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.721+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/tracks/hackathon/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">48. http://localhost:8080/team-members/team/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.730+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/team-members/team/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">49. http://localhost:8080/rounds/hackathon/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.740+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/rounds/hackathon/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">50. http://localhost:8080/prizes/event/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.750+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/prizes/event/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">51. http://localhost:8080/criteria/event/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.759+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/criteria/event/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">52. http://localhost:8080/criteria/default</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.768+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/criteria/default"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">53. http://localhost:8080/api/v1/users/role/PARTICIPANT</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.779+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users/role/PARTICIPANT"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">54. http://localhost:8080/api/v1/users/pending</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.787+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users/pending"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">55. http://localhost:8080/api/v1/teams/5</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.795+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/teams/5"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">56. http://localhost:8080/api/v1/teams/my-team/event/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.803+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/teams/my-team/event/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">57. http://localhost:8080/api/v1/teams/event/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.812+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/teams/event/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">58. http://localhost:8080/api/v1/team-invitations/pending</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.821+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/team-invitations/pending"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">59. http://localhost:8080/api/v1/submissions/5</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.830+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/submissions/5"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">60. http://localhost:8080/api/v1/submissions/team/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.842+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/submissions/team/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">61. http://localhost:8080/api/v1/submissions/round/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.851+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/submissions/round/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">62. http://localhost:8080/api/v1/submissions/event/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.860+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/submissions/event/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">63. http://localhost:8080/api/v1/scores/submission/5</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.869+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/scores/submission/5"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">64. http://localhost:8080/api/v1/scores/submission/5/judge/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.878+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/scores/submission/5/judge/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">65. http://localhost:8080/api/v1/rankings/round/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.888+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/rankings/round/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">66. http://localhost:8080/api/v1/notifications</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.900+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/notifications"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">67. http://localhost:8080/api/v1/notifications/unread-count</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.911+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/notifications/unread-count"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">68. http://localhost:8080/api/v1/mentorship-requests/open</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.921+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/mentorship-requests/open"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">69. http://localhost:8080/api/v1/mentorship-requests/my-requests</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.929+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/mentorship-requests/my-requests"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">70. http://localhost:8080/api/v1/judge-assignments/my-assignments</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.938+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/judge-assignments/my-assignments"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">71. http://localhost:8080/api/v1/judge-assignments/judge/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:53.947+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/judge-assignments/judge/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">72. http://localhost:8080/api/v1/hackathon-events/fpt-hackathon-2026</span>
+    </div>
+    <div class="status-success">Thành công: 200</div>
+    <pre>{
+    "success":  true,
+    "data":  {
+                 "id":  1,
+                 "name":  "FPT Hackathon 2026",
+                 "slug":  "fpt-hackathon-2026",
+                 "description":  "Cu?c thi kh?i nghi?p cÃ´ng ngh?",
+                 "startTime":  "2026-05-20T14:28:12.1866667",
+                 "endTime":  "2026-06-19T14:28:12.1866667",
+                 "imageUrl":  null,
+                 "status":  "DRAFT",
+                 "organizerId":  null,
+                 "organizerName":  null
+             },
+    "message":  "Operation successful",
+    "timestamp":  "2026-05-30T16:15:54.0518807"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">73. http://localhost:8080/api/v1/hackathon-events/my-events</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:54.1077661",
+    "error":  {
+                  "code":  "FORBIDDEN",
+                  "message":  "You do not have permission to access this resource."
+              }
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">74. http://localhost:8080/api/v1/export/rounds/1/scoring</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:54.116+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/export/rounds/1/scoring"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">75. http://localhost:8080/api/v1/export/rounds/1/ranking</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:54.125+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/export/rounds/1/ranking"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">76. http://localhost:8080/api/v1/event-registrations/event/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:54.134+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/event-registrations/event/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">77. http://localhost:8080/api/v1/audit-logs</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:54.142+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/audit-logs"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method GET">GET</span>
+      <span class="url">78. http://localhost:8080/api/v1/audit-logs/user/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:54.151+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/audit-logs/user/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method DELETE">DELETE</span>
+      <span class="url">79. http://localhost:8080/team-members/1</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:54.161+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/team-members/1"
+}</pre>
+  </div>  <div class="api-card">
+    <div>
+      <span class="method DELETE">DELETE</span>
+      <span class="url">80. http://localhost:8080/api/v1/users/5</span>
+    </div>
+    <div class="status-error">Lỗi: 403</div>
+    <pre>{
+    "timestamp":  "2026-05-30T09:15:54.169+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users/5"
+}</pre>
+  </div></body>
+</html>

@@ -1,0 +1,993 @@
+﻿1.PUT: http://localhost:8080/criteria/5
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:52.731+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/criteria/5"
+}
+
+----------------------------------------
+
+2.DELETE: http://localhost:8080/criteria/5
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:52.812+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/criteria/5"
+}
+
+----------------------------------------
+
+3.GET: http://localhost:8080/api/v1/profile/me
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:52.821+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/profile/me"
+}
+
+----------------------------------------
+
+4.PUT: http://localhost:8080/api/v1/profile/me
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:52.825+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/profile/me"
+}
+
+----------------------------------------
+
+5.PUT: http://localhost:8080/api/v1/hackathon-events/5
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:52.835+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/hackathon-events/5"
+}
+
+----------------------------------------
+
+6.DELETE: http://localhost:8080/api/v1/hackathon-events/5
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:52.839+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/hackathon-events/5"
+}
+
+----------------------------------------
+
+7.GET: http://localhost:8080/api/v1/CategoryCustomers/5
+Lỗi: 404
+
+{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:52.9616695",
+    "error":  {
+                  "code":  "RESOURCE_NOT_FOUND",
+                  "message":  "Category customer not found with ID: 5"
+              }
+}
+
+----------------------------------------
+
+8.PUT: http://localhost:8080/api/v1/CategoryCustomers/5
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:52.970+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/CategoryCustomers/5"
+}
+
+----------------------------------------
+
+9.DELETE: http://localhost:8080/api/v1/CategoryCustomers/5
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:52.975+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/CategoryCustomers/5"
+}
+
+----------------------------------------
+
+10.POST: http://localhost:8080/tracks
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:52.987+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/tracks"
+}
+
+----------------------------------------
+
+11.POST: http://localhost:8080/tracks/1/mentors/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:52.997+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/tracks/1/mentors/1"
+}
+
+----------------------------------------
+
+12.DELETE: http://localhost:8080/tracks/1/mentors/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.003+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/tracks/1/mentors/1"
+}
+
+----------------------------------------
+
+13.POST: http://localhost:8080/team-members
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.013+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/team-members"
+}
+
+----------------------------------------
+
+14.POST: http://localhost:8080/rounds
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.022+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/rounds"
+}
+
+----------------------------------------
+
+15.POST: http://localhost:8080/prizes
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.031+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/prizes"
+}
+
+----------------------------------------
+
+16.POST: http://localhost:8080/criteria
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.039+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/criteria"
+}
+
+----------------------------------------
+
+17.GET: http://localhost:8080/api/v1/users
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.049+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users"
+}
+
+----------------------------------------
+
+18.POST: http://localhost:8080/api/v1/users
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.054+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users"
+}
+
+----------------------------------------
+
+19.POST: http://localhost:8080/api/v1/teams
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.062+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/teams"
+}
+
+----------------------------------------
+
+20.POST: http://localhost:8080/api/v1/teams/5/disqualify
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.070+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/teams/5/disqualify"
+}
+
+----------------------------------------
+
+21.POST: http://localhost:8080/api/v1/team-invitations
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.082+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/team-invitations"
+}
+
+----------------------------------------
+
+22.POST: http://localhost:8080/api/v1/team-invitations/1/respond
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.090+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/team-invitations/1/respond"
+}
+
+----------------------------------------
+
+23.POST: http://localhost:8080/api/v1/submissions
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.098+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/submissions"
+}
+
+----------------------------------------
+
+24.POST: http://localhost:8080/api/v1/scores
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.108+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/scores"
+}
+
+----------------------------------------
+
+25.POST: http://localhost:8080/api/v1/scores/finalize/round/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.166+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/scores/finalize/round/1"
+}
+
+----------------------------------------
+
+26.POST: http://localhost:8080/api/v1/rounds/5/advance
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.179+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/rounds/5/advance"
+}
+
+----------------------------------------
+
+27.POST: http://localhost:8080/api/v1/notifications/read-all
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.191+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/notifications/read-all"
+}
+
+----------------------------------------
+
+28.POST: http://localhost:8080/api/v1/mentorship-requests
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.200+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/mentorship-requests"
+}
+
+----------------------------------------
+
+29.POST: http://localhost:8080/api/v1/judge-assignments
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.214+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/judge-assignments"
+}
+
+----------------------------------------
+
+30.GET: http://localhost:8080/api/v1/hackathon-events
+Thành công: 200
+
+{
+    "success":  true,
+    "data":  [
+
+             ],
+    "pagination":  {
+                       "page":  0,
+                       "size":  20,
+                       "totalElements":  0,
+                       "totalPages":  0
+                   },
+    "message":  "Operation successful",
+    "timestamp":  "2026-05-30T16:15:53.244521"
+}
+
+----------------------------------------
+
+31.POST: http://localhost:8080/api/v1/hackathon-events
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.315+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/hackathon-events"
+}
+
+----------------------------------------
+
+32.POST: http://localhost:8080/api/v1/event-registrations
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.325+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/event-registrations"
+}
+
+----------------------------------------
+
+33.POST: http://localhost:8080/api/v1/auth/verify-otp
+Lỗi: 500
+
+{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:53.3465398",
+    "error":  {
+                  "code":  "INTERNAL_SERVER_ERROR",
+                  "message":  "An unexpected error occurred."
+              }
+}
+
+----------------------------------------
+
+34.POST: http://localhost:8080/api/v1/auth/register
+Lỗi: 500
+
+{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:53.3886257",
+    "error":  {
+                  "code":  "INTERNAL_SERVER_ERROR",
+                  "message":  "An unexpected error occurred."
+              }
+}
+
+----------------------------------------
+
+35.POST: http://localhost:8080/api/v1/auth/refresh
+Lỗi: 500
+
+{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:53.4213451",
+    "error":  {
+                  "code":  "INTERNAL_SERVER_ERROR",
+                  "message":  "An unexpected error occurred."
+              }
+}
+
+----------------------------------------
+
+36.POST: http://localhost:8080/api/v1/auth/login
+Lỗi: 500
+
+{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:53.4740222",
+    "error":  {
+                  "code":  "INTERNAL_SERVER_ERROR",
+                  "message":  "An unexpected error occurred."
+              }
+}
+
+----------------------------------------
+
+37.POST: http://localhost:8080/api/v1/auth/create-guest-judge
+Lỗi: 500
+
+{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:53.5127127",
+    "error":  {
+                  "code":  "INTERNAL_SERVER_ERROR",
+                  "message":  "An unexpected error occurred."
+              }
+}
+
+----------------------------------------
+
+38.GET: http://localhost:8080/api/v1/CategoryCustomers
+Thành công: 200
+
+{
+    "value":  [
+
+              ],
+    "Count":  0
+}
+
+----------------------------------------
+
+39.POST: http://localhost:8080/api/v1/CategoryCustomers
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.642+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/CategoryCustomers"
+}
+
+----------------------------------------
+
+40.PATCH: http://localhost:8080/prizes/1/assign
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.654+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/prizes/1/assign"
+}
+
+----------------------------------------
+
+41.PATCH: http://localhost:8080/api/v1/users/5/approve
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.664+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users/5/approve"
+}
+
+----------------------------------------
+
+42.PATCH: http://localhost:8080/api/v1/notifications/5/read
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.673+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/notifications/5/read"
+}
+
+----------------------------------------
+
+43.PATCH: http://localhost:8080/api/v1/mentorship-requests/5/resolve
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.683+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/mentorship-requests/5/resolve"
+}
+
+----------------------------------------
+
+44.PATCH: http://localhost:8080/api/v1/mentorship-requests/5/accept
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.691+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/mentorship-requests/5/accept"
+}
+
+----------------------------------------
+
+45.PATCH: http://localhost:8080/api/v1/hackathon-events/5/status
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.702+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/hackathon-events/5/status"
+}
+
+----------------------------------------
+
+46.GET: http://localhost:8080/tracks/1/mentors
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.712+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/tracks/1/mentors"
+}
+
+----------------------------------------
+
+47.GET: http://localhost:8080/tracks/hackathon/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.721+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/tracks/hackathon/1"
+}
+
+----------------------------------------
+
+48.GET: http://localhost:8080/team-members/team/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.730+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/team-members/team/1"
+}
+
+----------------------------------------
+
+49.GET: http://localhost:8080/rounds/hackathon/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.740+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/rounds/hackathon/1"
+}
+
+----------------------------------------
+
+50.GET: http://localhost:8080/prizes/event/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.750+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/prizes/event/1"
+}
+
+----------------------------------------
+
+51.GET: http://localhost:8080/criteria/event/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.759+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/criteria/event/1"
+}
+
+----------------------------------------
+
+52.GET: http://localhost:8080/criteria/default
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.768+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/criteria/default"
+}
+
+----------------------------------------
+
+53.GET: http://localhost:8080/api/v1/users/role/PARTICIPANT
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.779+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users/role/PARTICIPANT"
+}
+
+----------------------------------------
+
+54.GET: http://localhost:8080/api/v1/users/pending
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.787+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users/pending"
+}
+
+----------------------------------------
+
+55.GET: http://localhost:8080/api/v1/teams/5
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.795+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/teams/5"
+}
+
+----------------------------------------
+
+56.GET: http://localhost:8080/api/v1/teams/my-team/event/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.803+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/teams/my-team/event/1"
+}
+
+----------------------------------------
+
+57.GET: http://localhost:8080/api/v1/teams/event/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.812+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/teams/event/1"
+}
+
+----------------------------------------
+
+58.GET: http://localhost:8080/api/v1/team-invitations/pending
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.821+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/team-invitations/pending"
+}
+
+----------------------------------------
+
+59.GET: http://localhost:8080/api/v1/submissions/5
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.830+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/submissions/5"
+}
+
+----------------------------------------
+
+60.GET: http://localhost:8080/api/v1/submissions/team/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.842+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/submissions/team/1"
+}
+
+----------------------------------------
+
+61.GET: http://localhost:8080/api/v1/submissions/round/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.851+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/submissions/round/1"
+}
+
+----------------------------------------
+
+62.GET: http://localhost:8080/api/v1/submissions/event/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.860+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/submissions/event/1"
+}
+
+----------------------------------------
+
+63.GET: http://localhost:8080/api/v1/scores/submission/5
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.869+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/scores/submission/5"
+}
+
+----------------------------------------
+
+64.GET: http://localhost:8080/api/v1/scores/submission/5/judge/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.878+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/scores/submission/5/judge/1"
+}
+
+----------------------------------------
+
+65.GET: http://localhost:8080/api/v1/rankings/round/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.888+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/rankings/round/1"
+}
+
+----------------------------------------
+
+66.GET: http://localhost:8080/api/v1/notifications
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.900+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/notifications"
+}
+
+----------------------------------------
+
+67.GET: http://localhost:8080/api/v1/notifications/unread-count
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.911+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/notifications/unread-count"
+}
+
+----------------------------------------
+
+68.GET: http://localhost:8080/api/v1/mentorship-requests/open
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.921+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/mentorship-requests/open"
+}
+
+----------------------------------------
+
+69.GET: http://localhost:8080/api/v1/mentorship-requests/my-requests
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.929+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/mentorship-requests/my-requests"
+}
+
+----------------------------------------
+
+70.GET: http://localhost:8080/api/v1/judge-assignments/my-assignments
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.938+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/judge-assignments/my-assignments"
+}
+
+----------------------------------------
+
+71.GET: http://localhost:8080/api/v1/judge-assignments/judge/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:53.947+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/judge-assignments/judge/1"
+}
+
+----------------------------------------
+
+72.GET: http://localhost:8080/api/v1/hackathon-events/fpt-hackathon-2026
+Thành công: 200
+
+{
+    "success":  true,
+    "data":  {
+                 "id":  1,
+                 "name":  "FPT Hackathon 2026",
+                 "slug":  "fpt-hackathon-2026",
+                 "description":  "Cu?c thi kh?i nghi?p cÃ´ng ngh?",
+                 "startTime":  "2026-05-20T14:28:12.1866667",
+                 "endTime":  "2026-06-19T14:28:12.1866667",
+                 "imageUrl":  null,
+                 "status":  "DRAFT",
+                 "organizerId":  null,
+                 "organizerName":  null
+             },
+    "message":  "Operation successful",
+    "timestamp":  "2026-05-30T16:15:54.0518807"
+}
+
+----------------------------------------
+
+73.GET: http://localhost:8080/api/v1/hackathon-events/my-events
+Lỗi: 403
+
+{
+    "success":  false,
+    "timestamp":  "2026-05-30T16:15:54.1077661",
+    "error":  {
+                  "code":  "FORBIDDEN",
+                  "message":  "You do not have permission to access this resource."
+              }
+}
+
+----------------------------------------
+
+74.GET: http://localhost:8080/api/v1/export/rounds/1/scoring
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:54.116+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/export/rounds/1/scoring"
+}
+
+----------------------------------------
+
+75.GET: http://localhost:8080/api/v1/export/rounds/1/ranking
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:54.125+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/export/rounds/1/ranking"
+}
+
+----------------------------------------
+
+76.GET: http://localhost:8080/api/v1/event-registrations/event/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:54.134+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/event-registrations/event/1"
+}
+
+----------------------------------------
+
+77.GET: http://localhost:8080/api/v1/audit-logs
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:54.142+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/audit-logs"
+}
+
+----------------------------------------
+
+78.GET: http://localhost:8080/api/v1/audit-logs/user/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:54.151+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/audit-logs/user/1"
+}
+
+----------------------------------------
+
+79.DELETE: http://localhost:8080/team-members/1
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:54.161+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/team-members/1"
+}
+
+----------------------------------------
+
+80.DELETE: http://localhost:8080/api/v1/users/5
+Lỗi: 403
+
+{
+    "timestamp":  "2026-05-30T09:15:54.169+00:00",
+    "status":  403,
+    "error":  "Forbidden",
+    "path":  "/api/v1/users/5"
+}
+
+----------------------------------------
+

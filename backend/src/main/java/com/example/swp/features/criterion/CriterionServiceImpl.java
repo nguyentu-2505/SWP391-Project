@@ -29,6 +29,7 @@ public class CriterionServiceImpl implements CriterionService {
         Criterion newCriterion = Criterion.builder()
                 .name(request.getName())
                 .description(request.getDescription())
+                .maxScore(request.getMaxScore())
                 .weight(request.getWeight())
                 .hackathonEvent(hackathonEvent) // This can be null
                 .build();
@@ -59,6 +60,9 @@ public class CriterionServiceImpl implements CriterionService {
         criterion.setName(request.getName());
         criterion.setDescription(request.getDescription());
         criterion.setWeight(request.getWeight());
+        if (request.getMaxScore() != null) {
+            criterion.setMaxScore(request.getMaxScore());
+        }
 
         Criterion updatedCriterion = criterionRepository.save(criterion);
         return mapToResponse(updatedCriterion);
@@ -77,6 +81,7 @@ public class CriterionServiceImpl implements CriterionService {
                 .id(criterion.getId())
                 .name(criterion.getName())
                 .description(criterion.getDescription())
+                .maxScore(criterion.getMaxScore())
                 .weight(criterion.getWeight())
                 .hackathonEventId(criterion.getHackathonEvent() != null ? criterion.getHackathonEvent().getId() : null)
                 .isDefault(criterion.getHackathonEvent() == null)

@@ -29,6 +29,7 @@ public class RefreshTokenService {
 
         // Delete existing refresh tokens for this user
         refreshTokenRepository.deleteByUser(user);
+        refreshTokenRepository.flush();
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
