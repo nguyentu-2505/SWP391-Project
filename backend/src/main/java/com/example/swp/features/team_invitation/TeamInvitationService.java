@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import com.example.swp.features.hackathon_event.HackathonStatus;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +38,10 @@ public class TeamInvitationService {
 
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+
+        if (team.getEvent().getStatus() != HackathonStatus.REGISTRATION_OPEN) {
+            throw new com.example.swp.exception.BadRequestException("Invitations can only be sent during the registration phase.");
+        }
 
         teamMemberRepository.findByTeamIdAndUserId(team.getId(), inviter.getId())
                 .filter(tm -> tm.isLeader())
@@ -97,6 +102,10 @@ public class TeamInvitationService {
 
         Team team = invitation.getTeam();
 
+        if (team.getEvent().getStatus() != HackathonStatus.REGISTRATION_OPEN) {
+            throw new com.example.swp.exception.BadRequestException("Invitations can only be responded to during the registration phase.");
+        }
+
         if (response == InvitationStatus.ACCEPTED) {
             
             if (isUserInAnotherTeamInEvent(invitee, team.getEvent().getId())) {
@@ -150,6 +159,53 @@ public class TeamInvitationService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         
         return invitationRepository.findByInviteeEmailAndStatus(currentUser.getEmail(), InvitationStatus.PENDING)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void revokeInvitation(Long invitationId) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        TeamInvitation invitation = invitationRepository.findById(invitationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invitation not found"));
+
+        Team team = invitation.getTeam();
+        
+        teamMemberRepository.findByTeamIdAndUserId(team.getId(), currentUser.getId())
+                .filter(tm -> tm.isLeader())
+                .orElseThrow(() -> new IllegalStateException("Only the team leader can revoke invitations."));
+
+        if (invitation.getStatus() != InvitationStatus.PENDING) {
+            throw new IllegalStateException("Only pending invitations can be revoked.");
+        }
+
+        invitation.setStatus(InvitationStatus.CANCELLED);
+        invitationRepository.save(invitation);
+
+        userRepository.findByEmail(invitation.getInviteeEmail()).ifPresent(invitee -> {
+            String title = "Invitation Revoked";
+            String message = currentUser.getUsername() + " has revoked your invitation to join the team '" + team.getName() + "'.";
+            notificationService.createNotification(invitee, title, message, "TEAM_INVITATION_REVOKED", "TeamInvitation", invitation.getId());
+        });
+    }
+
+    public List<TeamInvitationResponse> getSentInvitations(Long teamId) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+
+        teamMemberRepository.findByTeamIdAndUserId(team.getId(), currentUser.getId())
+                .filter(tm -> tm.isLeader())
+                .orElseThrow(() -> new IllegalStateException("Only the team leader can view sent invitations."));
+
+        return invitationRepository.findByTeamId(teamId)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());

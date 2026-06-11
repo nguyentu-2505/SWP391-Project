@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface TeamInvitationRepository extends JpaRepository<TeamInvitation, Long> {
     Optional<TeamInvitation> findByTeamIdAndInviteeEmail(Long teamId, String inviteeEmail);
     List<TeamInvitation> findByInviteeEmailAndStatus(String inviteeEmail, InvitationStatus status);
+    List<TeamInvitation> findByTeamId(Long teamId);
 }
