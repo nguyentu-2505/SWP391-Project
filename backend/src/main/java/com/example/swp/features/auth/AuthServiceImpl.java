@@ -35,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String TEMP_PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    private final AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;  
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
@@ -150,15 +150,13 @@ public class AuthServiceImpl implements AuthService {
     /**
      * Creates a temporary Guest Judge account on behalf of an Organizer.
      * WHY: Guest judges are external (non-FPT) evaluators who do not go through
-     * the normal OTP registration flow. Organizer creates them directly and
-     * sends credentials via email.
+     * the normal OTP registration flow. Organizer creates them directly.
      *
      * Security:
      * - Guest judges get role GUEST_JUDGE (cannot mentor, cannot manage events)
      * - Account is marked is_temporary=true for easy cleanup post-event
      * - Auto-approved and auto-verified to bypass normal gating
-     * - Password is randomly generated (12 chars, alphanumeric)
-     * - Email failure will rollback transaction to prevent orphaned accounts.
+     * - Password is provided by the organizer in the request
      */
     @Override
     @Transactional
@@ -170,13 +168,11 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Error: Email is already in use!");
         }
 
-        String tempPassword = generateTemporaryPassword(12);
-
         User guestJudge = new User();
         guestJudge.setUsername(request.getUsername());
         guestJudge.setEmail(request.getEmail());
         guestJudge.setFullName(request.getFullName());
-        guestJudge.setPassword(passwordEncoder.encode(tempPassword));
+        guestJudge.setPassword(passwordEncoder.encode(request.getPassword()));
         guestJudge.setRole(Role.GUEST_JUDGE);
         guestJudge.setApproved(true);      // auto-approved – no admin review needed
         guestJudge.setVerified(true);      // skip OTP – organizer vouches for them
@@ -192,26 +188,6 @@ public class AuthServiceImpl implements AuthService {
             null,
             request.getUsername()
         );
-
-        // Send credentials to guest judge via email
-        String emailBody = String.format(
-            "You have been invited as a Guest Judge for SEAL Hackathon.\n\n" +
-            "Login credentials:\n" +
-            "  Username : %s\n" +
-            "  Password : %s\n\n" +
-            "Please change your password after first login.",
-            request.getUsername(), tempPassword
-        );
-        emailService.sendSimpleMessage(request.getEmail(), "SEAL Hackathon – Guest Judge Account", emailBody);
-    }
-
-    /** Generates a cryptographically-random alphanumeric password of the given length. */
-    private String generateTemporaryPassword(int length) {
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(TEMP_PASSWORD_CHARS.charAt(SECURE_RANDOM.nextInt(TEMP_PASSWORD_CHARS.length())));
-        }
-        return sb.toString();
     }
 
     @Override
