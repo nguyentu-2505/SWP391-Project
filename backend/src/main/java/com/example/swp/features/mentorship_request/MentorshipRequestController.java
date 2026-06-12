@@ -40,21 +40,28 @@ public class MentorshipRequestController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
-    @PatchMapping("/{id}/accept")
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MENTOR', 'PARTICIPANT', 'ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<MentorshipRequestResponse>> getRequestDetail(@PathVariable Long id) {
+        MentorshipRequestResponse response = requestService.getRequestById(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @RequestMapping(value = "/{id}/accept", method = {RequestMethod.PATCH, RequestMethod.PUT})
     @PreAuthorize("hasRole('MENTOR')")
     public ResponseEntity<ApiResponse<MentorshipRequestResponse>> acceptRequest(@PathVariable Long id) {
         MentorshipRequestResponse response = requestService.acceptRequest(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Request accepted."));
     }
 
-    @PatchMapping("/{id}/resolve")
+    @RequestMapping(value = "/{id}/resolve", method = {RequestMethod.PATCH, RequestMethod.PUT})
     @PreAuthorize("hasAnyRole('MENTOR', 'PARTICIPANT')")
     public ResponseEntity<ApiResponse<MentorshipRequestResponse>> resolveRequest(@PathVariable Long id) {
         MentorshipRequestResponse response = requestService.resolveRequest(id);
         return ResponseEntity.ok(ApiResponse.success(response, "Request marked as resolved."));
     }
 
-    @PatchMapping("/{id}/reject")
+    @RequestMapping(value = "/{id}/reject", method = {RequestMethod.PATCH, RequestMethod.PUT})
     @PreAuthorize("hasRole('MENTOR')")
     public ResponseEntity<ApiResponse<MentorshipRequestResponse>> rejectRequest(@PathVariable Long id) {
         MentorshipRequestResponse response = requestService.rejectRequest(id);

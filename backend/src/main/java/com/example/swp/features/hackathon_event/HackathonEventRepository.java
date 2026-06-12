@@ -22,4 +22,7 @@ public interface HackathonEventRepository extends JpaRepository<HackathonEvent, 
     
     @EntityGraph(attributePaths = {"organizer"})
     Optional<HackathonEvent> findById(Long id);
+
+    @EntityGraph(attributePaths = {"organizer"})
+    Page<HackathonEvent> findAll(Pageable pageable);
 }

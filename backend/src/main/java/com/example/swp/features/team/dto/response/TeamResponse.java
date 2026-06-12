@@ -19,6 +19,7 @@ public class TeamResponse {
     private String status;
     private java.util.List<TeamMemberInfo> members;
 
+    @Data
     public static class TeamMemberInfo {
         private Long userId;
         private String username;
