@@ -140,6 +140,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     private SubmissionResponse mapToResponse(Submission submission) {
+        com.example.swp.features.track.Track track = submission.getTeam().getTrack();
         return SubmissionResponse.builder()
                 .id(submission.getId())
                 .teamId(submission.getTeam().getId())
@@ -151,6 +152,8 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .reportUrl(submission.getReportUrl())
                 .version(submission.getVersion())
                 .submittedAt(submission.getSubmittedAt())
+                .trackId(track != null ? track.getId() : null)
+                .trackName(track != null ? track.getName() : null)
                 .build();
     }
 }

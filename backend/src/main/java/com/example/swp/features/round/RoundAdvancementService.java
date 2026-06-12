@@ -9,6 +9,9 @@ import com.example.swp.features.team.TeamRepository;
 import com.example.swp.features.team.TeamStatus;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
+import com.example.swp.features.hackathon_event.HackathonEvent;
+import com.example.swp.features.hackathon_event.HackathonEventRepository;
+import com.example.swp.features.hackathon_event.HackathonStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -31,9 +34,10 @@ public class RoundAdvancementService {
     private final RankingService rankingService;
     private final AuditLogService auditLogService;
     private final UserRepository userRepository;
+    private final HackathonEventRepository hackathonEventRepository;
 
     @Transactional
-    public void advanceTeams(Long fromRoundId) {
+    public String advanceTeams(Long fromRoundId) {
         Round fromRound = roundRepository.findById(fromRoundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found: " + fromRoundId));
 
@@ -53,7 +57,18 @@ public class RoundAdvancementService {
                 fromRound.getHackathonEvent().getId(), fromRound.getRoundOrder() + 1);
         
         if (nextRounds.isEmpty()) {
-            throw new IllegalStateException("Next round does not exist. Cannot advance teams.");
+            HackathonEvent event = fromRound.getHackathonEvent();
+            event.setStatus(HackathonStatus.COMPLETED);
+            hackathonEventRepository.save(event);
+
+            auditLogService.logAction(
+                    "COMPLETE_EVENT",
+                    "EVENT",
+                    event.getId(),
+                    "0",
+                    "Event completed. Final round: " + fromRound.getName() + " has ended."
+            );
+            return "Final round completed. Hackathon event marked as COMPLETED.";
         }
         if (nextRounds.size() > 1) {
             throw new IllegalStateException("Ambiguous next round configuration. Multiple rounds found with the same order.");
@@ -111,6 +126,7 @@ public class RoundAdvancementService {
                 "0",
                 "Advanced Teams: [" + teamIdsStr + "] to Round " + toRound.getId()
         );
+        return "Teams advanced successfully to the next round.";
     }
 
     private User getCurrentUser() {

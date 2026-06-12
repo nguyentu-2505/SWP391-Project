@@ -20,21 +20,21 @@ public class ScoreController {
     private final ScoreService scoreService;
 
     @PostMapping
-    @PreAuthorize("hasRole('JUDGE')")
+    @PreAuthorize("hasAnyRole('JUDGE', 'GUEST_JUDGE')")
     public ResponseEntity<ApiResponse<List<ScoreResponse>>> saveScores(@Valid @RequestBody CreateScoreRequest request) {
         List<ScoreResponse> responses = scoreService.saveScores(request);
         return new ResponseEntity<>(ApiResponse.success(responses, "Scores saved successfully."), HttpStatus.CREATED);
     }
 
     @GetMapping("/submission/{submissionId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'JUDGE', 'MENTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'JUDGE', 'GUEST_JUDGE', 'MENTOR')")
     public ResponseEntity<ApiResponse<List<ScoreResponse>>> getScoresForSubmission(@PathVariable Long submissionId) {
         List<ScoreResponse> responses = scoreService.getScoresForSubmission(submissionId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
     @GetMapping("/submission/{submissionId}/judge/{judgeId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'JUDGE', 'MENTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'JUDGE', 'GUEST_JUDGE', 'MENTOR')")
     public ResponseEntity<ApiResponse<List<ScoreResponse>>> getScoresForSubmissionByJudge(@PathVariable Long submissionId, @PathVariable Long judgeId) {
         List<ScoreResponse> responses = scoreService.getScoresForSubmissionByJudge(submissionId, judgeId);
         return ResponseEntity.ok(ApiResponse.success(responses));
