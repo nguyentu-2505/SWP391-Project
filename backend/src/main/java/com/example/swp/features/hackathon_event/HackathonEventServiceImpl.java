@@ -7,6 +7,8 @@ import com.example.swp.features.hackathon_event.dto.response.HackathonEventRespo
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.audit_log.AuditLogService;
+import com.example.swp.features.criterion.Criterion;
+import com.example.swp.features.criterion.CriterionRepository;
 import com.github.slugify.Slugify;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,9 +28,11 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final HackathonEventRepository hackathonEventRepository;
     private final UserRepository userRepository;
     private final AuditLogService auditLogService;
+    private final CriterionRepository criterionRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public HackathonEventResponse createHackathonEvent(CreateHackathonEventRequest request) {
         User organizer = getCurrentUser();
         HackathonEvent event = HackathonEvent.builder()
@@ -43,6 +47,23 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .build();
 
         HackathonEvent savedEvent = hackathonEventRepository.save(event);
+
+        // Auto-seed default criteria
+        List<Criterion> defaultCriteria = criterionRepository.findByHackathonEventIsNull();
+        if (!defaultCriteria.isEmpty()) {
+            List<Criterion> clonedCriteria = defaultCriteria.stream()
+                    .map(c -> Criterion.builder()
+                            .name(c.getName())
+                            .description(c.getDescription())
+                            .maxScore(c.getMaxScore())
+                            .weight(c.getWeight())
+                            .hackathonEvent(savedEvent)
+                            .build())
+                    .collect(Collectors.toList());
+            criterionRepository.saveAll(clonedCriteria);
+            log.info("Auto-seeded {} default criteria for new event id={}", clonedCriteria.size(), savedEvent.getId());
+        }
+
         auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent", savedEvent.getId(), null, "Created event: " + savedEvent.getName());
         log.info("Hackathon event created successfully: id={}, name={} by organizer={}", savedEvent.getId(), savedEvent.getName(), organizer.getUsername());
         return mapToResponse(savedEvent);

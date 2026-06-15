@@ -136,6 +136,7 @@ CREATE TABLE team (
     disqualification_reason NVARCHAR(MAX),
     disqualified_at         DATETIME2,
     disqualified_by         BIGINT,
+    final_score             DECIMAL(5,2) DEFAULT NULL,
     FOREIGN KEY (track_id)        REFERENCES track(id),
     FOREIGN KEY (event_id)        REFERENCES hackathon_event(id),
     FOREIGN KEY (disqualified_by) REFERENCES _user(id),
@@ -283,12 +284,53 @@ CREATE TABLE team_round_advancement (
 
 -- Bảng audit_log
 CREATE TABLE audit_log (
-    id         BIGINT IDENTITY(1,1) PRIMARY KEY,
-    user_id    BIGINT,
-    action     NVARCHAR(255) NOT NULL,
-    details    NVARCHAR(MAX),
-    created_at DATETIME2 DEFAULT GETDATE(),
+    id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id     BIGINT,
+    action      NVARCHAR(255) NOT NULL,
+    details     NVARCHAR(MAX),
+    created_at  DATETIME2 DEFAULT GETDATE(),
+    entity_type NVARCHAR(255),
+    entity_id   BIGINT,
+    old_value   NVARCHAR(MAX),
+    new_value   NVARCHAR(MAX),
     FOREIGN KEY (user_id) REFERENCES _user(id)
+);
+GO
+
+-- Bảng refresh_token
+CREATE TABLE refresh_token (
+    id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+    token       NVARCHAR(255) NOT NULL UNIQUE,
+    user_id     BIGINT NOT NULL,
+    expiry_date DATETIME2 NOT NULL,
+    created_at  DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES _user(id) ON DELETE CASCADE
+);
+GO
+
+-- Bảng password_reset_token
+CREATE TABLE password_reset_token (
+    id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+    token       NVARCHAR(255) NOT NULL UNIQUE,
+    user_id     BIGINT NOT NULL,
+    expiry_date DATETIME2 NOT NULL,
+    created_at  DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES _user(id) ON DELETE CASCADE
+);
+GO
+
+-- Bảng category_customer
+CREATE TABLE category_customer (
+    id             BIGINT IDENTITY(1,1) PRIMARY KEY,
+    date_of_birth  DATE NOT NULL,
+    modified_date  DATE NOT NULL,
+    address        NVARCHAR(255) NOT NULL,
+    code           NVARCHAR(50) NOT NULL UNIQUE,
+    email          NVARCHAR(255) NOT NULL,
+    identification NVARCHAR(50) NOT NULL,
+    name           NVARCHAR(255) NOT NULL,
+    phone          NVARCHAR(50) NOT NULL,
+    zip_code       NVARCHAR(50) NOT NULL
 );
 GO
 
@@ -345,7 +387,7 @@ INSERT INTO hackathon_event (name, slug, description, status, registration_start
 VALUES
     -- event id=1: đang diễn ra
     (N'FPT Hackathon 2026',   'fpt-hackathon-2026',   N'Cuộc thi khởi nghiệp công nghệ dành cho sinh viên FPT toàn quốc',
-     'ONGOING',
+     'IN_PROGRESS',
      DATEADD(day, -15, GETDATE()), DATEADD(day, -1, GETDATE()),
      GETDATE(), DATEADD(day, 30, GETDATE()),
      5, 2, N'Mỗi đội 2-5 thành viên. Nộp bài qua GitHub. Không sử dụng code có sẵn.', 2),
@@ -397,12 +439,12 @@ INSERT INTO round (name, description, start_time, end_time, hackathon_event_id, 
      DATEADD(day, 46, GETDATE()), DATEADD(day, 60, GETDATE()), 2, DATEADD(day, 59, GETDATE()), NULL, 2); -- round id=5
 
 -- -----------------------------------------------
--- 5.6 criterion (3 criteria cho event 1)
+-- 5.6 criterion (3 criteria mặc định)
 -- -----------------------------------------------
 INSERT INTO criterion (name, description, max_score, weight, hackathon_event_id) VALUES
-    (N'Tính sáng tạo',       N'Ý tưởng mới lạ, khác biệt so với giải pháp hiện có',              10, 3, 1),  -- criterion id=1
-    (N'Tính khả thi',        N'Khả năng triển khai thực tế, mô hình kinh doanh rõ ràng',          10, 3, 1),  -- criterion id=2
-    (N'Chất lượng kỹ thuật', N'Code sạch, kiến trúc tốt, performance, test coverage',             10, 4, 1);  -- criterion id=3
+    (N'Tính sáng tạo',       N'Ý tưởng mới lạ, khác biệt so với giải pháp hiện có',              10, 1, NULL),  -- criterion id=1
+    (N'Tính khả thi',        N'Khả năng triển khai thực tế, mô hình kinh doanh rõ ràng',          10, 2, NULL),  -- criterion id=2
+    (N'Chất lượng kỹ thuật', N'Code sạch, kiến trúc tốt, performance, test coverage',             10, 1, NULL);  -- criterion id=3
 
 -- -----------------------------------------------
 -- 5.7 team (3 teams cho event 1)

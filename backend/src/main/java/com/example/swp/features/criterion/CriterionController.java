@@ -51,4 +51,13 @@ public class CriterionController {
         criterionService.deleteCriterion(id);
         return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(null, "Criterion deleted successfully."));
     }
+
+    @PostMapping("/copy")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<List<CriterionResponse>>> copyCriteria(
+            @RequestParam Long fromEventId,
+            @RequestParam Long toEventId) {
+        List<CriterionResponse> responses = criterionService.copyCriteria(fromEventId, toEventId);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses, "Criteria copied successfully."));
+    }
 }

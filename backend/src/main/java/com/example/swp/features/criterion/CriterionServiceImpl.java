@@ -5,6 +5,7 @@ import com.example.swp.features.hackathon_event.HackathonEventRepository;
 import com.example.swp.features.criterion.dto.request.CreateCriterionRequest;
 import com.example.swp.features.criterion.dto.request.UpdateCriterionRequest;
 import com.example.swp.features.criterion.dto.response.CriterionResponse;
+import com.example.swp.features.score.ScoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ public class CriterionServiceImpl implements CriterionService {
 
     private final CriterionRepository criterionRepository;
     private final HackathonEventRepository hackathonEventRepository;
+    private final ScoreRepository scoreRepository;
 
     @Override
     public CriterionResponse createCriterion(CreateCriterionRequest request) {
@@ -24,6 +26,13 @@ public class CriterionServiceImpl implements CriterionService {
         if (request.getHackathonEventId() != null) {
             hackathonEvent = hackathonEventRepository.findById(request.getHackathonEventId())
                     .orElseThrow(() -> new RuntimeException("Hackathon event not found"));
+
+            // Ràng buộc tổng trọng số (weight) không vượt quá 100%
+            List<Criterion> existing = criterionRepository.findByHackathonEventId(hackathonEvent.getId());
+            int currentSum = existing.stream().mapToInt(Criterion::getWeight).sum();
+            if (currentSum + request.getWeight() > 100) {
+                throw new IllegalArgumentException("Tổng hệ số (weight) của tất cả tiêu chí cho sự kiện này không được vượt quá 100%. Tổng hiện tại là: " + currentSum + "%");
+            }
         }
 
         Criterion newCriterion = Criterion.builder()
@@ -57,6 +66,24 @@ public class CriterionServiceImpl implements CriterionService {
         Criterion criterion = criterionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Criterion not found with id: " + id));
 
+        // Chặn chỉnh sửa nếu đã có điểm chấm
+        if (scoreRepository.existsByCriterionId(id)) {
+            throw new IllegalStateException("Không thể chỉnh sửa tiêu chí này vì đã có giám khảo thực hiện chấm điểm.");
+        }
+
+        // Ràng buộc tổng trọng số (weight) không vượt quá 100%
+        if (criterion.getHackathonEvent() != null) {
+            HackathonEvent event = criterion.getHackathonEvent();
+            List<Criterion> existing = criterionRepository.findByHackathonEventId(event.getId());
+            int currentSum = existing.stream()
+                    .filter(c -> !c.getId().equals(id))
+                    .mapToInt(Criterion::getWeight)
+                    .sum();
+            if (currentSum + request.getWeight() > 100) {
+                throw new IllegalArgumentException("Tổng hệ số (weight) của tất cả tiêu chí cho sự kiện này không được vượt quá 100%. Tổng hiện tại (chưa gồm tiêu chí này) là: " + currentSum + "%");
+            }
+        }
+
         criterion.setName(request.getName());
         criterion.setDescription(request.getDescription());
         criterion.setWeight(request.getWeight());
@@ -73,7 +100,38 @@ public class CriterionServiceImpl implements CriterionService {
         if (!criterionRepository.existsById(id)) {
             throw new RuntimeException("Criterion not found with id: " + id);
         }
+
+        // Chặn xóa nếu đã có điểm chấm
+        if (scoreRepository.existsByCriterionId(id)) {
+            throw new IllegalStateException("Không thể xóa tiêu chí này vì đã có giám khảo thực hiện chấm điểm.");
+        }
+
         criterionRepository.deleteById(id);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public List<CriterionResponse> copyCriteria(Long fromEventId, Long toEventId) {
+        HackathonEvent targetEvent = hackathonEventRepository.findById(toEventId)
+                .orElseThrow(() -> new RuntimeException("Target hackathon event not found: " + toEventId));
+
+        List<Criterion> sourceCriteria = criterionRepository.findByHackathonEventId(fromEventId);
+        if (sourceCriteria.isEmpty()) {
+            throw new IllegalStateException("No criteria found in the source event to copy.");
+        }
+
+        List<Criterion> clonedCriteria = sourceCriteria.stream()
+                .map(c -> Criterion.builder()
+                        .name(c.getName())
+                        .description(c.getDescription())
+                        .maxScore(c.getMaxScore())
+                        .weight(c.getWeight())
+                        .hackathonEvent(targetEvent)
+                        .build())
+                .collect(Collectors.toList());
+
+        List<Criterion> savedCriteria = criterionRepository.saveAll(clonedCriteria);
+        return savedCriteria.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     private CriterionResponse mapToResponse(Criterion criterion) {

@@ -41,10 +41,6 @@ public class RoundAdvancementService {
         Round fromRound = roundRepository.findById(fromRoundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found: " + fromRoundId));
 
-        if (fromRound.getAdvancementSlots() == null || fromRound.getAdvancementSlots() <= 0) {
-            throw new IllegalStateException("Round does not have valid advancement slots defined.");
-        }
-
         if (LocalDateTime.now().isBefore(fromRound.getEndTime())) {
             throw new IllegalStateException("Cannot advance teams before the round has ended.");
         }
@@ -61,15 +57,35 @@ public class RoundAdvancementService {
             event.setStatus(HackathonStatus.COMPLETED);
             hackathonEventRepository.save(event);
 
+            // Calculate final round average scores and update team finalScore
+            List<TeamRankingResponse> rankings = rankingService.getRankingForRound(fromRoundId);
+            if (rankings != null && !rankings.isEmpty()) {
+                List<Long> teamIds = rankings.stream().map(TeamRankingResponse::getTeamId).collect(Collectors.toList());
+                List<Team> teams = teamRepository.findAllById(teamIds);
+                Map<Long, Team> teamMap = teams.stream().collect(Collectors.toMap(Team::getId, t -> t));
+                for (TeamRankingResponse rankResponse : rankings) {
+                    Team team = teamMap.get(rankResponse.getTeamId());
+                    if (team != null) {
+                        team.setFinalScore(rankResponse.getFinalScore());
+                    }
+                }
+                teamRepository.saveAll(teams);
+            }
+
             auditLogService.logAction(
                     "COMPLETE_EVENT",
                     "EVENT",
                     event.getId(),
                     "0",
-                    "Event completed. Final round: " + fromRound.getName() + " has ended."
+                    "Event completed. Final round: " + fromRound.getName() + " has ended. Final scores populated."
             );
-            return "Final round completed. Hackathon event marked as COMPLETED.";
+            return "Final round completed. Hackathon event marked as COMPLETED. Final scores updated.";
         }
+
+        if (fromRound.getAdvancementSlots() == null || fromRound.getAdvancementSlots() <= 0) {
+            throw new IllegalStateException("Round does not have valid advancement slots defined.");
+        }
+
         if (nextRounds.size() > 1) {
             throw new IllegalStateException("Ambiguous next round configuration. Multiple rounds found with the same order.");
         }

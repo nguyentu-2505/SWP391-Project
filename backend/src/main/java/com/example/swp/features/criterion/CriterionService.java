@@ -11,4 +11,5 @@ public interface CriterionService {
     List<CriterionResponse> getDefaultCriteria();
     CriterionResponse updateCriterion(Long id, com.example.swp.features.criterion.dto.request.UpdateCriterionRequest request);
     void deleteCriterion(Long id);
+    List<CriterionResponse> copyCriteria(Long fromEventId, Long toEventId);
 }
