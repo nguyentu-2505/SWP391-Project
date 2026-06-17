@@ -66,6 +66,13 @@ public class CriterionServiceImpl implements CriterionService {
         Criterion criterion = criterionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Criterion not found with id: " + id));
 
+        // Kiểm tra chéo eventId
+        Long dbEventId = criterion.getHackathonEvent() != null ? criterion.getHackathonEvent().getId() : null;
+        if ((dbEventId == null && request.getHackathonEventId() != null) ||
+            (dbEventId != null && !dbEventId.equals(request.getHackathonEventId()))) {
+            throw new IllegalArgumentException("Tiêu chí này không thuộc về sự kiện được chỉ định.");
+        }
+
         // Chặn chỉnh sửa nếu đã có điểm chấm
         if (scoreRepository.existsByCriterionId(id)) {
             throw new IllegalStateException("Không thể chỉnh sửa tiêu chí này vì đã có giám khảo thực hiện chấm điểm.");
@@ -96,9 +103,15 @@ public class CriterionServiceImpl implements CriterionService {
     }
 
     @Override
-    public void deleteCriterion(Long id) {
-        if (!criterionRepository.existsById(id)) {
-            throw new RuntimeException("Criterion not found with id: " + id);
+    public void deleteCriterion(Long id, Long eventId) {
+        Criterion criterion = criterionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Criterion not found with id: " + id));
+
+        // Kiểm tra chéo eventId
+        Long dbEventId = criterion.getHackathonEvent() != null ? criterion.getHackathonEvent().getId() : null;
+        if ((dbEventId == null && eventId != null) ||
+            (dbEventId != null && !dbEventId.equals(eventId))) {
+            throw new IllegalArgumentException("Tiêu chí này không thuộc về sự kiện được chỉ định.");
         }
 
         // Chặn xóa nếu đã có điểm chấm

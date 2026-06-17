@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Use Case Specification - UC-18</title>
+<style>
+  body {
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+    margin: 40px;
+    line-height: 1.4;
+    font-size: 11pt;
+  }
+  h2 {
+    text-align: center;
+    font-family: 'Calibri', sans-serif;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  td {
+    border: 1px solid #000000;
+    padding: 8px 12px;
+    vertical-align: top;
+    font-size: 10pt;
+  }
+  .label-cell {
+    font-weight: bold;
+    width: 20%;
+    background-color: #F3F4F6;
+  }
+  .header-title {
+    background-color: #E5E7EB;
+    font-weight: bold;
+    text-align: center;
+    font-size: 14pt;
+    padding: 10px;
+  }
+  .flow-list {
+    margin: 0;
+    padding-left: 20px;
+  }
+  .flow-list li {
+    margin-bottom: 6px;
+  }
+  .sub-list {
+    margin-top: 4px;
+    margin-bottom: 4px;
+    padding-left: 20px;
+    list-style-type: lower-alpha;
+  }
+</style>
+</head>
+<body>
+
+  <h2>Use Case Specification</h2>
+
+  <table>
+    <tbody>
+      <!-- Title Row -->
+      <tr>
+        <td colspan="4" class="header-title">UC-18: View and Manage Notifications</td>
+      </tr>
+      
+      <!-- Created Info -->
+      <tr>
+        <td class="label-cell" style="width:15%;">Created By:</td>
+        <td style="width:35%;">Nguyen Khoi Nguyen</td>
+        <td class="label-cell" style="width:15%;">Date Created:</td>
+        <td style="width:35%;">2026-06-17</td>
+      </tr>
+      
+      <!-- Actors -->
+      <tr>
+        <td class="label-cell">Primary Actor:</td>
+        <td>All Authenticated Users</td>
+        <td class="label-cell">Secondary Actors:</td>
+        <td>None</td>
+      </tr>
+      
+      <!-- Trigger -->
+      <tr>
+        <td class="label-cell" colspan="1">Trigger:</td>
+        <td colspan="3">A user receives a new system notification (indicated by a red badge count) and clicks on the notification icon or navigates to the notifications page.</td>
+      </tr>
+      
+      <!-- Description -->
+      <tr>
+        <td class="label-cell" colspan="1">Description:</td>
+        <td colspan="3">The "View and Manage Notifications" use case describes how any authenticated user can view their list of system notifications (e.g., team invitations, project scoring updates, mentorship requests) and manage them by marking them as read, marking all as read, or checking their unread count.</td>
+      </tr>
+      
+      <!-- Preconditions -->
+      <tr>
+        <td class="label-cell" colspan="1">Preconditions:</td>
+        <td colspan="3">
+          <ul class="flow-list">
+            <li><b>PRE-1:</b> The user is successfully logged into the system.</li>
+          </ul>
+        </td>
+      </tr>
+      
+      <!-- Post-conditions -->
+      <tr>
+        <td class="label-cell" colspan="1">Post-conditions:</td>
+        <td colspan="3">
+          <ul class="flow-list">
+            <li><b>POST-1:</b> The user's notification list is retrieved and displayed.</li>
+            <li><b>POST-2:</b> Selected notifications or all notifications are updated to "Read" status in the database.</li>
+          </ul>
+        </td>
+      </tr>
+      
+      <!-- Normal Flow -->
+      <tr>
+        <td class="label-cell" colspan="1">Normal Flow:</td>
+        <td colspan="3">
+          <ol class="flow-list">
+            <li>The user logs into the system dashboard.</li>
+            <li>The system displays a notification bell icon in the header showing the current unread notification count badge <b>[see 1-EF]</b>.</li>
+            <li>The user clicks on the notification bell icon.</li>
+            <li>The system queries the database and displays a dropdown preview of the most recent notifications.</li>
+            <li>The user clicks the "View All Notifications" link.</li>
+            <li>The system displays the full, paginated notifications list page, sorting unread notifications first, followed by read notifications (chronologically, newest first) <b>[see 2-AF]</b>.</li>
+            <li>The user clicks on a specific unread notification or clicks the checkmark "Mark as Read" icon next to it.</li>
+            <li>The system updates the status of that notification to "Read" in the database and decrements the unread count badge in the header <b>[see 1-EF]</b>.</li>
+            <li>The system redirects the user to the relevant page related to the notification (e.g., team invitation page or project details page).</li>
+          </ol>
+        </td>
+      </tr>
+      
+      <!-- Alternative Flows -->
+      <tr>
+        <td class="label-cell" colspan="1">Alternative Flows:</td>
+        <td colspan="3">
+          <p style="margin:0 0 6px 0;"><b>1-AF: Mark all notifications as read</b></p>
+          <ul class="flow-list" style="list-style-type:none; padding-left:10px;">
+            <li>a. In Step 6 of the Normal Flow, the user clicks the "Mark All as Read" button.</li>
+            <li>b. The system updates the status of all the user's unread notifications to "Read" in the database.</li>
+            <li>c. The system resets the unread count badge in the header to zero.</li>
+            <li>d. The use case ends.</li>
+          </ul>
+          
+          <p style="margin:8px 0 6px 0;"><b>2-AF: Filtering notifications</b></p>
+          <ul class="flow-list" style="list-style-type:none; padding-left:10px;">
+            <li>a. In Step 6 of the Normal Flow, the user filters the list by selecting "All" or "Unread".</li>
+            <li>b. The system renders the filtered list based on the user's selection.</li>
+            <li>c. The use case continues from step 7 of the Normal Flow.</li>
+          </ul>
+        </td>
+      </tr>
+      
+      <!-- Exceptions -->
+      <tr>
+        <td class="label-cell" colspan="1">Exceptions:</td>
+        <td colspan="3">
+          <p style="margin:0 0 6px 0;"><b>1-EF: Database operations failure</b></p>
+          <ul class="flow-list" style="list-style-type:none; padding-left:10px;">
+            <li>1. In Step 2, 4, or 8, the system fails to read or write notification data in the database.</li>
+            <li>2. The system displays a warning message: "Failed to load/update notifications. Please try again."</li>
+            <li>3. The use case terminates.</li>
+          </ul>
+        </td>
+      </tr>
+      
+      <!-- Priority & Frequency -->
+      <tr>
+        <td class="label-cell" style="width:15%;">Priority:</td>
+        <td style="width:35%;">Medium</td>
+        <td class="label-cell" style="width:15%;">Frequency of Use:</td>
+        <td style="width:35%;">High (Used regularly as users check updates throughout the event)</td>
+      </tr>
+      
+      <!-- Business Rules -->
+      <tr>
+        <td class="label-cell" colspan="1">Business Rules:</td>
+        <td colspan="3">
+          <ul class="flow-list">
+            <li><b>BR-1: Data Isolation:</b> Users can only view and manage notifications specifically addressed/sent to their own user accounts.</li>
+            <li><b>BR-2: Auto-Generation:</b> Notifications are automatically created by the system when key business events occur (e.g., receiving a team invite, project graded, mentor assigned).</li>
+          </ul>
+        </td>
+      </tr>
+      
+      <!-- Other Information -->
+      <tr>
+        <td class="label-cell" colspan="1">Other Information:</td>
+        <td colspan="3">
+          None.
+        </td>
+      </tr>
+      
+      <!-- Assumptions -->
+      <tr>
+        <td class="label-cell" colspan="1">Assumptions:</td>
+        <td colspan="3">
+          <ul class="flow-list">
+            <li>The system background services are running correctly to log and generate notifications when trigger events happen.</li>
+          </ul>
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+
+</body>
+</html>

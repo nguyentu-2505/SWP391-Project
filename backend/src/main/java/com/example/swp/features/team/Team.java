@@ -65,7 +65,7 @@ public class Team {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @Column(name = "final_score")
+    @Column(name = "final_score", columnDefinition = "DECIMAL(5,2)")
     private java.math.BigDecimal finalScore;
 
     public Long getId() { return id; }

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Use Case Specification - UC-16</title>
+<style>
+  body {
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+    margin: 40px;
+    line-height: 1.4;
+    font-size: 11pt;
+  }
+  h2 {
+    text-align: center;
+    font-family: 'Calibri', sans-serif;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  td {
+    border: 1px solid #000000;
+    padding: 8px 12px;
+    vertical-align: top;
+    font-size: 10pt;
+  }
+  .label-cell {
+    font-weight: bold;
+    width: 20%;
+    background-color: #F3F4F6;
+  }
+  .header-title {
+    background-color: #E5E7EB;
+    font-weight: bold;
+    text-align: center;
+    font-size: 14pt;
+    padding: 10px;
+  }
+  .flow-list {
+    margin: 0;
+    padding-left: 20px;
+  }
+  .flow-list li {
+    margin-bottom: 6px;
+  }
+  .sub-list {
+    margin-top: 4px;
+    margin-bottom: 4px;
+    padding-left: 20px;
+    list-style-type: lower-alpha;
+  }
+</style>
+</head>
+<body>
+
+  <h2>Use Case Specification</h2>
+
+  <table>
+    <tbody>
+      <!-- Title Row -->
+      <tr>
+        <td colspan="4" class="header-title">UC-16: View Round Leaderboard / Rankings</td>
+      </tr>
+      
+      <!-- Created Info -->
+      <tr>
+        <td class="label-cell" style="width:15%;">Created By:</td>
+        <td style="width:35%;">Nguyen Khoi Nguyen</td>
+        <td class="label-cell" style="width:15%;">Date Created:</td>
+        <td style="width:35%;">2026-06-16</td>
+      </tr>
+      
+      <!-- Actors -->
+      <tr>
+        <td class="label-cell">Primary Actor:</td>
+        <td>Public / Guest (Khách vãng lai)</td>
+        <td class="label-cell">Secondary Actors:</td>
+        <td>None</td>
+      </tr>
+      
+      <!-- Trigger -->
+      <tr>
+        <td class="label-cell" colspan="1">Trigger:</td>
+        <td colspan="3">A user visits the Hackathon public web portal and clicks on the "Leaderboard" or "Rankings" section.</td>
+      </tr>
+      
+      <!-- Description -->
+      <tr>
+        <td class="label-cell" colspan="1">Description:</td>
+        <td colspan="3">The "View Round Leaderboard / Rankings" use case describes the process by which any user, including unauthenticated guests, can view the real-time rankings and scores of teams participating in a specific round of a hackathon.</td>
+      </tr>
+      
+      <!-- Preconditions -->
+      <tr>
+        <td class="label-cell" colspan="1">Preconditions:</td>
+        <td colspan="3">
+          <ul class="flow-list">
+            <li><b>PRE-1:</b> The Hackathon event has started and has at least one active or completed round.</li>
+            <li><b>PRE-2:</b> Leaderboard visibility is enabled by the Organizer (or scores are published).</li>
+          </ul>
+        </td>
+      </tr>
+      
+      <!-- Post-conditions -->
+      <tr>
+        <td class="label-cell" colspan="1">Post-conditions:</td>
+        <td colspan="3">
+          <ul class="flow-list">
+            <li><b>POST-1:</b> The system successfully renders the real-time leaderboard table showing team positions, names, and total scores to the user.</li>
+          </ul>
+        </td>
+      </tr>
+      
+      <!-- Normal Flow -->
+      <tr>
+        <td class="label-cell" colspan="1">Normal Flow:</td>
+        <td colspan="3">
+          <ol class="flow-list">
+            <li>The user visits the public Hackathon portal.</li>
+            <li>The user navigates to the "Leaderboard / Rankings" tab.</li>
+            <li>The system displays a dropdown list of active Hackathon events and their rounds.</li>
+            <li>The user selects a specific Hackathon event and the desired Round.</li>
+            <li>The system queries the database to retrieve the latest team scores and calculated rankings for the selected round <b>[see 1-EF]</b>.</li>
+            <li>The system sorts the teams in descending order based on their total scores.</li>
+            <li>The system displays the leaderboard containing: Rank, Team Name, Member Count, Total Score, and Submission Status.</li>
+            <li>The user can type a team name in the search bar to filter the leaderboard results <b>[see 1-AF]</b>.</li>
+          </ol>
+        </td>
+      </tr>
+      
+      <!-- Alternative Flows -->
+      <tr>
+        <td class="label-cell" colspan="1">Alternative Flows:</td>
+        <td colspan="3">
+          <p style="margin:0 0 6px 0;"><b>1-AF: Search query returns no results</b></p>
+          <ul class="flow-list" style="list-style-type:none; padding-left:10px;">
+            <li>a. The user enters a search term that doesn't match any team name.</li>
+            <li>b. The system displays a notice: "No teams found matching your search query."</li>
+            <li>c. The system displays an empty table and allows the user to clear or edit the search query.</li>
+            <li>d. The use case continues from step 7 of the Normal Flow.</li>
+          </ul>
+        </td>
+      </tr>
+      
+      <!-- Exceptions -->
+      <tr>
+        <td class="label-cell" colspan="1">Exceptions:</td>
+        <td colspan="3">
+          <p style="margin:0 0 6px 0;"><b>1-EF: Database query failure</b></p>
+          <ul class="flow-list" style="list-style-type:none; padding-left:10px;">
+            <li>1. The system fails to retrieve the ranking details from the database.</li>
+            <li>2. The system displays an error message: "Failed to load rankings. Please refresh the page or try again later."</li>
+            <li>3. The use case terminates.</li>
+          </ul>
+        </td>
+      </tr>
+      
+      <!-- Priority & Frequency -->
+      <tr>
+        <td class="label-cell" style="width:15%;">Priority:</td>
+        <td style="width:35%;">Medium</td>
+        <td class="label-cell" style="width:15%;">Frequency of Use:</td>
+        <td style="width:35%;">High (Constantly requested by public users during hackathons)</td>
+      </tr>
+      
+      <!-- Business Rules -->
+      <tr>
+        <td class="label-cell" colspan="1">Business Rules:</td>
+        <td colspan="3">
+          <ul class="flow-list">
+            <li><b>BR-1: Open Access:</b> No authentication or user account is required to access the leaderboard.</li>
+            <li><b>BR-2: Real-time Calculation:</b> Rankings are dynamically updated based on the latest approved grades submitted by judges.</li>
+            <li><b>BR-3: Visibility Window:</b> The Organizer can choose to hide or publish the leaderboard for specific rounds (e.g., hiding scores during a final pitch event).</li>
+          </ul>
+        </td>
+      </tr>
+      
+      <!-- Other Information -->
+      <tr>
+        <td class="label-cell" colspan="1">Other Information:</td>
+        <td colspan="3">
+          None.
+        </td>
+      </tr>
+      
+      <!-- Assumptions -->
+      <tr>
+        <td class="label-cell" colspan="1">Assumptions:</td>
+        <td colspan="3">
+          <ul class="flow-list">
+            <li>The system can handle a high volume of concurrent read requests to the leaderboard without database lockups.</li>
+            <li>Judges submit scores in a timely manner, allowing the leaderboard to reflect active progress.</li>
+          </ul>
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+
+</body>
+</html>
