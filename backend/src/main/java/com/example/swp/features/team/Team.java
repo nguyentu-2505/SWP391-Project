@@ -62,6 +62,9 @@ public class Team {
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeamMember> teamMembers;
 
+    @Column(name = "final_score", precision = 10, scale = 4)
+    private java.math.BigDecimal finalScore;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
     public Long getId() { return id; }
@@ -76,6 +79,8 @@ public class Team {
     public User getDisqualifiedBy() { return disqualifiedBy; }
     public List<TeamMember> getTeamMembers() { return teamMembers; }
     public void setTeamMembers(List<TeamMember> teamMembers) { this.teamMembers = teamMembers; }
+    public java.math.BigDecimal getFinalScore() { return finalScore; }
+    public void setFinalScore(java.math.BigDecimal finalScore) { this.finalScore = finalScore; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     public static TeamBuilder builder() { return new TeamBuilder(); }
@@ -91,6 +96,7 @@ public class Team {
         private LocalDateTime disqualifiedAt;
         private User disqualifiedBy;
         private List<TeamMember> teamMembers;
+        private java.math.BigDecimal finalScore;
         private LocalDateTime createdAt;
 
         public TeamBuilder id(Long id) { this.id = id; return this; }
@@ -104,6 +110,7 @@ public class Team {
         public TeamBuilder disqualifiedAt(LocalDateTime disqualifiedAt) { this.disqualifiedAt = disqualifiedAt; return this; }
         public TeamBuilder disqualifiedBy(User disqualifiedBy) { this.disqualifiedBy = disqualifiedBy; return this; }
         public TeamBuilder teamMembers(List<TeamMember> teamMembers) { this.teamMembers = teamMembers; return this; }
+        public TeamBuilder finalScore(java.math.BigDecimal finalScore) { this.finalScore = finalScore; return this; }
         public TeamBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
         
         public Team build() {
@@ -114,6 +121,7 @@ public class Team {
             t.disqualificationReason = this.disqualificationReason;
             t.disqualifiedAt = this.disqualifiedAt;
             t.disqualifiedBy = this.disqualifiedBy;
+            t.finalScore = this.finalScore;
             t.createdAt = this.createdAt;
             return t;
         }

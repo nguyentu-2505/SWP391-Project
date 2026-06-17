@@ -247,6 +247,7 @@ public class TeamServiceImpl implements TeamService {
                         .isLeader(tm.isLeader())
                         .build()
                 ).collect(Collectors.toList()) : null)
+                .finalScore(team.getFinalScore())
                 .build();
     }
 }

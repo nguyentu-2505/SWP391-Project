@@ -37,4 +37,31 @@ public class PrizeController {
         List<PrizeResponse> responses = prizeService.getPrizesByEvent(hackathonEventId);
         return ResponseEntity.ok(responses);
     }
+
+    @PostMapping("/event/{hackathonEventId}/auto-assign")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<List<PrizeResponse>> autoAssignPrizes(@PathVariable Long hackathonEventId) {
+        List<PrizeResponse> responses = prizeService.autoAssignPrizes(hackathonEventId);
+        return ResponseEntity.ok(responses);
+    }
+
+    @PutMapping("/{prizeId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<PrizeResponse> updatePrize(@PathVariable Long prizeId, @RequestBody @jakarta.validation.Valid com.example.swp.features.prize.dto.request.UpdatePrizeRequest request) {
+        PrizeResponse response = prizeService.updatePrize(prizeId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{prizeId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<Void> deletePrize(@PathVariable Long prizeId) {
+        prizeService.deletePrize(prizeId);
+        return ResponseEntity.noContent().build();
+    }
+    
+    @GetMapping("/event/{hackathonEventId}/track/{trackId}")
+    public ResponseEntity<List<PrizeResponse>> getPrizesByEventAndTrack(@PathVariable Long hackathonEventId, @PathVariable Long trackId) {
+        List<PrizeResponse> responses = prizeService.getPrizesByEventAndTrack(hackathonEventId, trackId);
+        return ResponseEntity.ok(responses);
+    }
 }

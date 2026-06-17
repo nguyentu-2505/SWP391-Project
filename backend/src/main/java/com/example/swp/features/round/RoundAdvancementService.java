@@ -9,6 +9,9 @@ import com.example.swp.features.team.TeamRepository;
 import com.example.swp.features.team.TeamStatus;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
+import com.example.swp.features.hackathon_event.HackathonEvent;
+import com.example.swp.features.hackathon_event.HackathonEventRepository;
+import com.example.swp.features.hackathon_event.HackathonStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -31,15 +34,12 @@ public class RoundAdvancementService {
     private final RankingService rankingService;
     private final AuditLogService auditLogService;
     private final UserRepository userRepository;
+    private final HackathonEventRepository hackathonEventRepository;
 
     @Transactional
-    public void advanceTeams(Long fromRoundId) {
+    public String advanceTeams(Long fromRoundId) {
         Round fromRound = roundRepository.findById(fromRoundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found: " + fromRoundId));
-
-        if (fromRound.getAdvancementSlots() == null || fromRound.getAdvancementSlots() <= 0) {
-            throw new IllegalStateException("Round does not have valid advancement slots defined.");
-        }
 
         if (LocalDateTime.now().isBefore(fromRound.getEndTime())) {
             throw new IllegalStateException("Cannot advance teams before the round has ended.");
@@ -53,8 +53,39 @@ public class RoundAdvancementService {
                 fromRound.getHackathonEvent().getId(), fromRound.getRoundOrder() + 1);
         
         if (nextRounds.isEmpty()) {
-            throw new IllegalStateException("Next round does not exist. Cannot advance teams.");
+            HackathonEvent event = fromRound.getHackathonEvent();
+            event.setStatus(HackathonStatus.COMPLETED);
+            hackathonEventRepository.save(event);
+
+            // Calculate final round average scores and update team finalScore
+            List<TeamRankingResponse> rankings = rankingService.getRankingForRound(fromRoundId);
+            if (rankings != null && !rankings.isEmpty()) {
+                List<Long> teamIds = rankings.stream().map(TeamRankingResponse::getTeamId).collect(Collectors.toList());
+                List<Team> teams = teamRepository.findAllById(teamIds);
+                Map<Long, Team> teamMap = teams.stream().collect(Collectors.toMap(Team::getId, t -> t));
+                for (TeamRankingResponse rankResponse : rankings) {
+                    Team team = teamMap.get(rankResponse.getTeamId());
+                    if (team != null) {
+                        team.setFinalScore(rankResponse.getFinalScore());
+                    }
+                }
+                teamRepository.saveAll(teams);
+            }
+
+            auditLogService.logAction(
+                    "COMPLETE_EVENT",
+                    "EVENT",
+                    event.getId(),
+                    "0",
+                    "Event completed. Final round: " + fromRound.getName() + " has ended. Final scores populated."
+            );
+            return "Final round completed. Hackathon event marked as COMPLETED. Final scores updated.";
         }
+
+        if (fromRound.getAdvancementSlots() == null || fromRound.getAdvancementSlots() <= 0) {
+            throw new IllegalStateException("Round does not have valid advancement slots defined.");
+        }
+
         if (nextRounds.size() > 1) {
             throw new IllegalStateException("Ambiguous next round configuration. Multiple rounds found with the same order.");
         }
@@ -111,6 +142,7 @@ public class RoundAdvancementService {
                 "0",
                 "Advanced Teams: [" + teamIdsStr + "] to Round " + toRound.getId()
         );
+        return "Teams advanced successfully to the next round.";
     }
 
     private User getCurrentUser() {

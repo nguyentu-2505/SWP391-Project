@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- SEAL HACKATHON – UNIFIED DATABASE SCRIPT
 -- Password mặc định: password123 (BCrypt hash)
 -- =============================================
@@ -449,31 +449,64 @@ INSERT INTO submission (team_id, round_id, repository_url, demo_url, report_url,
 -- 5.12 judge_assignment (phân công judge chấm bài)
 -- -----------------------------------------------
 INSERT INTO judge_assignment (judge_id, submission_id, assigned_by_organizer_id, status) VALUES
-    (4, 1, 2, 'ASSIGNED'),    -- judge1 chấm submission Team Alpha
-    (4, 2, 2, 'ASSIGNED'),    -- judge1 chấm submission Team Beta
-    (5, 2, 2, 'ASSIGNED'),    -- judge2 cũng chấm submission Team Beta (cross-review)
-    (5, 3, 2, 'ASSIGNED');    -- judge2 chấm submission Team Gamma
+    -- Team Alpha (Sub 1): Judge 4 và Judge 1
+    (4, 1, 2, 'ASSIGNED'),
+    (1, 1, 2, 'ASSIGNED'),
+    -- Team Beta (Sub 2): Judge 1 và Judge 2
+    (1, 2, 2, 'ASSIGNED'),
+    (2, 2, 2, 'ASSIGNED'),
+    -- Team Gamma (Sub 3): Judge 5 và Judge 2
+    (5, 3, 2, 'ASSIGNED'),
+    (2, 3, 2, 'ASSIGNED');
 
 -- -----------------------------------------------
 -- 5.13 score (judge1 đã chấm Team Alpha, judge2 đã chấm Team Gamma)
 -- -----------------------------------------------
 INSERT INTO score (judge_id, submission_id, criterion_id, score_value, comment, is_finalized) VALUES
-    -- judge1 chấm Team Alpha (submission 1) — đã finalize
-    (4, 1, 1, 9,  N'Ý tưởng rất sáng tạo, ứng dụng AI vào giáo dục',                 1),
-    (4, 1, 2, 8,  N'Khả thi nhưng cần thêm kế hoạch monetization',                     1),
-    (4, 1, 3, 7,  N'Code sạch nhưng chưa có unit test',                                1),
-    -- judge2 chấm Team Gamma (submission 3) — chưa finalize
-    (5, 3, 1, 7,  N'Ý tưởng IoT khá phổ biến nhưng cách tiếp cận hay',                0),
-    (5, 3, 2, 8,  N'Có prototype hardware, tính thực tiễn cao',                        0),
-    (5, 3, 3, 6,  N'Cần cải thiện kiến trúc phần mềm',                                0);
+    
+    -- ==========================================
+    -- SUBMISSION 1 (Team Alpha) - 2 Judges
+    -- ==========================================
+    -- Judge 4
+    (4, 1, 1, 8, N'Ý tưởng rất sáng tạo, ứng dụng AI vào giáo dục', 1),
+    (4, 1, 2, 9, N'Khả thi và có kế hoạch monetization rõ ràng', 1),
+    (4, 1, 3, 8, N'Code sạch, có unit test đầy đủ', 1),
+    -- Judge 1
+    (1, 1, 1, 8, N'Ý tưởng tốt, tuy nhiên cần làm rõ hơn về đối tượng người dùng mục tiêu', 1),
+    (1, 1, 2, 9, N'Mô hình kinh doanh rõ ràng, tính khả thi cao', 1),
+    (1, 1, 3, 8, N'Code ổn định, có comment đầy đủ, dễ maintain', 1),
+
+    -- ==========================================
+    -- SUBMISSION 2 (Team Beta) - 2 Judges
+    -- ==========================================
+    -- Judge 1
+    (1, 2, 1, 7, N'Ý tưởng khá an toàn, chưa có nhiều điểm nhấn đột phá', 1),
+    (1, 2, 2, 6, N'Chưa thấy kế hoạch phát triển và mở rộng thị trường dài hạn', 1),
+    (1, 2, 3, 8, N'Kỹ thuật triển khai khá tốt, xử lý lỗi tốt', 1),
+    -- Judge 2
+    (2, 2, 1, 8, N'Có tiềm năng nếu mở rộng scope sang các thị trường ngách', 0),
+    (2, 2, 2, 7, N'Cần cân nhắc lại chi phí vận hành (operational cost)', 0),
+    (2, 2, 3, 7, N'Kiến trúc tạm ổn, nhưng cần tối ưu hóa truy vấn database', 0),
+
+    -- ==========================================
+    -- SUBMISSION 3 (Team Gamma) - 2 Judges
+    -- ==========================================
+    -- Judge 5
+    (5, 3, 1, 8, N'Ý tưởng IoT khá phổ biến nhưng cách tiếp cận hay', 1),
+    (5, 3, 2, 6, N'Có prototype hardware, cần tính toán chi phí sản xuất', 1),
+    (5, 3, 3, 7, N'Cần cải thiện kiến trúc phần mềm', 1),
+    -- Judge 2
+    (2, 3, 1, 8, N'Ý tưởng IoT thực tế, giải quyết đúng pain point của người dùng', 1),
+    (2, 3, 2, 8, N'Prototype tốt nhưng cần tính toán kỹ chi phí hàng loạt', 1),
+    (2, 3, 3, 7, N'Code cần refactor lại một số module để tăng hiệu năng', 1);
 
 -- -----------------------------------------------
 -- 5.14 prize (3 giải thưởng cho event 1)
 -- -----------------------------------------------
 INSERT INTO prize (name, description, hackathon_event_id, track_id, winning_team_id, rank) VALUES
-    (N'Giải Nhất',          N'50 triệu VNĐ + Cơ hội thực tập tại FPT Software',   1, NULL, NULL, 1),
-    (N'Giải Nhì',           N'30 triệu VNĐ + Voucher khóa học Coursera',           1, NULL, NULL, 2),
-    (N'Best AI Solution',   N'20 triệu VNĐ – Giải đặc biệt cho track AI',         1, 1,    NULL, NULL);
+    (N'Giải Nhất',          N'50 triệu VNĐ + Cơ hội thực tập tại FPT Software',   1, 3, NULL, 1),
+    (N'Giải Nhì',           N'30 triệu VNĐ + Voucher khóa học Coursera',           1, 2, NULL, 2),
+    (N'Best AI Solution',   N'20 triệu VNĐ – Giải đặc biệt cho track AI',         1, 1,    NULL, 3);
 
 -- -----------------------------------------------
 -- 5.15 mentorship_request (2 yêu cầu hỗ trợ)

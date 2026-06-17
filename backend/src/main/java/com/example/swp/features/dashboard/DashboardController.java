@@ -16,8 +16,8 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping("/stats")
-    public ResponseEntity<ApiResponse<DashboardStatsResponse>> getStats() {
-        DashboardStatsResponse response = dashboardService.getDashboardStats();
+    public ResponseEntity<ApiResponse<DashboardStatsResponse>> getStats(@org.springframework.web.bind.annotation.RequestParam Long hackathonEventId) {
+        DashboardStatsResponse response = dashboardService.getDashboardStats(hackathonEventId);
         return ResponseEntity.ok(ApiResponse.success(response, "Fetched dashboard stats successfully"));
     }
 }

@@ -6,6 +6,7 @@ public enum HackathonStatus {
     REGISTRATION_OPEN,
     REGISTRATION_CLOSED,
     IN_PROGRESS,
+    ONGOING,
     JUDGING,
     COMPLETED,
     CANCELLED,

@@ -69,6 +69,7 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .userId(auditLog.getUser() != null ? auditLog.getUser().getId() : null)
                 .username(auditLog.getUser() != null ? auditLog.getUser().getUsername() : "SYSTEM")
                 .action(auditLog.getAction())
+                .details(auditLog.getDetails())
                 .entityType(auditLog.getEntityType())
                 .entityId(auditLog.getEntityId())
                 .oldValue(auditLog.getOldValue())

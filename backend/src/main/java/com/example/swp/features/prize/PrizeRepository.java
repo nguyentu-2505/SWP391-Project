@@ -13,6 +13,9 @@ public interface PrizeRepository extends JpaRepository<Prize, Long> {
     List<Prize> findByHackathonEventId(Long hackathonEventId);
     
     @EntityGraph(attributePaths = {"hackathonEvent", "track", "winningTeam"})
+    List<Prize> findByHackathonEventIdAndTrackId(Long hackathonEventId, Long trackId);
+    
+    @EntityGraph(attributePaths = {"hackathonEvent", "track", "winningTeam"})
     List<Prize> findByTrackId(Long trackId);
 
     @EntityGraph(attributePaths = {"hackathonEvent", "track", "winningTeam"})
