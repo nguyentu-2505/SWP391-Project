@@ -41,11 +41,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (header != null && header.startsWith("Bearer ")) {
             token = header.substring(7);
+        } else if (request.getRequestURI().endsWith("/stream") && request.getParameter("token") != null) {
+            // Hỗ trợ Server-Sent Events (SSE) vì EventSource API ở Frontend không gửi được Header
+            token = request.getParameter("token");
+        }
 
-            if (jwtTokenProvider.validateToken(token)) {
-                username = jwtTokenProvider.getUsernameFromJWT(token);
-                roles = jwtTokenProvider.getRolesFromJWT(token);
-            }
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            username = jwtTokenProvider.getUsernameFromJWT(token);
+            roles = jwtTokenProvider.getRolesFromJWT(token);
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

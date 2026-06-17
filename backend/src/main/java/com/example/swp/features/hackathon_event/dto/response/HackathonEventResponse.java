@@ -1,60 +1,40 @@
 package com.example.swp.features.hackathon_event.dto.response;
 
+import com.example.swp.features.hackathon_event.HackathonStatus;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Builder
-@lombok.NoArgsConstructor
-@lombok.AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class HackathonEventResponse {
     private Long id;
     private String name;
     private String slug;
     private String description;
+    private String status;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private LocalDateTime registrationStart;
+    private LocalDateTime registrationEnd;
+    private Integer minTeamSize;
+    private Integer maxTeamSize;
+    private String rules;
     private String imageUrl;
-    private String status;
     private Long organizerId;
     private String organizerName;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    public static HackathonEventResponseBuilder builder() { return new HackathonEventResponseBuilder(); }
-    public static class HackathonEventResponseBuilder {
-        private Long id;
-        private String name;
-        private String slug;
-        private String description;
-        private LocalDateTime startTime;
-        private LocalDateTime endTime;
-        private String imageUrl;
-        private String status;
-        private Long organizerId;
-        private String organizerName;
-
-        public HackathonEventResponseBuilder id(Long id) { this.id = id; return this; }
-        public HackathonEventResponseBuilder name(String name) { this.name = name; return this; }
-        public HackathonEventResponseBuilder slug(String slug) { this.slug = slug; return this; }
-        public HackathonEventResponseBuilder description(String description) { this.description = description; return this; }
-        public HackathonEventResponseBuilder startTime(LocalDateTime startTime) { this.startTime = startTime; return this; }
-        public HackathonEventResponseBuilder endTime(LocalDateTime endTime) { this.endTime = endTime; return this; }
-        public HackathonEventResponseBuilder imageUrl(String imageUrl) { this.imageUrl = imageUrl; return this; }
-        public HackathonEventResponseBuilder status(String status) { this.status = status; return this; }
-        public HackathonEventResponseBuilder organizerId(Long organizerId) { this.organizerId = organizerId; return this; }
-        public HackathonEventResponseBuilder organizerName(String organizerName) { this.organizerName = organizerName; return this; }
-        
-        public HackathonEventResponse build() {
-            HackathonEventResponse r = new HackathonEventResponse();
-            r.id = this.id; r.name = this.name; r.slug = this.slug;
-            r.description = this.description; r.startTime = this.startTime;
-            r.endTime = this.endTime; r.imageUrl = this.imageUrl;
-            r.status = this.status; r.organizerId = this.organizerId;
-            r.organizerName = this.organizerName;
-            return r;
-        }
-    }
+    /**
+     * Danh sách trạng thái hợp lệ tiếp theo.
+     * Frontend có thể dùng để render dropdown chỉ hiện các status được phép.
+     */
+    private Set<HackathonStatus> allowedStatusTransitions;
 }
-
-
