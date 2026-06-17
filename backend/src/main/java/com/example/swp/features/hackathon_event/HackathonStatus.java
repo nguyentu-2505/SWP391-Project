@@ -1,4 +1,4 @@
-package com.example.swp.features.hackathon_event;
+wpackage com.example.swp.features.hackathon_event;
 
 public enum HackathonStatus {
     DRAFT,
@@ -6,6 +6,7 @@ public enum HackathonStatus {
     REGISTRATION_OPEN,
     REGISTRATION_CLOSED,
     IN_PROGRESS,
+    ONGOING,
     JUDGING,
     COMPLETED,
     CANCELLED,

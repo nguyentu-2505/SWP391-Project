@@ -196,19 +196,12 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadRequestException("User not found with this email"));
 
-        passwordResetTokenRepository.deleteByUser(user);
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
+        user.setOtpCode(otpCode);
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        userRepository.save(user);
 
-        String token = java.util.UUID.randomUUID().toString();
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(token)
-                .user(user)
-                .expiryDate(LocalDateTime.now().plusMinutes(15))
-                .build();
-
-        passwordResetTokenRepository.save(resetToken);
-
-        String emailBody = "Your password reset token is: " + token + "\nIt will expire in 15 minutes.";
-        emailService.sendSimpleMessage(user.getEmail(), "Password Reset Request", emailBody);
+        log.info("=== FORGOT PASSWORD OTP FOR {} IS {} ===", user.getEmail(), otpCode);
         
         auditLogService.logAction("FORGOT_PASSWORD_REQUESTED", "USER", user.getId(), null, user.getUsername());
     }
@@ -216,19 +209,21 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void resetPassword(com.example.swp.features.auth.dto.request.ResetPasswordRequest request) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
-                .orElseThrow(() -> new BadRequestException("Invalid reset token"));
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadRequestException("User not found with this email"));
 
-        if (resetToken.isExpired()) {
-            passwordResetTokenRepository.delete(resetToken);
-            throw new BadRequestException("Reset token has expired");
+        if (user.getOtpCode() == null || !user.getOtpCode().equals(request.getOtpCode())) {
+            throw new BadRequestException("Invalid OTP.");
         }
 
-        User user = resetToken.getUser();
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
+        if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("OTP has expired.");
+        }
 
-        passwordResetTokenRepository.delete(resetToken);
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setOtpCode(null);
+        user.setOtpExpiry(null);
+        userRepository.save(user);
 
         auditLogService.logAction("PASSWORD_RESET_SUCCESS", "USER", user.getId(), null, user.getUsername());
     }
