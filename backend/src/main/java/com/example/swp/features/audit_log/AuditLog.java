@@ -42,22 +42,4 @@ public class AuditLog {
     public String getDetails() { return details; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
-    public static AuditLogBuilder builder() { return new AuditLogBuilder(); }
-    public static class AuditLogBuilder {
-        private User user;
-        private String action;
-        private String details;
-
-        public AuditLogBuilder user(User user) { this.user = user; return this; }
-        public AuditLogBuilder action(String action) { this.action = action; return this; }
-        public AuditLogBuilder details(String details) { this.details = details; return this; }
-
-        public AuditLog build() {
-            AuditLog al = new AuditLog();
-            al.user = this.user;
-            al.action = this.action;
-            al.details = this.details;
-            return al;
-        }
-    }
 }
