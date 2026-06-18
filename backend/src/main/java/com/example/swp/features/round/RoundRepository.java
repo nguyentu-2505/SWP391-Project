@@ -11,4 +11,10 @@ public interface RoundRepository extends JpaRepository<Round, Long> {
     List<Round> findByHackathonEventId(Long hackathonEventId);
     Optional<Round> findByHackathonEventIdAndName(Long hackathonEventId, String name);
     List<Round> findByHackathonEventIdAndRoundOrder(Long hackathonEventId, Integer roundOrder);
+
+    /**
+     * Tìm round cuối cùng (roundOrder cao nhất) của một event.
+     * Dùng khi event COMPLETED để lấy ranking vòng chung kết.
+     */
+    Optional<Round> findTopByHackathonEventIdOrderByRoundOrderDesc(Long hackathonEventId);
 }
