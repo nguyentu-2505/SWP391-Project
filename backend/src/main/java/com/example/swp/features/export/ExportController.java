@@ -24,7 +24,7 @@ public class ExportController {
         byte[] csvData = exportService.exportRankingCsv(roundId);
         
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType("text/csv; charset=utf-8"));
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", "ranking_round_" + roundId + ".csv");
         
         return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
@@ -36,7 +36,7 @@ public class ExportController {
         byte[] csvData = exportService.exportAnonymizedScoringCsv(roundId);
         
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType("text/csv; charset=utf-8"));
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", "scoring_round_" + roundId + ".csv");
         
         return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
@@ -48,7 +48,7 @@ public class ExportController {
         byte[] csvData = exportService.exportTeamsCsv();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType("text/csv; charset=utf-8"));
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", "all_teams.csv");
 
         return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
@@ -60,7 +60,7 @@ public class ExportController {
         byte[] csvData = exportService.exportParticipantsCsv();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType("text/csv; charset=utf-8"));
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", "all_participants.csv");
 
         return new ResponseEntity<>(csvData, headers, HttpStatus.OK);

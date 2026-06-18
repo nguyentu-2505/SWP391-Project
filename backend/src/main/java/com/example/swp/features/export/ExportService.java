@@ -101,16 +101,22 @@ public class ExportService {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             out.write(CsvExportUtils.UTF8_BOM);
 
-            String header = "Team ID,Team Name,Project Name,Track Name,Status\n";
+            String header = "Team ID,Team Name,Project Name,Track Name,Status,Final Score\n";
             out.write(header.getBytes(StandardCharsets.UTF_8));
 
             for (com.example.swp.features.team.Team t : teams) {
-                String line = String.format("%d,%s,%s,%s,%s\n",
+                List<Submission> submissions = submissionRepository.findByTeamId(t.getId());
+                List<Long> subIds = submissions.stream().map(Submission::getId).collect(Collectors.toList());
+                List<Score> scores = subIds.isEmpty() ? List.of() : scoreRepository.findBySubmissionIdIn(subIds);
+                java.math.BigDecimal finalScore = rankingService.calculateFinalScore(scores);
+
+                String line = String.format("%d,%s,%s,%s,%s,%s\n",
                         t.getId(),
                         CsvExportUtils.escapeCsvField(t.getName()),
                         CsvExportUtils.escapeCsvField(t.getProjectName()),
                         CsvExportUtils.escapeCsvField(t.getTrack() != null ? t.getTrack().getName() : "None"),
-                        t.getStatus()
+                        t.getStatus(),
+                        finalScore.toString()
                 );
                 out.write(line.getBytes(StandardCharsets.UTF_8));
             }

@@ -1,5 +1,3 @@
-@ -1,514 +0,0 @@
--- =============================================
 -- SEAL HACKATHON – UNIFIED DATABASE SCRIPT
 -- Password mặc định: password123 (BCrypt hash)
 -- =============================================
@@ -639,26 +637,57 @@ INSERT INTO judge_assignment (judge_id, round_id, track_id, assigned_by_organize
     (5, 1, 2, 2, 'ASSIGNED'),    -- judge2 chấm Round 1, Track 2 (Web)
     (5, 1, 3, 2, 'ASSIGNED');    -- judge2 chấm Round 1, Track 3 (IoT)
 
+
 -- -----------------------------------------------
 -- 5.13 score (judge1 đã chấm Team Alpha, judge2 đã chấm Team Gamma)
 -- -----------------------------------------------
 INSERT INTO score (judge_id, submission_id, criterion_id, score_value, comment, is_finalized) VALUES
-    -- judge1 scored Team Alpha (submission 1) — finalized
-    (4, 1, 1, 9,  N'Very creative idea, AI application in education',                 1),
-    (4, 1, 2, 8,  N'Feasible but needs more monetization planning',                     1),
-    (4, 1, 3, 7,  N'Clean code but no unit tests yet',                                1),
-    -- judge2 scored Team Gamma (submission 3) — not finalized
-    (5, 3, 1, 7,  N'IoT idea is quite common but approach is good',                0),
-    (5, 3, 2, 8,  N'Has hardware prototype, high practicality',                        0),
-    (5, 3, 3, 6,  N'Needs to improve software architecture',                                0);
+    
+    -- ==========================================
+    -- SUBMISSION 1 (Team Alpha) - 2 Judges
+    -- ==========================================
+    -- Judge 4
+    (4, 1, 1, 8, N'Ý tưởng rất sáng tạo, ứng dụng AI vào giáo dục', 1),
+    (4, 1, 2, 9, N'Khả thi và có kế hoạch monetization rõ ràng', 1),
+    (4, 1, 3, 8, N'Code sạch, có unit test đầy đủ', 1),
+    -- Judge 1
+    (1, 1, 1, 8, N'Ý tưởng tốt, tuy nhiên cần làm rõ hơn về đối tượng người dùng mục tiêu', 1),
+    (1, 1, 2, 9, N'Mô hình kinh doanh rõ ràng, tính khả thi cao', 1),
+    (1, 1, 3, 8, N'Code ổn định, có comment đầy đủ, dễ maintain', 1),
+
+    -- ==========================================
+    -- SUBMISSION 2 (Team Beta) - 2 Judges
+    -- ==========================================
+    -- Judge 1
+    (1, 2, 1, 7, N'Ý tưởng khá an toàn, chưa có nhiều điểm nhấn đột phá', 1),
+    (1, 2, 2, 6, N'Chưa thấy kế hoạch phát triển và mở rộng thị trường dài hạn', 1),
+    (1, 2, 3, 8, N'Kỹ thuật triển khai khá tốt, xử lý lỗi tốt', 1),
+    -- Judge 2
+    (2, 2, 1, 8, N'Có tiềm năng nếu mở rộng scope sang các thị trường ngách', 0),
+    (2, 2, 2, 7, N'Cần cân nhắc lại chi phí vận hành (operational cost)', 0),
+    (2, 2, 3, 7, N'Kiến trúc tạm ổn, nhưng cần tối ưu hóa truy vấn database', 0),
+
+    -- ==========================================
+    -- SUBMISSION 3 (Team Gamma) - 2 Judges
+    -- ==========================================
+    -- Judge 5
+    (5, 3, 1, 8, N'Ý tưởng IoT khá phổ biến nhưng cách tiếp cận hay', 1),
+    (5, 3, 2, 6, N'Có prototype hardware, cần tính toán chi phí sản xuất', 1),
+    (5, 3, 3, 7, N'Cần cải thiện kiến trúc phần mềm', 1),
+    -- Judge 2
+    (2, 3, 1, 8, N'Ý tưởng IoT thực tế, giải quyết đúng pain point của người dùng', 1),
+    (2, 3, 2, 8, N'Prototype tốt nhưng cần tính toán kỹ chi phí hàng loạt', 1),
+    (2, 3, 3, 7, N'Code cần refactor lại một số module để tăng hiệu năng', 1);
 
 -- -----------------------------------------------
 -- 5.14 prize (3 giải thưởng cho event 1)
 -- -----------------------------------------------
 INSERT INTO prize (name, description, hackathon_event_id, track_id, winning_team_id, rank) VALUES
-    (N'First Prize',          N'50 million VND + Internship opportunity at FPT Software',   1, NULL, NULL, 1),
-    (N'Second Prize',           N'30 million VND + Coursera course voucher',           1, NULL, NULL, 2),
-    (N'Best AI Solution',   N'20 million VND – Special prize for AI track',         1, 1,    NULL, NULL);
+
+    (N'Giải Nhất',          N'50 triệu VNĐ + Cơ hội thực tập tại FPT Software',   1, 3, NULL, 1),
+    (N'Giải Nhì',           N'30 triệu VNĐ + Voucher khóa học Coursera',           1, 2, NULL, 2),
+    (N'Best AI Solution',   N'20 triệu VNĐ – Giải đặc biệt cho track AI',         1, 1,    NULL, 3);
+
 
 -- -----------------------------------------------
 -- 5.15 mentorship_request (2 yêu cầu hỗ trợ)

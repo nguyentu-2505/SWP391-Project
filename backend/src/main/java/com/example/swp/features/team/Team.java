@@ -62,6 +62,9 @@ public class Team {
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TeamMember> teamMembers;
 
+    @Column(name = "final_score", precision = 10, scale = 4)
+    private java.math.BigDecimal finalScore;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -80,6 +83,8 @@ public class Team {
     public User getDisqualifiedBy() { return disqualifiedBy; }
     public List<TeamMember> getTeamMembers() { return teamMembers; }
     public void setTeamMembers(List<TeamMember> teamMembers) { this.teamMembers = teamMembers; }
+    public java.math.BigDecimal getFinalScore() { return finalScore; }
+    public void setFinalScore(java.math.BigDecimal finalScore) { this.finalScore = finalScore; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public java.math.BigDecimal getFinalScore() { return finalScore; }
     public void setFinalScore(java.math.BigDecimal finalScore) { this.finalScore = finalScore; }
@@ -97,6 +102,7 @@ public class Team {
         private LocalDateTime disqualifiedAt;
         private User disqualifiedBy;
         private List<TeamMember> teamMembers;
+        private java.math.BigDecimal finalScore;
         private LocalDateTime createdAt;
         private java.math.BigDecimal finalScore;
 
@@ -111,6 +117,7 @@ public class Team {
         public TeamBuilder disqualifiedAt(LocalDateTime disqualifiedAt) { this.disqualifiedAt = disqualifiedAt; return this; }
         public TeamBuilder disqualifiedBy(User disqualifiedBy) { this.disqualifiedBy = disqualifiedBy; return this; }
         public TeamBuilder teamMembers(List<TeamMember> teamMembers) { this.teamMembers = teamMembers; return this; }
+        public TeamBuilder finalScore(java.math.BigDecimal finalScore) { this.finalScore = finalScore; return this; }
         public TeamBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
         public TeamBuilder finalScore(java.math.BigDecimal finalScore) { this.finalScore = finalScore; return this; }
         
@@ -122,6 +129,7 @@ public class Team {
             t.disqualificationReason = this.disqualificationReason;
             t.disqualifiedAt = this.disqualifiedAt;
             t.disqualifiedBy = this.disqualifiedBy;
+            t.finalScore = this.finalScore;
             t.createdAt = this.createdAt;
             t.finalScore = this.finalScore;
             return t;

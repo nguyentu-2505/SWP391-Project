@@ -23,7 +23,6 @@ public class TeamResponse {
     @Data
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
-
     public static class TeamMemberInfo {
         private Long userId;
         private String username;
@@ -78,5 +77,3 @@ public class TeamResponse {
         }
     }
 }
-
-

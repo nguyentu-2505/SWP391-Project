@@ -37,9 +37,9 @@ public class RankingService {
 
         List<Long> submissionIds = submissions.stream().map(Submission::getId).collect(Collectors.toList());
 
-        // Fetch all scores for submissions in this round (avoids N+1)
-        List<Score> scoresForRound = scoreRepository.findBySubmissionIdIn(submissionIds);
-
+        List<Score> scoresForRound = scoreRepository.findBySubmissionIdIn(submissionIds).stream()
+                .filter(Score::isFinalized)
+                .collect(Collectors.toList());
 
         Map<Submission, List<Score>> scoresBySubmission = scoresForRound.stream()
                 .collect(Collectors.groupingBy(Score::getSubmission));
@@ -85,7 +85,7 @@ public class RankingService {
         return rankings;
     }
 
-    private BigDecimal calculateFinalScore(List<Score> scores) {
+    public BigDecimal calculateFinalScore(List<Score> scores) {
         if (scores.isEmpty()) {
             return BigDecimal.ZERO;
         }

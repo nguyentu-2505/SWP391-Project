@@ -1,5 +1,6 @@
 package com.example.swp.features.prize;
 
+import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.hackathon_event.HackathonEventRepository;
 import com.example.swp.features.team.Team;
@@ -15,43 +16,84 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class PrizeServiceImpl implements PrizeService {
 
     private final PrizeRepository prizeRepository;
     private final HackathonEventRepository hackathonEventRepository;
     private final TrackRepository trackRepository;
     private final TeamRepository teamRepository;
+    private final com.example.swp.features.round.RoundRepository roundRepository;
+    private final com.example.swp.features.ranking.RankingService rankingService;
+    private final com.example.swp.features.audit_log.AuditLogService auditLogService;
 
     @Override
     public PrizeResponse createPrize(CreatePrizeRequest request) {
         HackathonEvent event = hackathonEventRepository.findById(request.getHackathonEventId())
-                .orElseThrow(() -> new RuntimeException("Hackathon event not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
 
         Track track = null;
         if (request.getTrackId() != null) {
             track = trackRepository.findById(request.getTrackId())
-                    .orElseThrow(() -> new RuntimeException("Track not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Track not found"));
         }
+
+        validateUniqueRank(request.getHackathonEventId(), request.getTrackId(), request.getRank(), null);
 
         Prize newPrize = Prize.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .hackathonEvent(event)
                 .track(track)
+                .rank(request.getRank())
                 .build();
 
         Prize savedPrize = prizeRepository.save(newPrize);
+        auditLogService.logAction("CREATE_PRIZE", "PRIZE", savedPrize.getId(), null, "Created prize " + savedPrize.getName());
         return mapToResponse(savedPrize);
     }
 
     @Override
     public PrizeResponse assignPrizeToTeam(Long prizeId, AssignPrizeRequest request) {
         Prize prize = prizeRepository.findById(prizeId)
-                .orElseThrow(() -> new RuntimeException("Prize not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Prize not found"));
         Team team = teamRepository.findById(request.getTeamId())
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+
+        if (prize.getTrack() == null || prize.getRank() == null) {
+            throw new IllegalArgumentException("Cannot assign prize with track NULL or rank NULL");
+        }
+
+        Long teamTrackId = team.getTrack() != null ? team.getTrack().getId() : null;
+        Long prizeTrackId = prize.getTrack().getId();
+        
+        if (teamTrackId == null || !teamTrackId.equals(prizeTrackId)) {
+            throw new IllegalArgumentException("Team track does not match prize track");
+        }
+
+        boolean teamHasPrize = prizeRepository.findByHackathonEventId(prize.getHackathonEvent().getId()).stream()
+                .anyMatch(p -> !p.getId().equals(prizeId) && p.getWinningTeam() != null && p.getWinningTeam().getId().equals(team.getId()));
+        if (teamHasPrize) {
+            throw new IllegalArgumentException("Team has already received a prize in this event");
+        }
+
+        List<Prize> duplicates = prizeRepository.findByHackathonEventId(prize.getHackathonEvent().getId()).stream()
+                .filter(p -> !p.getId().equals(prize.getId()))
+                .filter(p -> p.getRank() != null && p.getRank().equals(prize.getRank()))
+                .filter(p -> {
+                    Long tId = p.getTrack() != null ? p.getTrack().getId() : null;
+                    Long pTId = prize.getTrack() != null ? prize.getTrack().getId() : null;
+                    return java.util.Objects.equals(tId, pTId);
+                })
+                .collect(Collectors.toList());
+        if (!duplicates.isEmpty()) {
+            prizeRepository.deleteAll(duplicates);
+            auditLogService.logAction("DELETE_DUPLICATE_PRIZES", "PRIZE", prize.getId(), null, "Deleted " + duplicates.size() + " duplicate prizes upon manual assignment");
+        }
 
         prize.setWinningTeam(team);
         Prize updatedPrize = prizeRepository.save(prize);
@@ -65,6 +107,143 @@ public class PrizeServiceImpl implements PrizeService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<PrizeResponse> autoAssignPrizes(Long hackathonEventId) {
+        List<com.example.swp.features.round.Round> rounds = roundRepository.findByHackathonEventId(hackathonEventId).stream()
+                .sorted(java.util.Comparator.comparing(com.example.swp.features.round.Round::getRoundOrder).reversed())
+                .collect(Collectors.toList());
+
+        if (rounds.isEmpty()) {
+            throw new ResourceNotFoundException("No rounds found for event");
+        }
+
+        List<com.example.swp.features.ranking.dto.TeamRankingResponse> rankings = List.of();
+        for (com.example.swp.features.round.Round r : rounds) {
+            rankings = rankingService.getRankingForRound(r.getId());
+            if (!rankings.isEmpty()) {
+                break;
+            }
+        }
+        List<Prize> allPrizes = prizeRepository.findByHackathonEventId(hackathonEventId);
+
+        java.util.Map<String, List<Prize>> groupedPrizes = allPrizes.stream()
+                .filter(p -> p.getRank() != null)
+                .collect(Collectors.groupingBy(p -> (p.getTrack() != null ? p.getTrack().getId() : "null") + "-" + p.getRank()));
+
+        List<Prize> validPrizes = new java.util.ArrayList<>();
+        for (List<Prize> group : groupedPrizes.values()) {
+            group.sort(java.util.Comparator.comparing(Prize::getId));
+            validPrizes.add(group.get(0));
+            if (group.size() > 1) {
+                List<Prize> toDelete = group.subList(1, group.size());
+                prizeRepository.deleteAll(toDelete);
+                auditLogService.logAction("DELETE_DUPLICATE_PRIZES", "PRIZE", group.get(0).getId(), null, "Deleted " + toDelete.size() + " duplicate prizes during auto-assign");
+            }
+        }
+
+        // Clear existing winners for valid prizes to prepare for fresh auto-assignment
+        for (Prize prize : validPrizes) {
+            prize.setWinningTeam(null);
+            prizeRepository.save(prize);
+        }
+
+        java.util.Set<Long> awardedTeamIds = new java.util.HashSet<>();
+
+        // Group valid prizes by track
+        java.util.Map<Long, List<Prize>> prizesByTrack = validPrizes.stream()
+                .collect(Collectors.groupingBy(p -> p.getTrack() != null ? p.getTrack().getId() : -1L));
+
+        for (java.util.Map.Entry<Long, List<Prize>> entry : prizesByTrack.entrySet()) {
+            Long trackId = entry.getKey();
+            List<Prize> trackPrizes = entry.getValue();
+            // Sort prizes by rank ascending (1, 2, 3...)
+            trackPrizes.sort(java.util.Comparator.comparing(Prize::getRank));
+
+            List<com.example.swp.features.ranking.dto.TeamRankingResponse> trackRankings = rankings.stream()
+                    .filter(r -> {
+                        Team t = teamRepository.findById(r.getTeamId()).orElse(null);
+                        if (t == null) return false;
+                        Long tId = t.getTrack() != null ? t.getTrack().getId() : -1L;
+                        return tId.equals(trackId);
+                    })
+                    .collect(Collectors.toList());
+
+            int teamIndex = 0;
+            for (Prize prize : trackPrizes) {
+                if (prize.getRank() == null || prize.getRank() <= 0) continue;
+
+                while (teamIndex < trackRankings.size()) {
+                    Long winningTeamId = trackRankings.get(teamIndex).getTeamId();
+                    teamIndex++;
+                    if (!awardedTeamIds.contains(winningTeamId)) {
+                        Team winningTeam = teamRepository.findById(winningTeamId).orElse(null);
+                        prize.setWinningTeam(winningTeam);
+                        prizeRepository.save(prize);
+                        awardedTeamIds.add(winningTeamId);
+                        break;
+                    }
+                }
+            }
+        }
+        return getPrizesByEvent(hackathonEventId);
+    }
+
+    @Override
+    public PrizeResponse updatePrize(Long prizeId, com.example.swp.features.prize.dto.request.UpdatePrizeRequest request) {
+        Prize prize = prizeRepository.findById(prizeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prize not found"));
+        
+        HackathonEvent event = hackathonEventRepository.findById(request.getHackathonEventId())
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
+
+        Track track = null;
+        if (request.getTrackId() != null) {
+            track = trackRepository.findById(request.getTrackId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Track not found"));
+        }
+
+        validateUniqueRank(request.getHackathonEventId(), request.getTrackId(), request.getRank(), prizeId);
+
+        prize.setName(request.getName());
+        prize.setDescription(request.getDescription());
+        prize.setRank(request.getRank());
+        prize.setHackathonEvent(event);
+        prize.setTrack(track);
+        
+        Prize updatedPrize = prizeRepository.save(prize);
+        auditLogService.logAction("UPDATE_PRIZE", "PRIZE", prizeId, null, "Updated prize " + updatedPrize.getName());
+        return mapToResponse(updatedPrize);
+    }
+
+    @Override
+    public void deletePrize(Long prizeId) {
+        Prize prize = prizeRepository.findById(prizeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prize not found"));
+        prizeRepository.delete(prize);
+        auditLogService.logAction("DELETE_PRIZE", "PRIZE", prizeId, null, "Deleted prize " + prize.getName());
+    }
+
+    @Override
+    public List<PrizeResponse> getPrizesByEventAndTrack(Long hackathonEventId, Long trackId) {
+        return prizeRepository.findByHackathonEventIdAndTrackId(hackathonEventId, trackId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    private void validateUniqueRank(Long eventId, Long trackId, Integer rank, Long currentPrizeId) {
+        if (rank == null) return;
+        List<Prize> prizes = prizeRepository.findByHackathonEventId(eventId);
+        for (Prize p : prizes) {
+            if (currentPrizeId != null && p.getId().equals(currentPrizeId)) continue;
+            if (p.getRank() != null && p.getRank().equals(rank)) {
+                Long pTrackId = p.getTrack() != null ? p.getTrack().getId() : null;
+                if (java.util.Objects.equals(trackId, pTrackId)) {
+                    throw new IllegalArgumentException("A prize with rank " + rank + " already exists in this track.");
+                }
+            }
+        }
+    }
+
     private PrizeResponse mapToResponse(Prize prize) {
         return PrizeResponse.builder()
                 .id(prize.getId())
@@ -74,6 +253,7 @@ public class PrizeServiceImpl implements PrizeService {
                 .trackId(prize.getTrack() != null ? prize.getTrack().getId() : null)
                 .winningTeamId(prize.getWinningTeam() != null ? prize.getWinningTeam().getId() : null)
                 .winningTeamName(prize.getWinningTeam() != null ? prize.getWinningTeam().getName() : null)
+                .rank(prize.getRank())
                 .build();
     }
 }

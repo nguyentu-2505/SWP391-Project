@@ -41,7 +41,8 @@ public class Prize {
     @JoinColumn(name = "winning_team_id")
     private Team winningTeam;
 
-    private int rank;
+    @Column(name = "[rank]")
+    private Integer rank;
 
     public Long getId() { return id; }
     public String getName() { return name; }
@@ -59,7 +60,7 @@ public class Prize {
         private HackathonEvent hackathonEvent;
         private Track track;
         private Team winningTeam;
-        private int rank;
+        private Integer rank;
 
         public PrizeBuilder id(Long id) { this.id = id; return this; }
         public PrizeBuilder name(String name) { this.name = name; return this; }
@@ -67,7 +68,7 @@ public class Prize {
         public PrizeBuilder hackathonEvent(HackathonEvent hackathonEvent) { this.hackathonEvent = hackathonEvent; return this; }
         public PrizeBuilder track(Track track) { this.track = track; return this; }
         public PrizeBuilder winningTeam(Team winningTeam) { this.winningTeam = winningTeam; return this; }
-        public PrizeBuilder rank(int rank) { this.rank = rank; return this; }
+        public PrizeBuilder rank(Integer rank) { this.rank = rank; return this; }
 
         public Prize build() {
             Prize p = new Prize();
