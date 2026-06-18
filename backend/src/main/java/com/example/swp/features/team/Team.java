@@ -64,6 +64,10 @@ public class Team {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @Column(name = "final_score", columnDefinition = "DECIMAL(5,2)")
+    private java.math.BigDecimal finalScore;
+
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getProjectName() { return projectName; }
@@ -77,6 +81,8 @@ public class Team {
     public List<TeamMember> getTeamMembers() { return teamMembers; }
     public void setTeamMembers(List<TeamMember> teamMembers) { this.teamMembers = teamMembers; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public java.math.BigDecimal getFinalScore() { return finalScore; }
+    public void setFinalScore(java.math.BigDecimal finalScore) { this.finalScore = finalScore; }
 
     public static TeamBuilder builder() { return new TeamBuilder(); }
     public static class TeamBuilder {
@@ -92,6 +98,7 @@ public class Team {
         private User disqualifiedBy;
         private List<TeamMember> teamMembers;
         private LocalDateTime createdAt;
+        private java.math.BigDecimal finalScore;
 
         public TeamBuilder id(Long id) { this.id = id; return this; }
         public TeamBuilder name(String name) { this.name = name; return this; }
@@ -105,6 +112,7 @@ public class Team {
         public TeamBuilder disqualifiedBy(User disqualifiedBy) { this.disqualifiedBy = disqualifiedBy; return this; }
         public TeamBuilder teamMembers(List<TeamMember> teamMembers) { this.teamMembers = teamMembers; return this; }
         public TeamBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
+        public TeamBuilder finalScore(java.math.BigDecimal finalScore) { this.finalScore = finalScore; return this; }
         
         public Team build() {
             Team t = new Team();
@@ -115,6 +123,7 @@ public class Team {
             t.disqualifiedAt = this.disqualifiedAt;
             t.disqualifiedBy = this.disqualifiedBy;
             t.createdAt = this.createdAt;
+            t.finalScore = this.finalScore;
             return t;
         }
     }

@@ -14,6 +14,8 @@ import com.example.swp.features.user.Role;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.audit_log.AuditLogService;
+import com.example.swp.features.criterion.Criterion;
+import com.example.swp.features.criterion.CriterionRepository;
 import com.github.slugify.Slugify;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +42,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final RoundRepository roundRepository;
     private final RankingService rankingService;
     private final ApplicationEventPublisher eventPublisher;
+    private final CriterionRepository criterionRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     // ==================== CREATE ====================
@@ -85,11 +88,24 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .build();
 
         HackathonEvent savedEvent = hackathonEventRepository.save(event);
-        auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent",
-                savedEvent.getId(), null, "Created event: " + savedEvent.getName());
-        log.info("Hackathon event created: id={}, name='{}', organizer='{}'",
-                savedEvent.getId(), savedEvent.getName(), organizer.getUsername());
+        // Auto-seed default criteria
+        List<Criterion> defaultCriteria = criterionRepository.findByHackathonEventIsNull();
+        if (!defaultCriteria.isEmpty()) {
+            List<Criterion> clonedCriteria = defaultCriteria.stream()
+                    .map(c -> Criterion.builder()
+                            .name(c.getName())
+                            .description(c.getDescription())
+                            .maxScore(c.getMaxScore())
+                            .weight(c.getWeight())
+                            .hackathonEvent(savedEvent)
+                            .build())
+                    .collect(Collectors.toList());
+            criterionRepository.saveAll(clonedCriteria);
+            log.info("Auto-seeded {} default criteria for new event id={}", clonedCriteria.size(), savedEvent.getId());
+        }
 
+        auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent", savedEvent.getId(), null, "Created event: " + savedEvent.getName());
+        log.info("Hackathon event created successfully: id={}, name={} by organizer={}", savedEvent.getId(), savedEvent.getName(), organizer.getUsername());
         return mapToResponse(savedEvent);
     }
 

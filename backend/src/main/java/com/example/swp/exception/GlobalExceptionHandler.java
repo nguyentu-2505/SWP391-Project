@@ -74,10 +74,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex, WebRequest request) {
-        ex.printStackTrace();
+    public ResponseEntity<ApiResponse<Void>> handleAllExceptions(Exception ex, WebRequest request) {
         return new ResponseEntity<>(
-                ApiResponse.error("INTERNAL_SERVER_ERROR", "An unexpected error occurred."),
+                ApiResponse.error("INTERNAL_SERVER_ERROR", ex.toString() + " | " + ex.getMessage()),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }

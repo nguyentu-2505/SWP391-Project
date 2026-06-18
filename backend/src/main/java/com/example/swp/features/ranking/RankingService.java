@@ -5,6 +5,7 @@ import com.example.swp.features.score.Score;
 import com.example.swp.features.score.ScoreRepository;
 import com.example.swp.features.submission.Submission;
 import com.example.swp.features.submission.SubmissionRepository;
+import com.example.swp.features.criterion.Criterion;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -48,11 +49,29 @@ public class RankingService {
                     Submission submission = entry.getKey();
                     List<Score> submissionScores = entry.getValue();
                     BigDecimal finalScore = calculateFinalScore(submissionScores);
+
+                    // Tính điểm trung bình cho từng tiêu chí
+                    Map<Criterion, Double> avgScores = submissionScores.stream()
+                            .collect(Collectors.groupingBy(
+                                    Score::getCriterion,
+                                    Collectors.averagingDouble(Score::getScoreValue)
+                            ));
+
+                    List<TeamRankingResponse.CriterionScoreDto> breakdown = avgScores.entrySet().stream()
+                            .map(e -> TeamRankingResponse.CriterionScoreDto.builder()
+                                    .criterionId(e.getKey().getId())
+                                    .criterionName(e.getKey().getName())
+                                    .averageScore(BigDecimal.valueOf(e.getValue()).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                                    .weight(e.getKey().getWeight())
+                                    .build())
+                            .collect(Collectors.toList());
+
                     return TeamRankingResponse.builder()
                             .teamId(submission.getTeam().getId())
                             .teamName(submission.getTeam().getName())
                             .projectName(submission.getTeam().getProjectName())
                             .finalScore(finalScore)
+                            .criterionBreakdown(breakdown)
                             .build();
                 })
                 .sorted(Comparator.comparing(TeamRankingResponse::getFinalScore).reversed())
