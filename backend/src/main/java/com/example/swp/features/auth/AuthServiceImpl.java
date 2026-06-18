@@ -35,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String TEMP_PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    private final AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;  
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
@@ -150,15 +150,13 @@ public class AuthServiceImpl implements AuthService {
     /**
      * Creates a temporary Guest Judge account on behalf of an Organizer.
      * WHY: Guest judges are external (non-FPT) evaluators who do not go through
-     * the normal OTP registration flow. Organizer creates them directly and
-     * sends credentials via email.
+     * the normal OTP registration flow. Organizer creates them directly.
      *
      * Security:
      * - Guest judges get role GUEST_JUDGE (cannot mentor, cannot manage events)
      * - Account is marked is_temporary=true for easy cleanup post-event
      * - Auto-approved and auto-verified to bypass normal gating
-     * - Password is randomly generated (12 chars, alphanumeric)
-     * - Email failure will rollback transaction to prevent orphaned accounts.
+     * - Password is provided by the organizer in the request
      */
     @Override
     @Transactional
@@ -170,13 +168,11 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Error: Email is already in use!");
         }
 
-        String tempPassword = generateTemporaryPassword(12);
-
         User guestJudge = new User();
         guestJudge.setUsername(request.getUsername());
         guestJudge.setEmail(request.getEmail());
         guestJudge.setFullName(request.getFullName());
-        guestJudge.setPassword(passwordEncoder.encode(tempPassword));
+        guestJudge.setPassword(passwordEncoder.encode(request.getPassword()));
         guestJudge.setRole(Role.GUEST_JUDGE);
         guestJudge.setApproved(true);      // auto-approved – no admin review needed
         guestJudge.setVerified(true);      // skip OTP – organizer vouches for them
@@ -192,26 +188,6 @@ public class AuthServiceImpl implements AuthService {
             null,
             request.getUsername()
         );
-
-        // Send credentials to guest judge via email
-        String emailBody = String.format(
-            "You have been invited as a Guest Judge for SEAL Hackathon.\n\n" +
-            "Login credentials:\n" +
-            "  Username : %s\n" +
-            "  Password : %s\n\n" +
-            "Please change your password after first login.",
-            request.getUsername(), tempPassword
-        );
-        emailService.sendSimpleMessage(request.getEmail(), "SEAL Hackathon – Guest Judge Account", emailBody);
-    }
-
-    /** Generates a cryptographically-random alphanumeric password of the given length. */
-    private String generateTemporaryPassword(int length) {
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(TEMP_PASSWORD_CHARS.charAt(SECURE_RANDOM.nextInt(TEMP_PASSWORD_CHARS.length())));
-        }
-        return sb.toString();
     }
 
     @Override
@@ -220,19 +196,12 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadRequestException("User not found with this email"));
 
-        passwordResetTokenRepository.deleteByUser(user);
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
+        user.setOtpCode(otpCode);
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        userRepository.save(user);
 
-        String token = java.util.UUID.randomUUID().toString();
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(token)
-                .user(user)
-                .expiryDate(LocalDateTime.now().plusMinutes(15))
-                .build();
-
-        passwordResetTokenRepository.save(resetToken);
-
-        String emailBody = "Your password reset token is: " + token + "\nIt will expire in 15 minutes.";
-        emailService.sendSimpleMessage(user.getEmail(), "Password Reset Request", emailBody);
+        log.info("=== FORGOT PASSWORD OTP FOR {} IS {} ===", user.getEmail(), otpCode);
         
         auditLogService.logAction("FORGOT_PASSWORD_REQUESTED", "USER", user.getId(), null, user.getUsername());
     }
@@ -240,19 +209,21 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void resetPassword(com.example.swp.features.auth.dto.request.ResetPasswordRequest request) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
-                .orElseThrow(() -> new BadRequestException("Invalid reset token"));
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadRequestException("User not found with this email"));
 
-        if (resetToken.isExpired()) {
-            passwordResetTokenRepository.delete(resetToken);
-            throw new BadRequestException("Reset token has expired");
+        if (user.getOtpCode() == null || !user.getOtpCode().equals(request.getOtpCode())) {
+            throw new BadRequestException("Invalid OTP.");
         }
 
-        User user = resetToken.getUser();
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
+        if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("OTP has expired.");
+        }
 
-        passwordResetTokenRepository.delete(resetToken);
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setOtpCode(null);
+        user.setOtpExpiry(null);
+        userRepository.save(user);
 
         auditLogService.logAction("PASSWORD_RESET_SUCCESS", "USER", user.getId(), null, user.getUsername());
     }

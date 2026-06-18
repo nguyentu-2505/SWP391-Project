@@ -1,4 +1,4 @@
-package com.example.swp.features.hackathon_event;
+wpackage com.example.swp.features.hackathon_event;
 
 public enum HackathonStatus {
     DRAFT,

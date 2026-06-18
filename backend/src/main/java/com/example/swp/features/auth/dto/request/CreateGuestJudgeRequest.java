@@ -14,6 +14,9 @@ public class CreateGuestJudgeRequest {
     @NotBlank(message = "Username cannot be empty")
     private String username;
 
+    @NotBlank(message = "Password cannot be empty")
+    private String password;
+
     @NotBlank(message = "Email cannot be empty")
     @Email(message = "Must be a valid email address")
     private String email;
@@ -21,6 +24,7 @@ public class CreateGuestJudgeRequest {
     private String fullName;
 
     public String getUsername() { return username; }
+    public String getPassword() { return password; }
     public String getEmail() { return email; }
     public String getFullName() { return fullName; }
 }

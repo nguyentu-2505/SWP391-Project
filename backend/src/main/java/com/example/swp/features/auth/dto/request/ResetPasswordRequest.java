@@ -6,13 +6,17 @@ import lombok.Data;
 
 @Data
 public class ResetPasswordRequest {
-    @NotBlank(message = "Token cannot be empty")
-    private String token;
+    @NotBlank(message = "Email cannot be empty")
+    private String email;
+
+    @NotBlank(message = "OTP Code cannot be empty")
+    private String otpCode;
 
     @NotBlank(message = "New password cannot be empty")
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String newPassword;
 
-    public String getToken() { return token; }
+    public String getEmail() { return email; }
+    public String getOtpCode() { return otpCode; }
     public String getNewPassword() { return newPassword; }
 }
