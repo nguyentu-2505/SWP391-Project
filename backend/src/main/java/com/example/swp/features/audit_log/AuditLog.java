@@ -2,10 +2,7 @@ package com.example.swp.features.audit_log;
 
 import com.example.swp.features.user.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -27,19 +24,25 @@ public class AuditLog {
     private User user;
 
     @Column(nullable = false)
-    private String action; // e.g., "DELETE_SUBMISSION", "APPROVE_USER"
+    private String action;
 
-    @Column(name = "details", columnDefinition = "TEXT")
-    private String details; // e.g., "User 'admin' deleted submission with ID 123 for reason: 'Plagiarism'"
+    @Column(name = "entity_type")
+    private String entityType;
+
+    @Column(name = "entity_id")
+    private Long entityId;
+
+    @Column(name = "old_value", columnDefinition = "nvarchar(max)")
+    private String oldValue;
+
+    @Column(name = "new_value", columnDefinition = "nvarchar(max)")
+    private String newValue;
+
+    @Lob
+    @Column(name = "details")
+    private String details;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-
-    public Long getId() { return id; }
-    public User getUser() { return user; }
-    public String getAction() { return action; }
-    public String getDetails() { return details; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-
 }

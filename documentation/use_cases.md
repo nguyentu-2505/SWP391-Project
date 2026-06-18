@@ -26,12 +26,12 @@
 *   **Description:** A team can request help and guidance from a mentor.
 
 **7. View and Score Submissions**
-*   **Actor:** Judge
-*   **Description:** A judge can view the list of projects submitted for a hackathon and score them based on predefined criteria.
+*   **Actor:** Judge, Guest_Judge
+*   **Description:** A judge or guest judge can view the list of projects submitted for a hackathon and score them based on predefined criteria.
 
 **8. Provide Feedback**
-*   **Actor:** Judge, Mentor
-*   **Description:** A judge or mentor can provide feedback on a submitted project.
+*   **Actor:** Judge, Guest_Judge, Mentor
+*   **Description:** A judge, guest judge, or mentor can provide feedback on a submitted project.
 
 **9. Manage Hackathon**
 *   **Actor:** Organizer

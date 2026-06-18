@@ -1,4 +1,4 @@
-wpackage com.example.swp.features.hackathon_event;
+package com.example.swp.features.hackathon_event;
 
 import java.util.Map;
 import java.util.Set;
