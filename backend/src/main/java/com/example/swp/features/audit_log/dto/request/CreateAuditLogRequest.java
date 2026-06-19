@@ -8,7 +8,4 @@ public class CreateAuditLogRequest {
     private String action;
     private String details;
 
-    public Long getUserId() { return userId; }
-    public String getAction() { return action; }
-    public String getDetails() { return details; }
 }

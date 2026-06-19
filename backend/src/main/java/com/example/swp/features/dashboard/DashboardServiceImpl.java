@@ -3,7 +3,7 @@ package com.example.swp.features.dashboard;
 import com.example.swp.features.dashboard.dto.DashboardStatsResponse;
 import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.hackathon_event.HackathonEventRepository;
-import com.example.swp.features.hackathon_event.HackathonStatus;
+
 import com.example.swp.features.mentorship_request.MentorshipRequestRepository;
 import com.example.swp.features.mentorship_request.MentorshipRequestStatus;
 import com.example.swp.features.submission.Submission;
@@ -11,8 +11,7 @@ import com.example.swp.features.submission.SubmissionRepository;
 import com.example.swp.features.team.TeamRepository;
 import com.example.swp.features.score.ScoreRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

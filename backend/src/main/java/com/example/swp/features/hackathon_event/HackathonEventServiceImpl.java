@@ -43,6 +43,8 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final RankingService rankingService;
     private final ApplicationEventPublisher eventPublisher;
     private final CriterionRepository criterionRepository;
+    private final com.example.swp.features.team.TeamRepository teamRepository;
+    private final com.example.swp.features.team_member.TeamMemberRepository teamMemberRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     // ==================== CREATE ====================
@@ -250,6 +252,25 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 );
             }
             log.info("Sent notifications to {} participants for newly published event id={}", participants.size(), updatedEvent.getId());
+        }
+
+        // NẾU EVENT CHUYỂN SANG IN_PROGRESS -> QUÉT VÀ LOẠI CÁC TEAM KHÔNG ĐỦ MIN_TEAM_SIZE
+        if (currentStatus == HackathonStatus.PUBLISHED && newStatus == HackathonStatus.IN_PROGRESS) {
+            List<com.example.swp.features.team.Team> eventTeams = teamRepository.findByEventId(updatedEvent.getId());
+            int disqualifiedCount = 0;
+            for (com.example.swp.features.team.Team team : eventTeams) {
+                if (team.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+                    long currentSize = teamMemberRepository.countByTeamId(team.getId());
+                    if (currentSize < updatedEvent.getMinTeamSize()) {
+                        team.setStatus(com.example.swp.features.team.TeamStatus.DISQUALIFIED);
+                        team.setDisqualificationReason("Not enough members (" + currentSize + "/" + updatedEvent.getMinTeamSize() + ") when registration closed.");
+                        team.setDisqualifiedAt(java.time.LocalDateTime.now());
+                        teamRepository.save(team);
+                        disqualifiedCount++;
+                    }
+                }
+            }
+            log.info("Transition to IN_PROGRESS: Disqualified {} teams for not meeting minTeamSize={}", disqualifiedCount, updatedEvent.getMinTeamSize());
         }
 
         // NẾU EVENT COMPLETED -> PUBLISH EVENT ĐỂ GỬI NOTIFICATION KẾT QUẢ TOP 1-2-3 (ASYNC)

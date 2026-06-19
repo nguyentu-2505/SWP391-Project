@@ -50,9 +50,25 @@ public class TeamServiceImpl implements TeamService {
 
         HackathonEvent event = eventRepository.findById(request.getEventId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
+
+        if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
+            throw new IllegalStateException("Teams can only be created when the hackathon is PUBLISHED (registration is open).");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (event.getRegistrationStart() != null && now.isBefore(event.getRegistrationStart())) {
+            throw new IllegalStateException("Registration has not started yet.");
+        }
+        if (event.getRegistrationEnd() != null && now.isAfter(event.getRegistrationEnd())) {
+            throw new IllegalStateException("Registration has closed.");
+        }
                 
         Track track = trackRepository.findById(request.getTrackId())
                 .orElseThrow(() -> new ResourceNotFoundException("Track not found"));
+
+        if (!track.getHackathonEvent().getId().equals(event.getId())) {
+            throw new com.example.swp.exception.BadRequestException("Track does not belong to this event");
+        }
 
         // Check if user is registered for the event
         registrationRepository.findByEventAndUser(event, currentUser)
@@ -193,6 +209,9 @@ public class TeamServiceImpl implements TeamService {
         if (request.getTrackId() != null) {
             Track track = trackRepository.findById(request.getTrackId())
                     .orElseThrow(() -> new ResourceNotFoundException("Track not found"));
+            if (!track.getHackathonEvent().getId().equals(team.getEvent().getId())) {
+                throw new com.example.swp.exception.BadRequestException("Track does not belong to this event");
+            }
             team.setTrack(track);
         }
 

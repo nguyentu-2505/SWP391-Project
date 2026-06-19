@@ -1,7 +1,7 @@
 package com.example.swp.security.service;
 
 import com.example.swp.features.user.User;
-import lombok.AllArgsConstructor;
+
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

@@ -26,12 +26,8 @@ public class AuditLogServiceImpl implements AuditLogService {
         
         AuditLog auditLog = AuditLog.builder()
                 .user(user)
-                .action(action)
-                .entityType(entityType)
-                .entityId(entityId)
-                .oldValue(oldValue)
-                .newValue(newValue)
-                .details(details)
+                .action(request.getAction())
+                .details(request.getDetails())
                 .build();
         
         AuditLog savedLog = auditLogRepository.save(auditLog);
@@ -75,10 +71,6 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .username(auditLog.getUser() != null ? auditLog.getUser().getUsername() : "SYSTEM")
                 .action(auditLog.getAction())
                 .details(auditLog.getDetails())
-                .entityType(auditLog.getEntityType())
-                .entityId(auditLog.getEntityId())
-                .oldValue(auditLog.getOldValue())
-                .newValue(auditLog.getNewValue())
                 .createdAt(auditLog.getCreatedAt())
                 .build();
     }
