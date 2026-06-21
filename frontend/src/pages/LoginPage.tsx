@@ -71,6 +71,9 @@ const LoginPage: React.FC = () => {
                     type="button"
                     variant="secondary"
                     className="w-full bg-white shadow-sm"
+                    onClick={() => {
+                        window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+                    }}
                     leftIcon={
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>

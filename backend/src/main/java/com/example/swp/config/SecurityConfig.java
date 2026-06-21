@@ -2,6 +2,7 @@ package com.example.swp.config;
 
 import com.example.swp.security.jwt.JwtAuthenticationFilter;
 import com.example.swp.security.service.UserDetailsServiceImpl;
+import com.example.swp.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,6 +33,7 @@ public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
@@ -86,6 +88,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/rankings/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
                 );
 
         http.authenticationProvider(authenticationProvider());

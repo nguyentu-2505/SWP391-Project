@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import VerifyOtpPage from './pages/VerifyOtpPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import CertificatesPage from './pages/CertificatesPage';
@@ -66,6 +67,7 @@ function App() {
         <Routes>
           {/* Routes that don't use any specific layout */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

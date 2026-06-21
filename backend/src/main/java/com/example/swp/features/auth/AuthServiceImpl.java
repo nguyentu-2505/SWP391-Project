@@ -113,11 +113,22 @@ public class AuthServiceImpl implements AuthService {
         user.setFptStudentId(request.getFptStudentId());
         user.setRole(Role.PARTICIPANT);
         user.setApproved(false);
-        user.setVerified(true); // Automatically verified, email sending bypassed
+        user.setVerified(false); // Require OTP verification
+
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
+        user.setOtpCode(otpCode);
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
 
         try {
             userRepository.save(user);
             log.info("New user registered successfully: {}", user.getUsername());
+            
+            String emailBody = "Hello " + user.getUsername() + ",\n\n" +
+                               "Thank you for registering. Your 6-digit OTP for account verification is: " + otpCode + "\n" +
+                               "It will expire in 5 minutes.\n\n" +
+                               "Best regards,\nHackathon Event Notification Team";
+            emailService.sendSimpleMessage(user.getEmail(), "Account Verification OTP", emailBody);
+            
         } catch (org.springframework.dao.DataIntegrityViolationException ex) {
             log.error("Database constraint violation during registration: {}", ex.getMessage());
             throw new BadRequestException("Username or Email is already registered");
@@ -201,7 +212,8 @@ public class AuthServiceImpl implements AuthService {
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
         userRepository.save(user);
 
-        log.info("=== FORGOT PASSWORD OTP FOR {} IS {} ===", user.getEmail(), otpCode);
+        String emailBody = "Hello,\n\nYour 6-digit OTP for password reset is: " + otpCode + "\nIt will expire in 5 minutes.\n\nBest regards,\nHackathon Event Notification Team";
+        emailService.sendSimpleMessage(user.getEmail(), "Password Reset OTP", emailBody);
         
         auditLogService.logAction("FORGOT_PASSWORD_REQUESTED", "USER", user.getId(), null, user.getUsername());
     }
