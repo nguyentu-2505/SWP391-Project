@@ -36,7 +36,6 @@ public class SubmissionController {
     @GetMapping("/team/{teamId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<SubmissionResponse>>> getSubmissionsByTeam(@PathVariable Long teamId) {
-        // TODO: Add security check to ensure a participant can only see their own team's submissions
         List<SubmissionResponse> responses = submissionService.getSubmissionsByTeam(teamId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }

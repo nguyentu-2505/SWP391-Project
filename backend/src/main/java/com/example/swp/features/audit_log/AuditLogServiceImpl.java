@@ -52,13 +52,14 @@ public class AuditLogServiceImpl implements AuditLogService {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUsername(username).orElse(null); // Can be null for system actions
 
+        String details = String.format("Entity: %s, ID: %d", entityType, entityId);
+        if (oldValue != null) details += ", Old: " + oldValue;
+        if (newValue != null) details += ", New: " + newValue;
+
         AuditLog auditLog = AuditLog.builder()
                 .user(currentUser)
                 .action(action)
-                .entityType(entityType)
-                .entityId(entityId)
-                .oldValue(oldValue)
-                .newValue(newValue)
+                .details(details)
                 .build();
         auditLogRepository.save(auditLog);
     }
@@ -69,10 +70,7 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .userId(auditLog.getUser() != null ? auditLog.getUser().getId() : null)
                 .username(auditLog.getUser() != null ? auditLog.getUser().getUsername() : "SYSTEM")
                 .action(auditLog.getAction())
-                .entityType(auditLog.getEntityType())
-                .entityId(auditLog.getEntityId())
-                .oldValue(auditLog.getOldValue())
-                .newValue(auditLog.getNewValue())
+                .details(auditLog.getDetails())
                 .createdAt(auditLog.getCreatedAt())
                 .build();
     }

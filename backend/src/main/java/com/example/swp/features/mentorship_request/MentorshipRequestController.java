@@ -40,6 +40,13 @@ public class MentorshipRequestController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MENTOR', 'PARTICIPANT', 'ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<MentorshipRequestResponse>> getRequestDetail(@PathVariable Long id) {
+        MentorshipRequestResponse response = requestService.getRequestById(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @PatchMapping("/{id}/accept")
     @PreAuthorize("hasRole('MENTOR')")
     public ResponseEntity<ApiResponse<MentorshipRequestResponse>> acceptRequest(@PathVariable Long id) {

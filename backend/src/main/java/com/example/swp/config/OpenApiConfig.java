@@ -137,4 +137,12 @@ public class OpenApiConfig {
                 .packagesToScan("com.example.swp.features.audit_log")
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi dashboardApi() {
+        return GroupedOpenApi.builder()
+                .group("Dashboard")
+                .packagesToScan("com.example.swp.features.dashboard")
+                .build();
+    }
 }

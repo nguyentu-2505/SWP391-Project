@@ -5,12 +5,13 @@ import com.example.swp.features.notification.dto.response.NotificationResponse;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
@@ -18,13 +19,12 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final SseEmitterService sseEmitterService;
 
-    public List<NotificationResponse> getMyNotifications() {
+    public Page<NotificationResponse> getMyNotifications(Pageable pageable) {
         User currentUser = getCurrentUser();
-        return notificationRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId())
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId(), pageable)
+                .map(this::mapToResponse);
     }
 
     public long getUnreadNotificationCount() {
@@ -64,7 +64,12 @@ public class NotificationService {
                 .referenceId(refId)
                 .isRead(false)
                 .build();
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+
+        // Push real-time qua SSE (nếu user đang online)
+        sseEmitterService.pushNotification(user.getId(), mapToResponse(saved));
+        long unreadCount = notificationRepository.countByUserIdAndIsReadFalse(user.getId());
+        sseEmitterService.pushUnreadCount(user.getId(), unreadCount);
     }
 
     private User getCurrentUser() {

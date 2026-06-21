@@ -23,6 +23,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+import com.example.swp.features.judge_assignment.JudgeAssignment;
+import com.example.swp.features.judge_assignment.JudgeAssignmentRepository;
+import com.example.swp.features.user.Role;
+import java.util.Objects;
+import java.util.Set;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,6 +39,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final RoundRepository roundRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
+    private final JudgeAssignmentRepository judgeAssignmentRepository;
 
     @Override
     @Transactional
@@ -106,6 +113,30 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     public List<SubmissionResponse> getSubmissionsByRound(Long roundId) {
+        User currentUser = getCurrentUser();
+        
+        if (currentUser.getRole() == Role.JUDGE || currentUser.getRole() == Role.GUEST_JUDGE) {
+            List<JudgeAssignment> assignments = judgeAssignmentRepository.findByJudgeIdAndRoundId(currentUser.getId(), roundId);
+            if (assignments.isEmpty()) {
+                throw new AccessDeniedException("Bạn không được phân công chấm điểm trong vòng thi này.");
+            }
+
+            boolean isAssignedToAllTracks = assignments.stream()
+                    .anyMatch(a -> a.getTrack() == null);
+
+            if (!isAssignedToAllTracks) {
+                Set<Long> assignedTrackIds = assignments.stream()
+                        .map(a -> a.getTrack() != null ? a.getTrack().getId() : null)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+
+                return submissionRepository.findByRoundId(roundId).stream()
+                        .filter(s -> s.getTeam().getTrack() != null && assignedTrackIds.contains(s.getTeam().getTrack().getId()))
+                        .map(this::mapToResponse)
+                        .collect(Collectors.toList());
+            }
+        }
+
         return submissionRepository.findByRoundId(roundId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -140,6 +171,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     private SubmissionResponse mapToResponse(Submission submission) {
+        com.example.swp.features.track.Track track = submission.getTeam().getTrack();
         return SubmissionResponse.builder()
                 .id(submission.getId())
                 .teamId(submission.getTeam().getId())
@@ -151,6 +183,8 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .reportUrl(submission.getReportUrl())
                 .version(submission.getVersion())
                 .submittedAt(submission.getSubmittedAt())
+                .trackId(track != null ? track.getId() : null)
+                .trackName(track != null ? track.getName() : null)
                 .build();
     }
 }

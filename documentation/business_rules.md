@@ -2,7 +2,7 @@
 ### Business Rules
 
 1.  A user must have a registered account to participate in a hackathon.
-2.  A user can have one of the following roles: Participant, Judge, Mentor, Organizer, or Admin.
+2.  A user can have one of the following roles: Participant, Judge, Guest_Judge, Mentor, Organizer, or Admin.
 3.  A participant can only be a member of one team per hackathon.
 4.  A team must have at least one member to be valid.
 5.  Each hackathon must have a start and end date.

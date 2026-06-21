@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
@@ -41,11 +41,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (header != null && header.startsWith("Bearer ")) {
             token = header.substring(7);
+        } else if (request.getRequestURI().endsWith("/stream") && request.getParameter("token") != null) {
+            // Hỗ trợ Server-Sent Events (SSE) vì EventSource API ở Frontend không gửi được Header
+            token = request.getParameter("token");
+        }
 
-            if (jwtTokenProvider.validateToken(token)) {
-                username = jwtTokenProvider.getUsernameFromJWT(token);
-                roles = jwtTokenProvider.getRolesFromJWT(token);
-            }
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            username = jwtTokenProvider.getUsernameFromJWT(token);
+            roles = jwtTokenProvider.getRolesFromJWT(token);
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

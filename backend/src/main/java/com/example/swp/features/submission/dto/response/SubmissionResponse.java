@@ -20,6 +20,8 @@ public class SubmissionResponse {
     private String reportUrl;
     private LocalDateTime submittedAt;
     private int version;
+    private Long trackId;
+    private String trackName;
 
     public static SubmissionResponseBuilder builder() { return new SubmissionResponseBuilder(); }
     public static class SubmissionResponseBuilder {
@@ -33,6 +35,8 @@ public class SubmissionResponse {
         private String reportUrl;
         private LocalDateTime submittedAt;
         private int version;
+        private Long trackId;
+        private String trackName;
 
         public SubmissionResponseBuilder id(Long id) { this.id = id; return this; }
         public SubmissionResponseBuilder teamId(Long teamId) { this.teamId = teamId; return this; }
@@ -44,6 +48,8 @@ public class SubmissionResponse {
         public SubmissionResponseBuilder reportUrl(String reportUrl) { this.reportUrl = reportUrl; return this; }
         public SubmissionResponseBuilder submittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; return this; }
         public SubmissionResponseBuilder version(int version) { this.version = version; return this; }
+        public SubmissionResponseBuilder trackId(Long trackId) { this.trackId = trackId; return this; }
+        public SubmissionResponseBuilder trackName(String trackName) { this.trackName = trackName; return this; }
 
         public SubmissionResponse build() {
             SubmissionResponse r = new SubmissionResponse();
@@ -51,7 +57,7 @@ public class SubmissionResponse {
             r.roundId = this.roundId; r.roundName = this.roundName;
             r.repositoryUrl = this.repositoryUrl; r.demoUrl = this.demoUrl;
             r.reportUrl = this.reportUrl; r.submittedAt = this.submittedAt;
-            r.version = this.version;
+            r.version = this.version; r.trackId = this.trackId; r.trackName = this.trackName;
             return r;
         }
     }

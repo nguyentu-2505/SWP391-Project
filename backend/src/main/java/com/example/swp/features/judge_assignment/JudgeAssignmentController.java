@@ -27,7 +27,7 @@ public class JudgeAssignmentController {
     }
 
     @GetMapping("/my-assignments")
-    @PreAuthorize("hasRole('JUDGE')")
+    @PreAuthorize("hasAnyRole('JUDGE', 'GUEST_JUDGE')")
     public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getMyAssignments() {
         List<JudgeAssignmentResponse> responses = assignmentService.getMyAssignments();
         return ResponseEntity.ok(ApiResponse.success(responses));

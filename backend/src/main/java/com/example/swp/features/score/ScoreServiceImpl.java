@@ -48,8 +48,14 @@ public class ScoreServiceImpl implements ScoreService {
             throw new IllegalStateException("Cannot score submissions from disqualified teams.");
         }
 
-        if (!judgeAssignmentRepository.existsByJudgeIdAndSubmissionId(judge.getId(), submission.getId())) {
-            throw new AccessDeniedException("You are not assigned to score this submission.");
+        Long roundId = submission.getRound().getId();
+        Long trackId = submission.getTeam().getTrack() != null ? submission.getTeam().getTrack().getId() : null;
+
+        boolean isAssignedToRound = judgeAssignmentRepository.existsByJudgeIdAndRoundIdAndTrackIdIsNull(judge.getId(), roundId);
+        boolean isAssignedToTrack = trackId != null && judgeAssignmentRepository.existsByJudgeIdAndRoundIdAndTrackId(judge.getId(), roundId, trackId);
+
+        if (!isAssignedToRound && !isAssignedToTrack) {
+            throw new AccessDeniedException("You are not assigned to score submissions in this round/track.");
         }
 
         if (advancementRepository.existsByFromRoundId(submission.getRound().getId())) {

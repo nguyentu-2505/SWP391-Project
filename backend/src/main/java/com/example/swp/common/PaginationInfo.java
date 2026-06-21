@@ -1,6 +1,6 @@
 package com.example.swp.common;
 
-import lombok.AllArgsConstructor;
+
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.domain.Page;

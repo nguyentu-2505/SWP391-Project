@@ -19,7 +19,7 @@ public class RoundAdvancementController {
     @PostMapping("/{id}/advance")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<ApiResponse<Void>> advanceTeams(@PathVariable Long id) {
-        advancementService.advanceTeams(id);
-        return ResponseEntity.ok(ApiResponse.success(null, "Teams advanced successfully to the next round."));
+        String message = advancementService.advanceTeams(id);
+        return ResponseEntity.ok(ApiResponse.success(null, message));
     }
 }

@@ -7,10 +7,12 @@ import lombok.Data;
 public class AssignJudgeRequest {
     @NotNull
     private Long judgeId;
-
     @NotNull
-    private Long submissionId;
+    private Long roundId;
+    
+    private Long trackId;
 
     public Long getJudgeId() { return judgeId; }
-    public Long getSubmissionId() { return submissionId; }
+    public Long getRoundId() { return roundId; }
+    public Long getTrackId() { return trackId; }
 }

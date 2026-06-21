@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
 public class EventRegistrationService {
@@ -23,20 +25,37 @@ public class EventRegistrationService {
     private final HackathonEventRepository hackathonEventRepository;
     private final UserRepository userRepository;
 
+    @Transactional
     public EventRegistrationResponse registerForEvent(Long eventId) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        // User phải đã xác thực email
+        if (!currentUser.isVerified()) {
+            throw new IllegalStateException("You must verify your email before registering for an event.");
+        }
+
+        // User phải đã được admin duyệt
+        if (!currentUser.isApproved()) {
+            throw new IllegalStateException("Your account must be approved before registering for an event.");
+        }
+
         HackathonEvent event = hackathonEventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
 
-        if (event.getStatus() != HackathonStatus.REGISTRATION_OPEN) {
-            throw new IllegalStateException("Registration for this event is not open.");
+        // Event phải ở trạng thái PUBLISHED mới cho phép đăng ký
+        if (event.getStatus() != HackathonStatus.PUBLISHED) {
+            throw new IllegalStateException("Registration for this event is not open. Current status: " + event.getStatus());
         }
-        
-        if (event.getRegistrationEnd() != null && LocalDateTime.now().isAfter(event.getRegistrationEnd())) {
-             throw new IllegalStateException("The registration deadline has passed.");
+
+        // Check registration window
+        LocalDateTime now = LocalDateTime.now();
+        if (event.getRegistrationStart() != null && now.isBefore(event.getRegistrationStart())) {
+            throw new IllegalStateException("Registration has not started yet.");
+        }
+        if (event.getRegistrationEnd() != null && now.isAfter(event.getRegistrationEnd())) {
+            throw new IllegalStateException("The registration deadline has passed.");
         }
 
         eventRegistrationRepository.findByEventAndUser(event, currentUser).ifPresent(registration -> {
@@ -53,6 +72,7 @@ public class EventRegistrationService {
         return mapToResponse(savedRegistration);
     }
 
+    @Transactional(readOnly = true)
     public List<EventRegistrationResponse> getRegistrationsForEvent(Long eventId) {
         List<EventRegistration> registrations = eventRegistrationRepository.findByEventId(eventId);
         return registrations.stream().map(this::mapToResponse).collect(Collectors.toList());

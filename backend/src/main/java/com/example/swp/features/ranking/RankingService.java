@@ -5,6 +5,7 @@ import com.example.swp.features.score.Score;
 import com.example.swp.features.score.ScoreRepository;
 import com.example.swp.features.submission.Submission;
 import com.example.swp.features.submission.SubmissionRepository;
+import com.example.swp.features.criterion.Criterion;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -36,9 +37,9 @@ public class RankingService {
 
         List<Long> submissionIds = submissions.stream().map(Submission::getId).collect(Collectors.toList());
 
-        // Fetch all scores for submissions in this round (avoids N+1)
-        List<Score> scoresForRound = scoreRepository.findBySubmissionIdIn(submissionIds);
-
+        List<Score> scoresForRound = scoreRepository.findBySubmissionIdIn(submissionIds).stream()
+                .filter(Score::isFinalized)
+                .collect(Collectors.toList());
 
         Map<Submission, List<Score>> scoresBySubmission = scoresForRound.stream()
                 .collect(Collectors.groupingBy(Score::getSubmission));
@@ -48,11 +49,29 @@ public class RankingService {
                     Submission submission = entry.getKey();
                     List<Score> submissionScores = entry.getValue();
                     BigDecimal finalScore = calculateFinalScore(submissionScores);
+
+                    // Tính điểm trung bình cho từng tiêu chí
+                    Map<Criterion, Double> avgScores = submissionScores.stream()
+                            .collect(Collectors.groupingBy(
+                                    Score::getCriterion,
+                                    Collectors.averagingDouble(Score::getScoreValue)
+                            ));
+
+                    List<TeamRankingResponse.CriterionScoreDto> breakdown = avgScores.entrySet().stream()
+                            .map(e -> TeamRankingResponse.CriterionScoreDto.builder()
+                                    .criterionId(e.getKey().getId())
+                                    .criterionName(e.getKey().getName())
+                                    .averageScore(BigDecimal.valueOf(e.getValue()).setScale(2, RoundingMode.HALF_UP).doubleValue())
+                                    .weight(e.getKey().getWeight())
+                                    .build())
+                            .collect(Collectors.toList());
+
                     return TeamRankingResponse.builder()
                             .teamId(submission.getTeam().getId())
                             .teamName(submission.getTeam().getName())
                             .projectName(submission.getTeam().getProjectName())
                             .finalScore(finalScore)
+                            .criterionBreakdown(breakdown)
                             .build();
                 })
                 .sorted(Comparator.comparing(TeamRankingResponse::getFinalScore).reversed())
@@ -66,7 +85,7 @@ public class RankingService {
         return rankings;
     }
 
-    private BigDecimal calculateFinalScore(List<Score> scores) {
+    public BigDecimal calculateFinalScore(List<Score> scores) {
         if (scores.isEmpty()) {
             return BigDecimal.ZERO;
         }

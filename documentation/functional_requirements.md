@@ -3,7 +3,7 @@
 
 **1. User Management**
     1.1. Users shall be able to register for an account using their email address.
-    1.2. The system shall support the following user roles: Participant, Judge, Mentor, Organizer, Admin.
+    1.2. The system shall support the following user roles: Participant, Judge, Guest_Judge, Mentor, Organizer, Admin.
     1.3. Users shall be able to log in and log out of the system.
     1.4. Users shall be able to view and edit their own profiles.
     1.5. Admins shall be able to manage all user accounts.

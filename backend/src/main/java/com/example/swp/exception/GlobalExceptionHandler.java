@@ -65,11 +65,18 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex, WebRequest request) {
-        ex.printStackTrace();
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(org.springframework.web.HttpRequestMethodNotSupportedException ex) {
         return new ResponseEntity<>(
-                ApiResponse.error("INTERNAL_SERVER_ERROR", "An unexpected error occurred."),
+                ApiResponse.error("METHOD_NOT_ALLOWED", ex.getMessage()),
+                HttpStatus.METHOD_NOT_ALLOWED
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Void>> handleAllExceptions(Exception ex, WebRequest request) {
+        return new ResponseEntity<>(
+                ApiResponse.error("INTERNAL_SERVER_ERROR", ex.toString() + " | " + ex.getMessage()),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }

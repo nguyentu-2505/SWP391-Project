@@ -28,6 +28,7 @@ public class RoundServiceImpl implements RoundService {
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .hackathonEvent(hackathonEvent)
+                .advancementSlots(request.getAdvancementSlots() != null && request.getAdvancementSlots() > 0 ? request.getAdvancementSlots() : 2)
                 .build();
 
         Round savedRound = roundRepository.save(newRound);
@@ -49,6 +50,7 @@ public class RoundServiceImpl implements RoundService {
                 .startTime(round.getStartTime())
                 .endTime(round.getEndTime())
                 .hackathonEventId(round.getHackathonEvent().getId())
+                .advancementSlots(round.getAdvancementSlots())
                 .build();
     }
 }

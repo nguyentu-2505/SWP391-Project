@@ -39,7 +39,7 @@ public class TeamInvitationService {
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
 
-        if (team.getEvent().getStatus() != HackathonStatus.REGISTRATION_OPEN) {
+        if (team.getEvent().getStatus() != HackathonStatus.PUBLISHED) {
             throw new com.example.swp.exception.BadRequestException("Invitations can only be sent during the registration phase.");
         }
 
@@ -102,7 +102,7 @@ public class TeamInvitationService {
 
         Team team = invitation.getTeam();
 
-        if (team.getEvent().getStatus() != HackathonStatus.REGISTRATION_OPEN) {
+        if (team.getEvent().getStatus() != HackathonStatus.PUBLISHED) {
             throw new com.example.swp.exception.BadRequestException("Invitations can only be responded to during the registration phase.");
         }
 

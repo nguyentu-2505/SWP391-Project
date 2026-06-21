@@ -26,6 +26,8 @@ public interface ScoreRepository extends JpaRepository<Score, Long> {
     @EntityGraph(attributePaths = {"judge", "submission", "criterion"})
     Optional<Score> findBySubmissionIdAndJudgeIdAndCriterionId(Long submissionId, Long judgeId, Long criterionId);
 
+    boolean existsByCriterionId(Long criterionId);
+
     @Modifying
     @Query("UPDATE Score s SET s.isFinalized = true WHERE s.submission.id IN (SELECT sub.id FROM Submission sub WHERE sub.round.id = :roundId)")
     void finalizeScoresByRound(Long roundId);

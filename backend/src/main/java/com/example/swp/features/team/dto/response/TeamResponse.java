@@ -18,7 +18,11 @@ public class TeamResponse {
     private String trackName;
     private String status;
     private java.util.List<TeamMemberInfo> members;
+    private java.math.BigDecimal finalScore;
 
+    @Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
     public static class TeamMemberInfo {
         private Long userId;
         private String username;
@@ -51,6 +55,7 @@ public class TeamResponse {
         private String trackName;
         private String status;
         private java.util.List<TeamMemberInfo> members;
+        private java.math.BigDecimal finalScore;
 
         public TeamResponseBuilder id(Long id) { this.id = id; return this; }
         public TeamResponseBuilder name(String name) { this.name = name; return this; }
@@ -61,14 +66,14 @@ public class TeamResponse {
         public TeamResponseBuilder trackName(String trackName) { this.trackName = trackName; return this; }
         public TeamResponseBuilder status(String status) { this.status = status; return this; }
         public TeamResponseBuilder members(java.util.List<TeamMemberInfo> members) { this.members = members; return this; }
+        public TeamResponseBuilder finalScore(java.math.BigDecimal finalScore) { this.finalScore = finalScore; return this; }
         public TeamResponse build() {
             TeamResponse r = new TeamResponse();
             r.id = this.id; r.name = this.name; r.projectName = this.projectName;
             r.projectDescription = this.projectDescription; r.trackId = this.trackId;
-            r.eventId = this.eventId; r.trackName = this.trackName; r.status = this.status; r.members = this.members;
+            r.eventId = this.eventId; r.trackName = this.trackName; r.status = this.status; 
+            r.members = this.members; r.finalScore = this.finalScore;
             return r;
         }
     }
 }
-
-

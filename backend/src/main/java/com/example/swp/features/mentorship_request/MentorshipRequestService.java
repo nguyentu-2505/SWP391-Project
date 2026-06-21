@@ -180,6 +180,12 @@ public class MentorshipRequestService {
         return requestRepository.findByStatus(MentorshipRequestStatus.OPEN).stream()
             .map(this::mapToResponse).collect(Collectors.toList());
     }
+
+    public MentorshipRequestResponse getRequestById(Long id) {
+        MentorshipRequest request = requestRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Mentorship request not found"));
+        return mapToResponse(request);
+    }
     
     public List<MentorshipRequestResponse> getMyMentorshipRequests() {
         User currentUser = getCurrentUser();

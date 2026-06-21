@@ -14,7 +14,13 @@ public class UpdateCriterionRequest {
     @NotNull(message = "Weight cannot be null")
     private Integer weight;
     
+    private Integer maxScore;
+    
+    private Long hackathonEventId;
+    
     public String getName() { return name; }
     public String getDescription() { return description; }
     public Integer getWeight() { return weight; }
+    public Integer getMaxScore() { return maxScore; }
+    public Long getHackathonEventId() { return hackathonEventId; }
 }

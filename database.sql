@@ -1,5 +1,3 @@
-@ -1,514 +0,0 @@
--- =============================================
 -- SEAL HACKATHON – UNIFIED DATABASE SCRIPT
 -- Password mặc định: password123 (BCrypt hash)
 -- =============================================
@@ -134,13 +132,15 @@ CREATE TABLE team (
                       status                  NVARCHAR(50) DEFAULT 'ACTIVE',
                       created_at              DATETIME2 DEFAULT GETDATE(),
     -- Thêm từ patch_phase2 & patch_phase4: disqualification tracking
-                      disqualification_reason NVARCHAR(MAX),
-                      disqualified_at         DATETIME2,
-                      disqualified_by         BIGINT,
-                      FOREIGN KEY (track_id)        REFERENCES track(id),
-                      FOREIGN KEY (event_id)        REFERENCES hackathon_event(id),
-                      FOREIGN KEY (disqualified_by) REFERENCES _user(id),
-                      UNIQUE (name, event_id)
+    disqualification_reason NVARCHAR(MAX),
+    disqualified_at         DATETIME2,
+    disqualified_by         BIGINT,
+    final_score             DECIMAL(5,2) DEFAULT NULL,
+    FOREIGN KEY (track_id)        REFERENCES track(id),
+    FOREIGN KEY (event_id)        REFERENCES hackathon_event(id),
+    FOREIGN KEY (disqualified_by) REFERENCES _user(id),
+    UNIQUE (name, event_id)
+
 );
 
 -- Bảng track_mentor (Phân công Mentor/Judge cho Track — thêm từ patch_phase2)
@@ -195,18 +195,20 @@ CREATE TABLE submission (
                             FOREIGN KEY (round_id) REFERENCES round(id)
 );
 
--- Bảng judge_assignment (Phân công giám khảo cho bài nộp)
+-- Bảng judge_assignment (Phân công giám khảo cho Vòng đấu & Track)
 CREATE TABLE judge_assignment (
-                                  id                       BIGINT IDENTITY(1,1) PRIMARY KEY,
-                                  judge_id                 BIGINT NOT NULL,
-                                  submission_id            BIGINT NOT NULL,
-                                  assigned_by_organizer_id BIGINT,
-                                  status                   NVARCHAR(50) DEFAULT 'ASSIGNED', -- thêm từ patch.sql
-                                  assigned_at              DATETIME2 DEFAULT GETDATE(),      -- thêm từ patch.sql
-                                  FOREIGN KEY (judge_id)                 REFERENCES _user(id),
-                                  FOREIGN KEY (submission_id)            REFERENCES submission(id) ON DELETE CASCADE,
-                                  FOREIGN KEY (assigned_by_organizer_id) REFERENCES _user(id),
-                                  UNIQUE (judge_id, submission_id)
+    id                       BIGINT IDENTITY(1,1) PRIMARY KEY,
+    judge_id                 BIGINT NOT NULL,
+    round_id                 BIGINT NOT NULL,
+    track_id                 BIGINT NULL,
+    assigned_by_organizer_id BIGINT,
+    status                   NVARCHAR(50) DEFAULT 'ASSIGNED',
+    assigned_at              DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (judge_id)                 REFERENCES _user(id),
+    FOREIGN KEY (round_id)                 REFERENCES round(id) ON DELETE CASCADE,
+    FOREIGN KEY (track_id)                 REFERENCES track(id),
+    FOREIGN KEY (assigned_by_organizer_id) REFERENCES _user(id),
+    UNIQUE (judge_id, round_id, track_id)
 );
 
 -- Bảng score (Điểm số)
@@ -284,12 +286,38 @@ CREATE TABLE team_round_advancement (
 
 -- Bảng audit_log
 CREATE TABLE audit_log (
-                           id         BIGINT IDENTITY(1,1) PRIMARY KEY,
-                           user_id    BIGINT,
-                           action     NVARCHAR(255) NOT NULL,
-                           details    NVARCHAR(MAX),
-                           created_at DATETIME2 DEFAULT GETDATE(),
-                           FOREIGN KEY (user_id) REFERENCES _user(id)
+    id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id     BIGINT,
+    action      NVARCHAR(255) NOT NULL,
+    details     NVARCHAR(MAX),
+    created_at  DATETIME2 DEFAULT GETDATE(),
+    entity_type NVARCHAR(255),
+    entity_id   BIGINT,
+    old_value   NVARCHAR(MAX),
+    new_value   NVARCHAR(MAX),
+    FOREIGN KEY (user_id) REFERENCES _user(id)
+);
+GO
+
+-- Bảng refresh_token
+CREATE TABLE refresh_token (
+    id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+    token       NVARCHAR(255) NOT NULL UNIQUE,
+    user_id     BIGINT NOT NULL,
+    expiry_date DATETIME2 NOT NULL,
+    created_at  DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES _user(id) ON DELETE CASCADE
+);
+GO
+
+-- Bảng password_reset_token
+CREATE TABLE password_reset_token (
+    id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+    token       NVARCHAR(255) NOT NULL UNIQUE,
+    user_id     BIGINT NOT NULL,
+    expiry_date DATETIME2 NOT NULL,
+    created_at  DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES _user(id) ON DELETE CASCADE
 );
 GO
 
@@ -312,7 +340,6 @@ GO
 -- Password mặc định: password123 (BCrypt)
 -- Mỗi bảng có 2-3 dòng mẫu để test
 -- =============================================
-
 -- -----------------------------------------------
 -- 5.1 _user (10 users: 1 admin, 2 organizer, 2 judge, 2 mentor, 3 participant)
 -- -----------------------------------------------
@@ -344,9 +371,10 @@ VALUES
 -- -----------------------------------------------
 INSERT INTO hackathon_event (name, slug, description, status, registration_start, registration_end, start_time, end_time, max_team_size, min_team_size, rules, organizer_id)
 VALUES
+
     -- event id=1: đang diễn ra
     (N'FPT Hackathon 2026',   'fpt-hackathon-2026',   N'Cuộc thi khởi nghiệp công nghệ dành cho sinh viên FPT toàn quốc',
-     'ONGOING',
+     'IN_PROGRESS',
      DATEADD(day, -15, GETDATE()), DATEADD(day, -1, GETDATE()),
      GETDATE(), DATEADD(day, 30, GETDATE()),
      5, 2, N'Mỗi đội 2-5 thành viên. Nộp bài qua GitHub. Không sử dụng code có sẵn.', 2),
@@ -449,11 +477,11 @@ INSERT INTO submission (team_id, round_id, repository_url, demo_url, report_url,
 -- -----------------------------------------------
 -- 5.12 judge_assignment (phân công judge chấm bài)
 -- -----------------------------------------------
-INSERT INTO judge_assignment (judge_id, submission_id, assigned_by_organizer_id, status) VALUES
-                                                                                             (4, 1, 2, 'ASSIGNED'),    -- judge1 chấm submission Team Alpha
-                                                                                             (4, 2, 2, 'ASSIGNED'),    -- judge1 chấm submission Team Beta
-                                                                                             (5, 2, 2, 'ASSIGNED'),    -- judge2 cũng chấm submission Team Beta (cross-review)
-                                                                                             (5, 3, 2, 'ASSIGNED');    -- judge2 chấm submission Team Gamma
+INSERT INTO judge_assignment (judge_id, round_id, track_id, assigned_by_organizer_id, status) VALUES
+    (4, 1, 1, 2, 'ASSIGNED'),    -- judge1 chấm vòng 1, track 1 (chứa Team Alpha)
+    (4, 1, 2, 2, 'ASSIGNED'),    -- judge1 chấm vòng 1, track 2 (chứa Team Beta)
+    (5, 1, 2, 2, 'ASSIGNED'),    -- judge2 chấm vòng 1, track 2 (chứa Team Beta)
+    (5, 1, 3, 2, 'ASSIGNED');    -- judge2 chấm vòng 1, track 3 (chứa Team Gamma)
 
 -- -----------------------------------------------
 -- 5.13 score (judge1 đã chấm Team Alpha, judge2 đã chấm Team Gamma)
@@ -511,5 +539,3 @@ INSERT INTO audit_log (user_id, action, details) VALUES
                                                      (8, 'TEAM_CREATED',         N'Student1 tạo Team Alpha cho event FPT Hackathon 2026'),
                                                      (4, 'SCORE_SUBMITTED',      N'Judge1 đã chấm điểm submission Team Alpha – Vòng Ý tưởng');
 
-PRINT '=== Unified Database Script chạy thành công! ===';
-GO
