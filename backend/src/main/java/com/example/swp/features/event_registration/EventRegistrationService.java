@@ -41,6 +41,10 @@ public class EventRegistrationService {
             throw new IllegalStateException("Your account must be approved before registering for an event.");
         }
 
+        if (!currentUser.isProfileComplete()) {
+            throw new com.example.swp.exception.BadRequestException("Please complete your profile before registering for this event.");
+        }
+
         HackathonEvent event = hackathonEventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
 

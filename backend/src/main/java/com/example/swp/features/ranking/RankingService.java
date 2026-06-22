@@ -66,23 +66,39 @@ public class RankingService {
                                     .build())
                             .collect(Collectors.toList());
 
+                    com.example.swp.features.track.Track track = submission.getTeam().getTrack();
+
                     return TeamRankingResponse.builder()
                             .teamId(submission.getTeam().getId())
                             .teamName(submission.getTeam().getName())
                             .projectName(submission.getTeam().getProjectName())
                             .finalScore(finalScore)
+                            .trackId(track != null ? track.getId() : null)
+                            .trackName(track != null ? track.getName() : null)
                             .criterionBreakdown(breakdown)
                             .build();
                 })
-                .sorted(Comparator.comparing(TeamRankingResponse::getFinalScore).reversed())
                 .collect(Collectors.toList());
 
-        // Assign ranks
-        for (int i = 0; i < rankings.size(); i++) {
-            rankings.get(i).setRank(i + 1);
+        // Group by trackId and assign ranks per track
+        Map<Long, List<TeamRankingResponse>> groupedByTrack = rankings.stream()
+                .collect(Collectors.groupingBy(r -> r.getTrackId() != null ? r.getTrackId() : -1L));
+
+        List<TeamRankingResponse> finalRankings = new java.util.ArrayList<>();
+        
+        for (List<TeamRankingResponse> trackRankings : groupedByTrack.values()) {
+            trackRankings.sort(Comparator.comparing(TeamRankingResponse::getFinalScore).reversed());
+            for (int i = 0; i < trackRankings.size(); i++) {
+                trackRankings.get(i).setRank(i + 1);
+            }
+            finalRankings.addAll(trackRankings);
         }
 
-        return rankings;
+        // Sort the final list by trackId then rank for clean output
+        finalRankings.sort(Comparator.comparing((TeamRankingResponse r) -> r.getTrackId() != null ? r.getTrackId() : -1L)
+                .thenComparing(TeamRankingResponse::getRank));
+
+        return finalRankings;
     }
 
     public BigDecimal calculateFinalScore(List<Score> scores) {

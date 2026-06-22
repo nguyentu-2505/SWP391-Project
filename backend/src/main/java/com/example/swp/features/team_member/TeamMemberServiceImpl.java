@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.example.swp.features.hackathon_event.HackathonStatus;
+import com.example.swp.features.audit_log.AuditLogService;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +22,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     private final TeamMemberRepository teamMemberRepository;
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     @Override
     public TeamMemberResponse addTeamMember(AddTeamMemberRequest request) {
@@ -81,6 +83,15 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
         }
         
+        Team team = member.getTeam();
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
+            long currentSize = teamMemberRepository.countByTeamId(team.getId());
+            Integer minSize = team.getEvent().getMinTeamSize();
+            if (minSize != null && (currentSize - 1) < minSize) {
+                throw new com.example.swp.exception.BadRequestException("Cannot remove member: Team is finalized and would fall below the minimum team size.");
+            }
+        }
+        
         teamMemberRepository.deleteById(teamMemberId);
     }
 
@@ -115,6 +126,18 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         TeamMember memberToKick = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User is not a member of this team"));
 
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
+            long currentSize = teamMemberRepository.countByTeamId(team.getId());
+            Integer minSize = team.getEvent().getMinTeamSize();
+            if (minSize != null && (currentSize - 1) < minSize) {
+                if (!isCurrentUserAdmin) {
+                    throw new com.example.swp.exception.BadRequestException("Cannot kick member: Team is finalized and would fall below the minimum team size.");
+                } else {
+                    auditLogService.logAction("FORCE_KICK_MEMBER", "TEAM", team.getId(), null, "Admin " + currentUser.getUsername() + " forced member removal on FINALIZED team");
+                }
+            }
+        }
+
         teamMemberRepository.delete(memberToKick);
     }
 
@@ -132,6 +155,15 @@ public class TeamMemberServiceImpl implements TeamMemberService {
 
         if (member.isLeader()) {
             throw new com.example.swp.exception.BadRequestException("Leader cannot leave the team without transferring leadership first");
+        }
+
+        Team team = member.getTeam();
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
+            long currentSize = teamMemberRepository.countByTeamId(team.getId());
+            Integer minSize = team.getEvent().getMinTeamSize();
+            if (minSize != null && (currentSize - 1) < minSize) {
+                throw new com.example.swp.exception.BadRequestException("Cannot leave team: Team is finalized and would fall below the minimum team size.");
+            }
         }
 
         teamMemberRepository.delete(member);

@@ -32,6 +32,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(name = "fpt_student_id", unique = true)
     private String fptStudentId;
     private String schoolName;
     private String githubUrl;
@@ -102,4 +103,8 @@ public class User {
     public void setSchoolName(String schoolName) { this.schoolName = schoolName; }
     public boolean isTemporary() { return Boolean.TRUE.equals(temporary); }
     public void setTemporary(boolean temporary) { this.temporary = temporary; }
+    
+    public boolean isProfileComplete() {
+        return fptStudentId != null && !fptStudentId.trim().isEmpty();
+    }
 }

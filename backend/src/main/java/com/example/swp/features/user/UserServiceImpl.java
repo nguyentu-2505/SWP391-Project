@@ -21,12 +21,18 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
+    private final com.example.swp.util.EmailService emailService;
+    private final com.example.swp.features.team_member.TeamMemberRepository teamMemberRepository;
 
     @Override
     @Transactional
     public UserResponse approveUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        if (user.isApproved()) {
+            return mapToResponse(user);
+        }
 
         auditLogService.logAction(
             "APPROVE_USER", 
@@ -38,6 +44,16 @@ public class UserServiceImpl implements UserService {
 
         user.setApproved(true);
         User updatedUser = userRepository.save(user);
+        
+        try {
+            String emailBody = "Hello " + updatedUser.getUsername() + ",\n\n" +
+                               "Your account has been approved. You can now login and complete your profile.\n\n" +
+                               "Best regards,\nHackathon Event Notification Team";
+            emailService.sendSimpleMessage(updatedUser.getEmail(), "Account Approved", emailBody);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(UserServiceImpl.class).error("Failed to send approval email to {}", updatedUser.getEmail(), e);
+        }
+        
         return mapToResponse(updatedUser);
     }
 
@@ -65,6 +81,12 @@ public class UserServiceImpl implements UserService {
         }
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalStateException("Error: Email is already in use!");
+        }
+        
+        if (request.getFptStudentId() != null && !request.getFptStudentId().trim().isEmpty()) {
+            if (userRepository.existsByFptStudentId(request.getFptStudentId())) {
+                throw new com.example.swp.exception.BadRequestException("This student ID is already registered.");
+            }
         }
 
         User user = new User();
@@ -134,8 +156,24 @@ public class UserServiceImpl implements UserService {
         if (request.getFullName() != null) user.setFullName(request.getFullName());
         if (request.getPhone() != null) user.setPhone(request.getPhone());
         if (request.getBio() != null) user.setBio(request.getBio());
-        if (request.getFptStudentId() != null) user.setFptStudentId(request.getFptStudentId());
-        if (request.getSchoolName() != null) user.setSchoolName(request.getSchoolName());
+        boolean inFinalizedTeam = teamMemberRepository.findByUserId(user.getId()).stream()
+            .anyMatch(tm -> tm.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED);
+
+        if (request.getFptStudentId() != null) {
+            if (inFinalizedTeam && !request.getFptStudentId().equals(user.getFptStudentId())) {
+                throw new com.example.swp.exception.BadRequestException("Identity fields cannot be changed after your team registration is finalized.");
+            }
+            if (!request.getFptStudentId().trim().isEmpty() && userRepository.existsByFptStudentIdAndIdNot(request.getFptStudentId(), user.getId())) {
+                throw new com.example.swp.exception.BadRequestException("This student ID is already registered.");
+            }
+            user.setFptStudentId(request.getFptStudentId());
+        }
+        if (request.getSchoolName() != null) {
+            if (inFinalizedTeam && !request.getSchoolName().equals(user.getSchoolName())) {
+                throw new com.example.swp.exception.BadRequestException("Identity fields cannot be changed after your team registration is finalized.");
+            }
+            user.setSchoolName(request.getSchoolName());
+        }
         if (request.getGithubUrl() != null) user.setGithubUrl(request.getGithubUrl());
 
         User updatedUser = userRepository.save(user);

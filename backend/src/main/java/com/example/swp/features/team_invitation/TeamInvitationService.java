@@ -29,6 +29,7 @@ public class TeamInvitationService {
     private final UserRepository userRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final NotificationService notificationService;
+    private final com.example.swp.features.event_registration.EventRegistrationRepository registrationRepository;
 
     @Transactional
     public TeamInvitationResponse inviteMember(InviteMemberRequest request) {
@@ -107,6 +108,19 @@ public class TeamInvitationService {
         }
 
         if (response == InvitationStatus.ACCEPTED) {
+            
+            if (!invitee.isVerified()) {
+                throw new IllegalStateException("Your account email must be verified before joining a team.");
+            }
+            if (!invitee.isApproved()) {
+                throw new IllegalStateException("Your account must be approved before joining a team.");
+            }
+            if (!invitee.isProfileComplete()) {
+                throw new com.example.swp.exception.BadRequestException("Please complete your profile before joining a team.");
+            }
+            if (registrationRepository.findByEventAndUser(team.getEvent(), invitee).isEmpty()) {
+                throw new IllegalStateException("You must register for this event before joining a team.");
+            }
             
             if (isUserInAnotherTeamInEvent(invitee, team.getEvent().getId())) {
                 throw new IllegalStateException("You are already in another team for this hackathon.");

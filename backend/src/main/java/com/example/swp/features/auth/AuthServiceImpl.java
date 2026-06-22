@@ -97,6 +97,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new BadRequestException("Error: Username is already taken!");
@@ -104,6 +105,12 @@ public class AuthServiceImpl implements AuthService {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Error: Email is already in use!");
+        }
+
+        if (request.getFptStudentId() != null && !request.getFptStudentId().trim().isEmpty()) {
+            if (userRepository.existsByFptStudentId(request.getFptStudentId())) {
+                throw new BadRequestException("This student ID is already registered.");
+            }
         }
 
         User user = new User();

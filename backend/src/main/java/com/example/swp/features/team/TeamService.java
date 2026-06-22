@@ -15,5 +15,6 @@ public interface TeamService {
     TeamResponse getMyTeamForEvent(Long eventId);
     void disqualifyTeam(Long teamId, DisqualifyTeamRequest request);
     TeamResponse updateTeam(Long teamId, com.example.swp.features.team.dto.request.UpdateTeamRequest request);
+    TeamResponse finalizeTeam(Long teamId);
     void deleteTeam(Long teamId);
 }

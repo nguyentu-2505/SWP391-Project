@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { BookUser, Clock, CheckCircle } from 'lucide-react';
+import Modal from '../../components/Modal';
 
 interface MentorshipRequest {
     id: number;
@@ -15,6 +16,7 @@ const MentorDashboardPage: React.FC = () => {
     const [myRequests, setMyRequests] = useState<MentorshipRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [selectedRequest, setSelectedRequest] = useState<MentorshipRequest | null>(null);
 
     useEffect(() => {
         const fetchMyRequests = async () => {
@@ -67,7 +69,10 @@ const MentorDashboardPage: React.FC = () => {
                                         </span>
                                     </td>
                                     <td className="py-3 px-4">
-                                        <button className="text-blue-600 hover:text-blue-800 font-semibold">
+                                        <button 
+                                            className="text-blue-600 hover:text-blue-800 font-semibold"
+                                            onClick={() => setSelectedRequest(req)}
+                                        >
                                             View Details
                                         </button>
                                     </td>
@@ -77,6 +82,37 @@ const MentorDashboardPage: React.FC = () => {
                     </table>
                 </div>
             )}
+
+            <Modal
+                isOpen={!!selectedRequest}
+                onClose={() => setSelectedRequest(null)}
+                title="Mentorship Session Details"
+            >
+                {selectedRequest && (
+                    <div className="space-y-4">
+                        <div>
+                            <p className="text-sm font-semibold text-gray-500 uppercase">Team Name</p>
+                            <p className="text-gray-900 font-medium">{selectedRequest.teamName}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-gray-500 uppercase">Request Title</p>
+                            <p className="text-gray-900 font-medium">{selectedRequest.title}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-gray-500 uppercase">Status</p>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                selectedRequest.status === 'RESOLVED' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                            }`}>
+                                {selectedRequest.status}
+                            </span>
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-gray-500 uppercase">Created At</p>
+                            <p className="text-gray-900">{new Date(selectedRequest.createdAt).toLocaleString()}</p>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 };

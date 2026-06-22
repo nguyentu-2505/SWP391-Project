@@ -72,6 +72,13 @@ public class TeamController {
         return ResponseEntity.ok(ApiResponse.success(response, "Team updated successfully."));
     }
 
+    @PostMapping("/{id}/finalize")
+    @PreAuthorize("hasRole('PARTICIPANT')")
+    public ResponseEntity<ApiResponse<TeamResponse>> finalizeTeam(@PathVariable Long id) {
+        TeamResponse response = teamService.finalizeTeam(id);
+        return ResponseEntity.ok(ApiResponse.success(response, "Team finalized successfully."));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<ApiResponse<Void>> deleteTeam(@PathVariable Long id) {

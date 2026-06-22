@@ -18,4 +18,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     Page<User> findByApprovedTrue(Pageable pageable);
     Page<User> findByApprovedFalse(Pageable pageable);
+    
+    Boolean existsByFptStudentId(String fptStudentId);
+    Boolean existsByFptStudentIdAndIdNot(String fptStudentId, Long id);
 }

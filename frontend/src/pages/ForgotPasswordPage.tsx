@@ -1,10 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, Mail } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import AuthLayout from '../components/AuthLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import api from '../services/api';
 
 const ForgotPasswordPage: React.FC = () => {
+    const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+
+    const handleForgot = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await api.post('/auth/forgot-password', { email });
+            toast.success('Recovery email sent! Please check your inbox.');
+            navigate('/reset-password');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to send recovery email.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <AuthLayout>
             <div className="text-center mb-8">
@@ -14,7 +35,7 @@ const ForgotPasswordPage: React.FC = () => {
                 </p>
             </div>
 
-            <form className="space-y-6">
+            <form onSubmit={handleForgot} className="space-y-6">
                 <Input 
                     label="Email Address"
                     id="email"
@@ -22,6 +43,8 @@ const ForgotPasswordPage: React.FC = () => {
                     placeholder="john@example.com"
                     required
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     leftIcon={<Mail size={18} />}
                 />
 
@@ -29,8 +52,9 @@ const ForgotPasswordPage: React.FC = () => {
                     type="submit"
                     className="w-full"
                     rightIcon={<ArrowRight size={18} />}
+                    disabled={loading}
                 >
-                    Send Recovery Email
+                    {loading ? 'Sending...' : 'Send Recovery Email'}
                 </Button>
             </form>
 

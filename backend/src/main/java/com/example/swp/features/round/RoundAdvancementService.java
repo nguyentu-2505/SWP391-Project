@@ -102,21 +102,23 @@ public class RoundAdvancementService {
 
         User currentUser = getCurrentUser();
         List<TeamRoundAdvancement> advancements = new ArrayList<>();
-        int slotsFilled = 0;
+        java.util.Map<Long, Integer> slotsFilledPerTrack = new java.util.HashMap<>();
 
         for (TeamRankingResponse rankResponse : rankings) {
             Team team = teamMap.get(rankResponse.getTeamId());
             if (team != null && team.getStatus() != TeamStatus.DISQUALIFIED) {
-                TeamRoundAdvancement adv = TeamRoundAdvancement.builder()
-                        .team(team)
-                        .fromRound(fromRound)
-                        .toRound(toRound)
-                        .advancedBy(currentUser)
-                        .build();
-                advancements.add(adv);
-                slotsFilled++;
-                if (slotsFilled >= fromRound.getAdvancementSlots()) {
-                    break;
+                Long trackId = team.getTrack() != null ? team.getTrack().getId() : -1L;
+                int currentSlots = slotsFilledPerTrack.getOrDefault(trackId, 0);
+
+                if (currentSlots < fromRound.getAdvancementSlots()) {
+                    TeamRoundAdvancement adv = TeamRoundAdvancement.builder()
+                            .team(team)
+                            .fromRound(fromRound)
+                            .toRound(toRound)
+                            .advancedBy(currentUser)
+                            .build();
+                    advancements.add(adv);
+                    slotsFilledPerTrack.put(trackId, currentSlots + 1);
                 }
             }
         }

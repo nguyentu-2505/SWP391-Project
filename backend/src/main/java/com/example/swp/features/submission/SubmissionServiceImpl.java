@@ -46,11 +46,19 @@ public class SubmissionServiceImpl implements SubmissionService {
     public SubmissionResponse createSubmission(CreateSubmissionRequest request) {
         User currentUser = getCurrentUser();
         
+        if (!currentUser.isProfileComplete()) {
+            throw new com.example.swp.exception.BadRequestException("Please complete your profile before participating.");
+        }
+        
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
         
         if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
             throw new IllegalStateException("Your team has been disqualified and cannot make submissions.");
+        }
+        
+        if (team.getStatus() != com.example.swp.features.team.TeamStatus.FINALIZED) {
+            throw new com.example.swp.exception.BadRequestException("Only finalized teams can submit projects. Please finalize your team first.");
         }
 
         Round round = roundRepository.findById(request.getRoundId())
@@ -61,6 +69,12 @@ public class SubmissionServiceImpl implements SubmissionService {
         
         if (!teamMember.isLeader()) {
             throw new AccessDeniedException("Only the team leader can make a submission.");
+        }
+
+        long currentSize = teamMemberRepository.countByTeamId(team.getId());
+        Integer minSize = team.getEvent().getMinTeamSize();
+        if (minSize != null && currentSize < minSize) {
+            throw new com.example.swp.exception.BadRequestException("Team size does not meet the minimum requirement to submit.");
         }
 
         LocalDateTime now = LocalDateTime.now();

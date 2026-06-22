@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import VerifyOtpPage from './pages/VerifyOtpPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
@@ -40,6 +41,11 @@ import EventDashboardPage from './pages/organizer/EventDashboardPage';
 import SubmissionsTab from './pages/organizer/tabs/SubmissionsTab';
 import JudgesTab from './pages/organizer/tabs/JudgesTab';
 import RankingTab from './pages/organizer/tabs/RankingTab';
+import TeamsTab from './pages/organizer/tabs/TeamsTab';
+import RoundsTab from './pages/organizer/tabs/RoundsTab';
+import CriteriaTab from './pages/organizer/tabs/CriteriaTab';
+import TracksTab from './pages/organizer/tabs/TracksTab';
+import PrizesTab from './pages/organizer/tabs/PrizesTab';
 // Generic Pages
 import TeamsPage from './pages/TeamsPage';
 import RoundsPage from './pages/RoundsPage';
@@ -71,6 +77,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Public facing routes with PublicLayout */}
           <Route element={<PublicLayout />}>
@@ -118,6 +125,11 @@ function App() {
                   <Route path="submissions" element={<SubmissionsTab />} />
                   <Route path="judges" element={<JudgesTab />} />
                   <Route path="ranking" element={<RankingTab />} />
+                  <Route path="teams" element={<TeamsTab />} />
+                  <Route path="rounds" element={<RoundsTab />} />
+                  <Route path="criteria" element={<CriteriaTab />} />
+                  <Route path="tracks" element={<TracksTab />} />
+                  <Route path="prizes" element={<PrizesTab />} />
                   {/* Add other tabs here */}
                 </Route>
               </Route>

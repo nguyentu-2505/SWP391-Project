@@ -74,6 +74,10 @@ public class TeamServiceImpl implements TeamService {
         registrationRepository.findByEventAndUser(event, currentUser)
                 .orElseThrow(() -> new IllegalStateException("You must be registered for the event to create a team."));
 
+        if (!currentUser.isProfileComplete()) {
+            throw new com.example.swp.exception.BadRequestException("Please complete your profile before participating.");
+        }
+
         // Business Rule: One team per hackathon (Task 2.4)
         if (isUserInAnotherTeamInEvent(currentUser, event.getId())) {
             throw new IllegalStateException("You are already in a team for this hackathon.");
@@ -207,12 +211,23 @@ public class TeamServiceImpl implements TeamService {
         if (request.getProjectDescription() != null) team.setProjectDescription(request.getProjectDescription());
         
         if (request.getTrackId() != null) {
-            Track track = trackRepository.findById(request.getTrackId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Track not found"));
-            if (!track.getHackathonEvent().getId().equals(team.getEvent().getId())) {
-                throw new com.example.swp.exception.BadRequestException("Track does not belong to this event");
+            Long currentTrackId = team.getTrack() != null ? team.getTrack().getId() : null;
+            if (!request.getTrackId().equals(currentTrackId)) {
+                if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
+                    if (!isCurrentUserAdmin) {
+                        throw new com.example.swp.exception.BadRequestException("Cannot change track after team finalization.");
+                    } else {
+                        auditLogService.logAction("FORCE_CHANGE_TRACK", "TEAM", team.getId(), null, "Admin " + currentUser.getUsername() + " forced track change on FINALIZED team");
+                    }
+                }
+                
+                Track track = trackRepository.findById(request.getTrackId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Track not found"));
+                if (!track.getHackathonEvent().getId().equals(team.getEvent().getId())) {
+                    throw new com.example.swp.exception.BadRequestException("Track does not belong to this event");
+                }
+                team.setTrack(track);
             }
-            team.setTrack(track);
         }
 
         Team updatedTeam = teamRepository.save(team);
@@ -228,6 +243,10 @@ public class TeamServiceImpl implements TeamService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
         
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
+            throw new com.example.swp.exception.BadRequestException("Finalized teams cannot be deleted. Please use disqualify instead.");
+        }
+        
         List<com.example.swp.features.mentorship_request.MentorshipRequest> requests = mentorshipRequestRepository.findByTeamId(teamId);
         mentorshipRequestRepository.deleteAll(requests);
         
@@ -241,6 +260,40 @@ public class TeamServiceImpl implements TeamService {
 
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         auditLogService.logAction("DELETE_TEAM", "TEAM", teamId, "DELETED", "Team '" + team.getName() + "' deleted by " + currentUsername);
+    }
+
+    @Override
+    @Transactional
+    public TeamResponse finalizeTeam(Long teamId) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+
+        boolean isCurrentUserLeader = teamMemberRepository.existsByTeamIdAndUserIdAndIsLeaderTrue(teamId, currentUser.getId());
+        if (!isCurrentUserLeader) {
+            throw new com.example.swp.exception.BadRequestException("Only the Team Leader can finalize the team.");
+        }
+
+        long currentSize = teamMemberRepository.countByTeamId(team.getId());
+        Integer minSize = team.getEvent().getMinTeamSize();
+        if (minSize != null && currentSize < minSize) {
+            throw new com.example.swp.exception.BadRequestException("Your team needs at least " + minSize + " members before participating.");
+        }
+        
+        Integer maxSize = team.getEvent().getMaxTeamSize();
+        if (maxSize != null && currentSize > maxSize) {
+            throw new com.example.swp.exception.BadRequestException("Your team exceeds the maximum allowed members.");
+        }
+
+        team.setStatus(TeamStatus.FINALIZED);
+        Team updatedTeam = teamRepository.save(team);
+        
+        auditLogService.logAction("FINALIZE_TEAM", "TEAM", team.getId(), null, "Team finalized by " + currentUser.getUsername());
+        
+        return mapToResponse(updatedTeam);
     }
 
     private boolean isUserInAnotherTeamInEvent(User user, Long eventId) {
