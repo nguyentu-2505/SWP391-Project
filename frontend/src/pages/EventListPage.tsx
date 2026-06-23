@@ -114,10 +114,9 @@ const EventListPage: React.FC = () => {
                             className="pl-10 pr-10 py-3 w-full bg-white border border-neutral-border rounded-lg text-body-sm text-on-surface focus:outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 transition-all duration-200 appearance-none cursor-pointer font-medium"
                         >
                             <option value="">All Statuses</option>
-                            <option value="DRAFT">Draft</option>
-                            <option value="REGISTRATION_OPEN">Registration Open</option>
-                            <option value="ONGOING">Ongoing</option>
-                            <option value="ENDED">Ended</option>
+                            <option value="PUBLISHED">Published</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETED">Completed</option>
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                             <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

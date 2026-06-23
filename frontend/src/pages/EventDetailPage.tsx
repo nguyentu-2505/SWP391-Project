@@ -166,7 +166,7 @@ const EventDetailPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {event.status === 'REGISTRATION_OPEN' && (
+                                {event.status === 'PUBLISHED' && (
                                     <div className="pt-2">
                                         <button 
                                             className="w-full py-2.5 text-sm font-bold text-white bg-primary-container hover:bg-[#d9611b] rounded-lg shadow-sm transition-colors disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed"

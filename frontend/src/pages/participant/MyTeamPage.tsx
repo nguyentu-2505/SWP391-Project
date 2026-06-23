@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Users, User, Crown, X, Plus, AlertCircle, Link as LinkIcon, Mail, Info } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Users, Crown, X, Plus, AlertCircle, Mail, Info, CheckCircle, Lock, Send } from 'lucide-react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Skeleton from '../../components/Skeleton';
+import { getDecodedToken } from '../../services/authUtils';
 
 interface TeamMemberInfo {
     userId: number;
@@ -29,6 +30,7 @@ interface HackathonEvent {
 
 const MyTeamPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
+    const navigate = useNavigate();
     
     const [events, setEvents] = useState<HackathonEvent[]>([]);
     const [selectedEventId, setSelectedEventId] = useState<number | ''>('');
@@ -41,6 +43,7 @@ const MyTeamPage: React.FC = () => {
     const [isInviteModalOpen, setInviteModalOpen] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
     const [isInviting, setIsInviting] = useState(false);
+    const [isFinalizing, setIsFinalizing] = useState(false);
 
     // Step 1: Fetch all events
     useEffect(() => {
@@ -66,27 +69,28 @@ const MyTeamPage: React.FC = () => {
     }, []);
 
     // Step 2: Fetch team when selected event changes
-    useEffect(() => {
-        const fetchMyTeam = async () => {
-            if (!selectedEventId) return;
-            setLoadingTeam(true);
-            setError('');
-            setTeam(null);
-            
-            try {
-                const response = await api.get(`/teams/my-team/event/${selectedEventId}`);
-                setTeam(response.data.data);
-            } catch (err: any) {
-                if (err.response?.status === 404) {
-                    setError("You are not part of a team for this event yet.");
-                } else {
-                    setError('Failed to fetch your team information.');
-                }
-            } finally {
-                setLoadingTeam(false);
-                setLoadingEvents(false);
+    const fetchMyTeam = async () => {
+        if (!selectedEventId) return;
+        setLoadingTeam(true);
+        setError('');
+        setTeam(null);
+        
+        try {
+            const response = await api.get(`/teams/my-team/event/${selectedEventId}`);
+            setTeam(response.data.data);
+        } catch (err: any) {
+            if (err.response?.status === 404) {
+                setError("You are not part of a team for this event yet.");
+            } else {
+                setError('Failed to fetch your team information.');
             }
-        };
+        } finally {
+            setLoadingTeam(false);
+            setLoadingEvents(false);
+        }
+    };
+
+    useEffect(() => {
         fetchMyTeam();
     }, [selectedEventId]);
 
@@ -109,9 +113,27 @@ const MyTeamPage: React.FC = () => {
             setInviteEmail('');
             setInviteModalOpen(false);
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to send invitation.');
+            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to send invitation.');
         } finally {
             setIsInviting(false);
+        }
+    };
+
+    const handleFinalize = async () => {
+        if (!team) return;
+        if (!window.confirm("Are you sure you want to finalize this team? You will not be able to change track or members after this.")) {
+            return;
+        }
+
+        setIsFinalizing(true);
+        try {
+            await api.post(`/teams/${team.id}/finalize`);
+            toast.success("Team finalized successfully!");
+            await fetchMyTeam(); // reload data
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to finalize team.');
+        } finally {
+            setIsFinalizing(false);
         }
     };
 
@@ -123,7 +145,17 @@ const MyTeamPage: React.FC = () => {
         );
     }
 
-    const currentUserId = 0; // Replace with actual current user ID if available in context/localStorage
+    const currentUsername = getDecodedToken()?.sub;
+    const isCurrentUserLeader = team?.members.some(m => m.username === currentUsername && m.isLeader) || false;
+    const isFinalized = team?.status === 'FINALIZED';
+    const isDisqualified = team?.status === 'DISQUALIFIED';
+    const isActive = team?.status === 'ACTIVE' || (!isFinalized && !isDisqualified);
+
+    const statusBadgeClass = isDisqualified
+        ? "bg-red-50 text-red-700 border-red-200"
+        : isFinalized
+        ? "bg-blue-50 text-blue-700 border-blue-200"
+        : "bg-green-50 text-green-700 border-green-200";
 
     return (
         <div className="space-y-6 max-w-[1440px] mx-auto">
@@ -198,7 +230,7 @@ const MyTeamPage: React.FC = () => {
                                     </span>
                                     <h2 className="text-xl md:text-2xl font-bold text-on-surface mt-3">{team.name}</h2>
                                 </div>
-                                <span className="text-xs font-semibold text-green-700 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+                                <span className={`text-xs font-semibold px-3 py-1 border rounded-full ${statusBadgeClass}`}>
                                     {team.status || 'ACTIVE'}
                                 </span>
                             </div>
@@ -213,6 +245,36 @@ const MyTeamPage: React.FC = () => {
                                         {team.projectDescription || 'No project description provided yet. Ask your team leader to define the project details.'}
                                     </p>
                                 </div>
+                            </div>
+
+                            {/* Actions area based on team status */}
+                            <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-3">
+                                {isActive && isCurrentUserLeader && (
+                                    <button
+                                        onClick={handleFinalize}
+                                        disabled={isFinalizing}
+                                        className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                                    >
+                                        <CheckCircle size={16} />
+                                        {isFinalizing ? 'Finalizing...' : 'Finalize Team'}
+                                    </button>
+                                )}
+                                
+                                {isFinalized && isCurrentUserLeader && (
+                                    <button
+                                        onClick={() => navigate(`/events/${selectedEventId}/submissions/new`)}
+                                        className="inline-flex items-center gap-2 bg-primary-container hover:bg-[#d9611b] text-white text-sm font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors"
+                                    >
+                                        <Send size={16} />
+                                        Submit Project
+                                    </button>
+                                )}
+
+                                {isFinalized && (
+                                    <div className="flex items-center gap-2 text-sm text-on-surface-variant bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                                        <Lock size={16} /> Team is finalized. Edits are locked.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -238,7 +300,7 @@ const MyTeamPage: React.FC = () => {
                         </ul>
 
                         {/* Invitation trigger for team leaders */}
-                        {team.members.some(m => m.isLeader) && (
+                        {isActive && isCurrentUserLeader && (
                             <button 
                                 onClick={() => setInviteModalOpen(true)}
                                 className="mt-5 w-full flex items-center justify-center gap-2 border border-outline-variant hover:bg-slate-50 text-sm font-semibold text-on-surface py-2.5 rounded-lg transition-colors cursor-pointer shadow-sm"

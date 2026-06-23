@@ -12,6 +12,7 @@ interface Round {
 interface TeamDetails {
     id: number;
     name: string;
+    status: string;
 }
 
 const SubmitProjectPage: React.FC = () => {
@@ -168,6 +169,15 @@ const SubmitProjectPage: React.FC = () => {
                     </div>
                 </div>
 
+                {myTeam?.status !== 'FINALIZED' ? (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
+                        <AlertCircle className="shrink-0 mt-0.5" size={20} />
+                        <div>
+                            <p className="font-bold">Team must be finalized before submission.</p>
+                            <p className="text-sm mt-1">Please return to your team dashboard and finalize your team first.</p>
+                        </div>
+                    </div>
+                ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Round Selection */}
                     <div>
@@ -287,6 +297,7 @@ const SubmitProjectPage: React.FC = () => {
                         </button>
                     </div>
                 </form>
+                )}
             </div>
         </div>
     );

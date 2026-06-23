@@ -21,7 +21,7 @@ const HackathonEventPage: React.FC = () => {
   const fetchEvents = async () => {
     setIsLoading(true);
     try {
-      const data = await HackathonEventService.getHackathonEvents();
+      const data = await HackathonEventService.getAllEventsForAdmin();
       setEvents(data);
     } catch (error) {
       console.error('Failed to fetch hackathon events:', error);
