@@ -4,7 +4,9 @@ import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.user.dto.UserResponse;
 import com.example.swp.features.user.dto.request.CreateUserRequest;
+import com.example.swp.util.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -21,6 +25,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -38,6 +43,18 @@ public class UserServiceImpl implements UserService {
 
         user.setApproved(true);
         User updatedUser = userRepository.save(user);
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                String emailBody = "Hello " + updatedUser.getUsername() + ",\n\n" +
+                                   "Your account has been approved by the admin. You can now log in to the Hackathon Event platform.\n\n" +
+                                   "Best regards,\nHackathon Event Notification Team";
+                emailService.sendSimpleMessage(updatedUser.getEmail(), "Account Approved", emailBody);
+            } catch (Exception e) {
+                log.error("Failed to send approval email to {}: {}", updatedUser.getEmail(), e.getMessage());
+            }
+        });
+
         return mapToResponse(updatedUser);
     }
 

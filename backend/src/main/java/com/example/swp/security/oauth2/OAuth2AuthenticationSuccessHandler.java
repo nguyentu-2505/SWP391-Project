@@ -56,7 +56,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             newUser.setFullName(name);
             newUser.setAvatarUrl(avatar);
             newUser.setRole(Role.PARTICIPANT);
-            newUser.setApproved(true);
+            newUser.setApproved(false);
             newUser.setVerified(true);
             
             // Set a random impossible password for OAuth users
