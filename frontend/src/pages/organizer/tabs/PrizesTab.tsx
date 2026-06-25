@@ -41,7 +41,7 @@ const PrizesTab: React.FC = () => {
         if (!eventId) return;
         try {
             const [prizeRes, teamRes] = await Promise.all([
-                api.get(`/prizes/event/${eventId}`),
+                api.get(`/prizes/event/${eventId}`, { baseURL: api.defaults.baseURL?.replace('/api/v1', '') }),
                 api.get(`/teams/event/${eventId}`),
             ]);
             // Handle both raw array and wrapped response
@@ -49,7 +49,8 @@ const PrizesTab: React.FC = () => {
             const teamData = teamRes.data.data ?? teamRes.data;
             setPrizes(Array.isArray(prizeData) ? prizeData : []);
             setTeams(Array.isArray(teamData) ? teamData : []);
-        } catch {
+        } catch (err) {
+            console.error('Failed to load prize data', err);
             toast.error('Failed to load prize data.');
         } finally {
             setLoading(false);
@@ -70,7 +71,7 @@ const PrizesTab: React.FC = () => {
                 rank: form.rank,
                 hackathonEventId: Number(eventId),
                 ...(form.trackId ? { trackId: form.trackId } : {}),
-            });
+            }, { baseURL: api.defaults.baseURL?.replace('/api/v1', '') });
             toast.success('Prize created!');
             setForm({ name: '', description: '', rank: 1, trackId: '' });
             setShowForm(false);
@@ -85,13 +86,33 @@ const PrizesTab: React.FC = () => {
     const handleAssign = async (prizeId: number) => {
         if (!assignTeamId) { toast.error('Please select a team.'); return; }
         try {
-            await api.patch(`/prizes/${prizeId}/assign`, { teamId: assignTeamId });
+            await api.patch(`/prizes/${prizeId}/assign`, { teamId: assignTeamId }, { baseURL: api.defaults.baseURL?.replace('/api/v1', '') });
             toast.success('Prize assigned successfully!');
             setAssigningPrizeId(null);
             setAssignTeamId('');
             fetchData();
         } catch (err: any) {
             toast.error(err.response?.data?.error?.message || 'Failed to assign prize.');
+        }
+    };
+
+    const [autoAssigning, setAutoAssigning] = useState(false);
+
+    const handleAutoAssign = async () => {
+        if (!eventId) return;
+        if (!window.confirm('Are you sure you want to auto-assign prizes based on rankings?')) {
+            return;
+        }
+        
+        setAutoAssigning(true);
+        try {
+            await api.post(`/prizes/event/${eventId}/auto-assign`, {}, { baseURL: api.defaults.baseURL?.replace('/api/v1', '') });
+            toast.success('Prizes auto-assigned successfully!');
+            fetchData();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || 'Failed to auto-assign prizes.');
+        } finally {
+            setAutoAssigning(false);
         }
     };
 
@@ -104,13 +125,26 @@ const PrizesTab: React.FC = () => {
             <div className="flex items-center gap-2 mb-4">
                 <Trophy size={20} className="text-yellow-500" />
                 <h2 className="text-xl font-semibold text-gray-800">Prizes & Winners</h2>
-                <button
-                    onClick={() => setShowForm(s => !s)}
-                    className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    <Plus size={14} />
-                    Add Prize
-                </button>
+                
+                <div className="ml-auto flex gap-2">
+                    {prizes.length > 0 && (
+                        <button
+                            onClick={handleAutoAssign}
+                            disabled={autoAssigning}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                        >
+                            <Trophy size={14} />
+                            {autoAssigning ? 'Assigning...' : 'Auto Assign Prizes'}
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setShowForm(s => !s)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        <Plus size={14} />
+                        Add Prize
+                    </button>
+                </div>
             </div>
 
             {showForm && (

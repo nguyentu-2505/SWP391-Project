@@ -28,7 +28,7 @@ const TracksTab: React.FC = () => {
     const fetchTracks = async () => {
         if (!eventId) return;
         try {
-            const res = await api.get(`/tracks/event/${eventId}`);
+            const res = await api.get(`/tracks/hackathon/${eventId}`);
             const data = res.data.data ?? res.data;
             setTracks(Array.isArray(data) ? data : []);
         } catch {
