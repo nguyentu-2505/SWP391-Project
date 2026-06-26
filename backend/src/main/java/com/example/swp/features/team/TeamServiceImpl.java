@@ -62,7 +62,7 @@ public class TeamServiceImpl implements TeamService {
         if (event.getRegistrationEnd() != null && now.isAfter(event.getRegistrationEnd())) {
             throw new IllegalStateException("Registration has closed.");
         }
-                
+
         Track track = trackRepository.findById(request.getTrackId())
                 .orElseThrow(() -> new ResourceNotFoundException("Track not found"));
 
@@ -90,7 +90,7 @@ public class TeamServiceImpl implements TeamService {
                 .status(TeamStatus.ACTIVE)
                 .build();
         Team savedTeam = teamRepository.save(team);
-        
+
         auditLogService.logAction("CREATE_TEAM", "Team", savedTeam.getId(), null, "Created team: " + savedTeam.getName());
 
         TeamMember leader = TeamMember.builder()
@@ -99,8 +99,11 @@ public class TeamServiceImpl implements TeamService {
                 .isLeader(true)
                 .build();
         teamMemberRepository.save(leader);
-        
-        // Refresh team members from DB
+
+        // IMPORTANT: Flush to ensure DB is updated before querying
+        teamMemberRepository.flush();
+
+        // Refresh team members from DB (now this will include the leader)
         savedTeam.setTeamMembers(teamMemberRepository.findByTeamId(savedTeam.getId()));
 
         return mapToResponse(savedTeam);

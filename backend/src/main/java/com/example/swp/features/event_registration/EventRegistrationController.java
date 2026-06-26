@@ -1,4 +1,4 @@
-package com.example.swp.features.event_registration;
+        package com.example.swp.features.event_registration;
 
 import com.example.swp.common.ApiResponse;
 import com.example.swp.features.event_registration.dto.response.EventRegistrationResponse;
@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+        import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/event-registrations")

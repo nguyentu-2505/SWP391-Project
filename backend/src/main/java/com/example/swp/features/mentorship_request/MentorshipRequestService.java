@@ -16,6 +16,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.swp.features.track.TrackMentor;
+import com.example.swp.features.track_mentor.TrackMentorRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,6 +32,7 @@ public class MentorshipRequestService {
     private final UserRepository userRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final NotificationService notificationService;
+    private final TrackMentorRepository trackMentorRepository;
 
     @Transactional
     public MentorshipRequestResponse createRequest(CreateMentorshipRequest request) {
@@ -50,8 +53,21 @@ public class MentorshipRequestService {
         
         MentorshipRequest savedRequest = requestRepository.save(newRequest);
 
-        // Notify all available mentors
-        List<User> mentors = userRepository.findByRole(Role.MENTOR);
+        // Notify mentors assigned to the track, fallback to all mentors if none assigned
+        List<User> mentors;
+        if (team.getTrack() != null) {
+            List<TrackMentor> trackMentors = trackMentorRepository.findByTrackId(team.getTrack().getId());
+            if (!trackMentors.isEmpty()) {
+                mentors = trackMentors.stream()
+                        .map(TrackMentor::getMentor)
+                        .collect(Collectors.toList());
+            } else {
+                mentors = userRepository.findByRole(Role.MENTOR);
+            }
+        } else {
+            mentors = userRepository.findByRole(Role.MENTOR);
+        }
+
         for (User mentor : mentors) {
             notificationService.createNotification(
                 mentor, 
@@ -177,6 +193,22 @@ public class MentorshipRequestService {
     }
 
     public List<MentorshipRequestResponse> getOpenRequests() {
+        User currentUser = getCurrentUser();
+
+        // If the current user is a mentor or judge, only show requests for their assigned tracks
+        if (currentUser.getRole() == Role.MENTOR || currentUser.getRole() == Role.JUDGE) {
+            List<TrackMentor> assignments = trackMentorRepository.findByMentorId(currentUser.getId());
+            List<Long> assignedTrackIds = assignments.stream()
+                    .map(tm -> tm.getTrack().getId())
+                    .collect(Collectors.toList());
+
+            return requestRepository.findByStatus(MentorshipRequestStatus.OPEN).stream()
+                    .filter(req -> req.getTeam().getTrack() != null && assignedTrackIds.contains(req.getTeam().getTrack().getId()))
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        }
+
+        // Default fallback (e.g. ADMIN or ORGANIZER)
         return requestRepository.findByStatus(MentorshipRequestStatus.OPEN).stream()
             .map(this::mapToResponse).collect(Collectors.toList());
     }

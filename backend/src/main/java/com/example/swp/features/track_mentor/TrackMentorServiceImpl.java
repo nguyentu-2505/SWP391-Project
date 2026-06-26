@@ -4,6 +4,7 @@ import com.example.swp.exception.BadRequestException;
 import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.track.Track;
+import com.example.swp.features.track.TrackMentor;
 import com.example.swp.features.track.TrackRepository;
 import com.example.swp.features.track_mentor.dto.response.TrackMentorResponse;
 import com.example.swp.features.user.Role;
@@ -44,13 +45,13 @@ public class TrackMentorServiceImpl implements TrackMentorService {
             throw new BadRequestException("User is not a Mentor or Judge.");
         }
 
-        if (trackMentorRepository.findByTrackIdAndUserId(trackId, mentorId).isPresent()) {
+        if (trackMentorRepository.findByTrackIdAndMentorId(trackId, mentorId).isPresent()) {
             throw new BadRequestException("This user is already assigned to this track.");
         }
 
         TrackMentor assignment = TrackMentor.builder()
                 .track(track)
-                .user(mentor)
+                .mentor(mentor)
                 .event(track.getHackathonEvent())
                 .assignedBy(assigner)
                 .build();
@@ -80,7 +81,7 @@ public class TrackMentorServiceImpl implements TrackMentorService {
                 "REMOVE_MENTOR",
                 "TRACK_MENTOR",
                 trackMentorId,
-                String.format("Removed %s %s from track %s", assignment.getUser().getRole(), assignment.getUser().getUsername(), assignment.getTrack().getName()),
+                String.format("Removed %s %s from track %s", assignment.getMentor().getRole(), assignment.getMentor().getUsername(), assignment.getTrack().getName()),
                 null
         );
     }
@@ -90,14 +91,14 @@ public class TrackMentorServiceImpl implements TrackMentorService {
     public List<UserResponse> getMentorsByTrack(Long trackId) {
         List<TrackMentor> assignments = trackMentorRepository.findByTrackId(trackId);
         return assignments.stream()
-                .map(assignment -> mapToUserResponse(assignment.getUser()))
+                .map(assignment -> mapToUserResponse(assignment.getMentor()))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TrackMentorResponse> getAssignmentsByMentor(Long mentorId) {
-        List<TrackMentor> assignments = trackMentorRepository.findByUserId(mentorId);
+        List<TrackMentor> assignments = trackMentorRepository.findByMentorId(mentorId);
         return assignments.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -108,8 +109,8 @@ public class TrackMentorServiceImpl implements TrackMentorService {
                 .id(assignment.getId())
                 .trackId(assignment.getTrack().getId())
                 .trackName(assignment.getTrack().getName())
-                .mentorId(assignment.getUser().getId())
-                .mentorName(assignment.getUser().getUsername())
+                .mentorId(assignment.getMentor().getId())
+                .mentorName(assignment.getMentor().getUsername())
                 .eventId(assignment.getEvent().getId())
                 .eventName(assignment.getEvent().getName())
                 .assignedById(assignment.getAssignedBy() != null ? assignment.getAssignedBy().getId() : null)

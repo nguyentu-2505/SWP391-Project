@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
-import { Tag, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Tag, Plus, Trash2, Loader2, UserPlus, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import AssignMentorModal from './AssignMentorModal';
 
 interface Track {
     id: number;
@@ -15,22 +16,46 @@ interface TrackForm {
     description: string;
 }
 
+interface Mentor {
+    id: number;
+    username: string;
+}
+
+interface TrackWithMentors extends Track {
+    mentors: Mentor[];
+}
+
 const emptyForm: TrackForm = { name: '', description: '' };
 
 const TracksTab: React.FC = () => {
     const { eventId } = useParams<{ eventId: string }>();
-    const [tracks, setTracks] = useState<Track[]>([]);
+    const [tracks, setTracks] = useState<TrackWithMentors[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState<TrackForm>(emptyForm);
     const [saving, setSaving] = useState(false);
+    const [modalTrack, setModalTrack] = useState<TrackWithMentors | null>(null);
 
-    const fetchTracks = async () => {
+    const fetchTracksAndMentors = async () => {
         if (!eventId) return;
+        setLoading(true);
         try {
-            const res = await api.get(`/tracks/hackathon/${eventId}`);
-            const data = res.data.data ?? res.data;
-            setTracks(Array.isArray(data) ? data : []);
+            const trackRes = await api.get(`/tracks/hackathon/${eventId}`);
+            const trackData: Track[] = trackRes.data.data ?? trackRes.data ?? [];
+
+            const tracksWithMentors = await Promise.all(
+                trackData.map(async (track) => {
+                    try {
+                        const mentorRes = await api.get(`/track-mentors/track/${track.id}`);
+                        const mentors: Mentor[] = mentorRes.data.data ?? [];
+                        return { ...track, mentors };
+                    } catch {
+                        // If fetching mentors fails for a track, return it with an empty array
+                        return { ...track, mentors: [] };
+                    }
+                })
+            );
+            setTracks(tracksWithMentors);
         } catch {
             toast.error('Failed to load tracks.');
         } finally {
@@ -38,9 +63,9 @@ const TracksTab: React.FC = () => {
         }
     };
 
-    useEffect(() => { fetchTracks(); }, [eventId]);
+    useEffect(() => { fetchTracksAndMentors(); }, [eventId]);
 
-    const handleCreate = async (e: React.FormEvent) => {
+    const handleCreateTrack = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.name.trim()) { toast.error('Track name is required.'); return; }
 
@@ -50,7 +75,7 @@ const TracksTab: React.FC = () => {
             toast.success('Track created!');
             setForm(emptyForm);
             setShowForm(false);
-            fetchTracks();
+            fetchTracksAndMentors();
         } catch (err: any) {
             toast.error(err.response?.data?.error?.message || 'Failed to create track.');
         } finally {
@@ -58,7 +83,7 @@ const TracksTab: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDeleteTrack = async (id: number) => {
         if (!confirm('Delete this track? Teams in this track will become untracked.')) return;
         try {
             await api.delete(`/tracks/${id}`);
@@ -67,6 +92,15 @@ const TracksTab: React.FC = () => {
         } catch {
             toast.error('Failed to delete track.');
         }
+    };
+    
+    const handleRemoveMentor = async (trackId: number, mentorId: number) => {
+        // This is a simplified approach. A more robust way would be to find the specific track-mentor assignment ID.
+        // For now, we assume we can find the assignment to delete it. This needs a backend endpoint improvement.
+        // Let's assume we have an endpoint `DELETE /track-mentors/track/{trackId}/mentor/{mentorId}`
+        // Since we don't, this will fail. The correct way is to get the assignment ID first.
+        // This is a placeholder for a more complex implementation.
+        toast.error("Mentor removal not implemented yet. Requires specific assignment ID.");
     };
 
     if (loading) return (
@@ -83,9 +117,22 @@ const TracksTab: React.FC = () => {
 
     return (
         <div>
+            {modalTrack && (
+                <AssignMentorModal
+                    trackId={modalTrack.id}
+                    trackName={modalTrack.name}
+                    assignedMentorIds={modalTrack.mentors.map(m => m.id)}
+                    onClose={() => setModalTrack(null)}
+                    onSuccess={() => {
+                        fetchTracksAndMentors();
+                        setModalTrack(null);
+                    }}
+                />
+            )}
+
             <div className="flex items-center gap-2 mb-4">
                 <Tag size={20} className="text-gray-600" />
-                <h2 className="text-xl font-semibold text-gray-800">Competition Tracks</h2>
+                <h2 className="text-xl font-semibold text-gray-800">Competition Tracks & Mentors</h2>
                 <button
                     onClick={() => setShowForm(s => !s)}
                     className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -96,7 +143,8 @@ const TracksTab: React.FC = () => {
             </div>
 
             {showForm && (
-                <form onSubmit={handleCreate} className="mb-6 border border-blue-200 bg-blue-50 rounded-lg p-4 space-y-3">
+                <form onSubmit={handleCreateTrack} className="mb-6 border border-blue-200 bg-blue-50 rounded-lg p-4 space-y-3">
+                    {/* Form content remains the same */}
                     <h3 className="text-sm font-semibold text-blue-800">New Track</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
@@ -134,24 +182,49 @@ const TracksTab: React.FC = () => {
                     <p className="text-sm">No tracks yet. Tracks allow teams to compete in specific categories.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-4">
                     {tracks.map((track, idx) => (
                         <div
                             key={track.id}
-                            className={`flex items-start gap-3 p-4 border rounded-lg ${tagColors[idx % tagColors.length]}`}
+                            className={`p-4 border rounded-lg ${tagColors[idx % tagColors.length]}`}
                         >
-                            <Tag size={18} className="flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                                <p className="font-semibold text-sm">{track.name}</p>
-                                {track.description && <p className="text-xs opacity-80 mt-0.5">{track.description}</p>}
+                            <div className="flex items-start gap-3">
+                                <Tag size={18} className="flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <p className="font-semibold text-sm">{track.name}</p>
+                                    {track.description && <p className="text-xs opacity-80 mt-0.5">{track.description}</p>}
+                                </div>
+                                <button
+                                    onClick={() => handleDeleteTrack(track.id)}
+                                    className="opacity-60 hover:opacity-100 transition-opacity p-1"
+                                    title="Delete track"
+                                >
+                                    <Trash2 size={15} />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => handleDelete(track.id)}
-                                className="opacity-60 hover:opacity-100 transition-opacity p-1"
-                                title="Delete track"
-                            >
-                                <Trash2 size={15} />
-                            </button>
+                            <div className="mt-4 pt-3 border-t border-black/10">
+                                <h4 className="text-xs font-semibold uppercase tracking-wider mb-2">Assigned Mentors</h4>
+                                {track.mentors.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {track.mentors.map(mentor => (
+                                            <div key={mentor.id} className="flex items-center gap-1.5 bg-white/70 text-xs px-2 py-1 rounded-full border border-black/10">
+                                                <span>{mentor.username}</span>
+                                                {/* The remove button is complex, requires assignment ID. Placeholder for now. */}
+                                                {/* <button onClick={() => handleRemoveMentor(track.id, mentor.id)}><XCircle size={12} className="hover:text-red-500" /></button> */}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-black/50">No mentors assigned yet.</p>
+                                )}
+                                <button
+                                    onClick={() => setModalTrack(track)}
+                                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-inherit opacity-80 hover:opacity-100"
+                                >
+                                    <UserPlus size={14} />
+                                    Assign Mentor
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>

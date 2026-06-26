@@ -1,4 +1,4 @@
-package com.example.swp.features.event_registration;
+        package com.example.swp.features.event_registration;
 
 import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.event_registration.dto.response.EventRegistrationResponse;

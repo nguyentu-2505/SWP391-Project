@@ -1,5 +1,6 @@
 package com.example.swp.features.team_member.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,6 +13,7 @@ public class TeamMemberResponse {
     private Long teamId;
     private Long userId;
     private String username; // To show user's name in response
+    @JsonProperty("isLeader")
     private boolean isLeader;
 
     public static TeamMemberResponseBuilder builder() { return new TeamMemberResponseBuilder(); }

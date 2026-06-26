@@ -14,7 +14,6 @@ public interface HackathonEventService {
     Page<HackathonEventResponse> getAllEventsForAdmin(Pageable pageable);
     List<HackathonEventResponse> getMyHackathonEvents();
     HackathonEventResponse getHackathonEventBySlug(String slug);
-    HackathonEventResponse getHackathonEventById(Long id);
     HackathonEventResponse updateHackathonEvent(Long id, UpdateHackathonEventRequest request);
     void deleteHackathonEvent(Long id);
     HackathonEventResponse updateHackathonEventStatus(Long id, HackathonStatus newStatus);

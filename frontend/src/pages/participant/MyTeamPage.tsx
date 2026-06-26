@@ -73,16 +73,18 @@ const MyTeamPage: React.FC = () => {
         if (!selectedEventId) return;
         setLoadingTeam(true);
         setError('');
-        setTeam(null);
+        setTeam(null); // Clear previous team data before fetching
         
         try {
             const response = await api.get(`/teams/my-team/event/${selectedEventId}`);
             setTeam(response.data.data);
         } catch (err: any) {
+            // If team is not found (404) or any other error, ensure team state is null
+            setTeam(null); 
             if (err.response?.status === 404) {
                 setError("You are not part of a team for this event yet.");
             } else {
-                setError('Failed to fetch your team information.');
+                setError('Failed to fetch your team information. Please refresh the page.');
             }
         } finally {
             setLoadingTeam(false);
