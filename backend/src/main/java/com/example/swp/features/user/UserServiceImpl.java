@@ -4,7 +4,9 @@ import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.user.dto.UserResponse;
 import com.example.swp.features.user.dto.request.CreateUserRequest;
+import com.example.swp.util.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -21,8 +25,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
-    private final com.example.swp.util.EmailService emailService;
     private final com.example.swp.features.team_member.TeamMemberRepository teamMemberRepository;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -35,25 +39,26 @@ public class UserServiceImpl implements UserService {
         }
 
         auditLogService.logAction(
-            "APPROVE_USER", 
-            "User", 
-            userId, 
-            "approved: false", 
-            "approved: true"
-        );
+                "APPROVE_USER",
+                "User",
+                userId,
+                "approved: false",
+                "approved: true");
 
         user.setApproved(true);
         User updatedUser = userRepository.save(user);
-        
-        try {
-            String emailBody = "Hello " + updatedUser.getUsername() + ",\n\n" +
-                               "Your account has been approved. You can now login and complete your profile.\n\n" +
-                               "Best regards,\nHackathon Event Notification Team";
-            emailService.sendSimpleMessage(updatedUser.getEmail(), "Account Approved", emailBody);
-        } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(UserServiceImpl.class).error("Failed to send approval email to {}", updatedUser.getEmail(), e);
-        }
-        
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                String emailBody = "Hello " + updatedUser.getUsername() + ",\n\n" +
+                        "Your account has been approved by the admin. You can now log in to the Hackathon Event platform.\n\n"
+                        +
+                        "Best regards,\nHackathon Event Notification Team";
+                emailService.sendSimpleMessage(updatedUser.getEmail(), "Account Approved", emailBody);
+            } catch (Exception e) {
+                log.error("Failed to send approval email to {}: {}", updatedUser.getEmail(), e.getMessage());
+            }
+        });
         return mapToResponse(updatedUser);
     }
 
@@ -82,7 +87,7 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalStateException("Error: Email is already in use!");
         }
-        
+
         if (request.getFptStudentId() != null && !request.getFptStudentId().trim().isEmpty()) {
             if (userRepository.existsByFptStudentId(request.getFptStudentId())) {
                 throw new com.example.swp.exception.BadRequestException("This student ID is already registered.");
@@ -98,27 +103,27 @@ public class UserServiceImpl implements UserService {
         user.setSchoolName(request.getSchoolName());
         user.setApproved(true);
         user.setVerified(true);
-        
+
         User savedUser = userRepository.save(user);
-        
-        auditLogService.logAction("CREATE_USER", "User", savedUser.getId(), null, "User created: " + savedUser.getUsername());
-        
+
+        auditLogService.logAction("CREATE_USER", "User", savedUser.getId(), null,
+                "User created: " + savedUser.getUsername());
+
         return mapToResponse(savedUser);
     }
-    
+
     @Override
     @Transactional
     public void deactivateUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        
+
         auditLogService.logAction(
-            "DEACTIVATE_USER", 
-            "User", 
-            userId, 
-            "isActive: true", 
-            "isActive: false"
-        );
+                "DEACTIVATE_USER",
+                "User",
+                userId,
+                "isActive: true",
+                "isActive: false");
 
         user.setActive(false);
         userRepository.save(user);
@@ -138,7 +143,8 @@ public class UserServiceImpl implements UserService {
     }
 
     private User getCurrentUser() {
-        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication().getName();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
@@ -152,29 +158,36 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse updateProfile(com.example.swp.features.user.dto.request.UpdateProfileRequest request) {
         User user = getCurrentUser();
-        
-        if (request.getFullName() != null) user.setFullName(request.getFullName());
-        if (request.getPhone() != null) user.setPhone(request.getPhone());
-        if (request.getBio() != null) user.setBio(request.getBio());
+
+        if (request.getFullName() != null)
+            user.setFullName(request.getFullName());
+        if (request.getPhone() != null)
+            user.setPhone(request.getPhone());
+        if (request.getBio() != null)
+            user.setBio(request.getBio());
         boolean inFinalizedTeam = teamMemberRepository.findByUserId(user.getId()).stream()
-            .anyMatch(tm -> tm.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED);
+                .anyMatch(tm -> tm.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED);
 
         if (request.getFptStudentId() != null) {
             if (inFinalizedTeam && !request.getFptStudentId().equals(user.getFptStudentId())) {
-                throw new com.example.swp.exception.BadRequestException("Identity fields cannot be changed after your team registration is finalized.");
+                throw new com.example.swp.exception.BadRequestException(
+                        "Identity fields cannot be changed after your team registration is finalized.");
             }
-            if (!request.getFptStudentId().trim().isEmpty() && userRepository.existsByFptStudentIdAndIdNot(request.getFptStudentId(), user.getId())) {
+            if (!request.getFptStudentId().trim().isEmpty()
+                    && userRepository.existsByFptStudentIdAndIdNot(request.getFptStudentId(), user.getId())) {
                 throw new com.example.swp.exception.BadRequestException("This student ID is already registered.");
             }
             user.setFptStudentId(request.getFptStudentId());
         }
         if (request.getSchoolName() != null) {
             if (inFinalizedTeam && !request.getSchoolName().equals(user.getSchoolName())) {
-                throw new com.example.swp.exception.BadRequestException("Identity fields cannot be changed after your team registration is finalized.");
+                throw new com.example.swp.exception.BadRequestException(
+                        "Identity fields cannot be changed after your team registration is finalized.");
             }
             user.setSchoolName(request.getSchoolName());
         }
-        if (request.getGithubUrl() != null) user.setGithubUrl(request.getGithubUrl());
+        if (request.getGithubUrl() != null)
+            user.setGithubUrl(request.getGithubUrl());
 
         User updatedUser = userRepository.save(user);
         auditLogService.logAction("UPDATE_PROFILE", "USER", user.getId(), null, user.getUsername());
