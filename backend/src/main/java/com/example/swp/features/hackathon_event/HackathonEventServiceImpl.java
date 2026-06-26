@@ -55,30 +55,30 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         User organizer = getCurrentUser();
 
         // Validate: endTime phải sau startTime
-        validateTimeRange(request.getStartTime(), request.getEndTime(), "Thời gian kết thúc sự kiện phải sau thời gian bắt đầu.");
+        validateTimeRange(request.getStartTime(), request.getEndTime(), "Event end time must be after start time.");
 
         // Validate: registration window (nếu có)
         if (request.getRegistrationStart() != null && request.getRegistrationEnd() != null) {
             validateTimeRange(request.getRegistrationStart(), request.getRegistrationEnd(),
-                    "Thời gian kết thúc đăng ký phải sau thời gian bắt đầu đăng ký.");
+                    "Registration end time must be after registration start time.");
         }
 
         // Validate: registration start time must be before event start time
         if (request.getRegistrationStart() != null && request.getStartTime() != null
                 && !request.getRegistrationStart().isBefore(request.getStartTime())) {
-            throw new IllegalArgumentException("Thời gian bắt đầu đăng ký phải trước thời gian bắt đầu sự kiện.");
+            throw new IllegalArgumentException("Registration start time must be before event start time.");
         }
 
         // Validate: registration end time must be before event end time
         if (request.getRegistrationEnd() != null && request.getEndTime() != null
                 && !request.getRegistrationEnd().isBefore(request.getEndTime())) {
-            throw new IllegalArgumentException("Thời gian kết thúc đăng ký phải trước thời gian kết thúc sự kiện.");
+            throw new IllegalArgumentException("Registration end time must be before event end time.");
         }
 
         // Validate: minTeamSize <= maxTeamSize (nếu có)
         if (request.getMinTeamSize() != null && request.getMaxTeamSize() != null
                 && request.getMinTeamSize() > request.getMaxTeamSize()) {
-            throw new IllegalArgumentException("Số lượng thành viên tối thiểu của đội không được lớn hơn số lượng tối đa.");
+            throw new IllegalArgumentException("Minimum team size cannot be greater than maximum team size.");
         }
 
         // Generate unique slug
@@ -206,30 +206,30 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
 
         // Validate sau khi merge: endTime > startTime
-        validateTimeRange(event.getStartTime(), event.getEndTime(), "Thời gian kết thúc sự kiện phải sau thời gian bắt đầu.");
+        validateTimeRange(event.getStartTime(), event.getEndTime(), "Event end time must be after start time.");
 
         // Validate: registration window (nếu cả 2 đều có)
         if (event.getRegistrationStart() != null && event.getRegistrationEnd() != null) {
             validateTimeRange(event.getRegistrationStart(), event.getRegistrationEnd(),
-                    "Thời gian kết thúc đăng ký phải sau thời gian bắt đầu đăng ký.");
+                    "Registration end time must be after registration start time.");
         }
 
         // Validate: registration start time must be before event start time
         if (event.getRegistrationStart() != null && event.getStartTime() != null
                 && !event.getRegistrationStart().isBefore(event.getStartTime())) {
-            throw new IllegalArgumentException("Thời gian bắt đầu đăng ký phải trước thời gian bắt đầu sự kiện.");
+            throw new IllegalArgumentException("Registration start time must be before event start time.");
         }
 
         // Validate: registration end time must be before event end time
         if (event.getRegistrationEnd() != null && event.getEndTime() != null
                 && !event.getRegistrationEnd().isBefore(event.getEndTime())) {
-            throw new IllegalArgumentException("Thời gian kết thúc đăng ký phải trước thời gian kết thúc sự kiện.");
+            throw new IllegalArgumentException("Registration end time must be before event end time.");
         }
 
         // Validate: minTeamSize <= maxTeamSize
         if (event.getMinTeamSize() != null && event.getMaxTeamSize() != null
                 && event.getMinTeamSize() > event.getMaxTeamSize()) {
-            throw new IllegalArgumentException("Số lượng thành viên tối thiểu của đội không được lớn hơn số lượng tối đa.");
+            throw new IllegalArgumentException("Minimum team size cannot be greater than maximum team size.");
         }
 
         HackathonEvent updatedEvent = hackathonEventRepository.save(event);

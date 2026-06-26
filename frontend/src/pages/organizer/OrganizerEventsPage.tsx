@@ -45,23 +45,23 @@ const OrganizerEventsPage: React.FC = () => {
             const response = await api.get('/hackathon-events/my-events');
             setEvents(response.data.data);
         } catch (err) {
-            setError('Không thể tải danh sách sự kiện của bạn.');
-            toast.error('Không thể tải danh sách sự kiện.');
+            setError('Failed to fetch your events.');
+            toast.error('Failed to fetch events.');
         }
     };
 
     const handleStatusChange = async (eventId: number, newStatus: string) => {
-        if (!window.confirm(`Bạn có chắc chắn muốn thay đổi trạng thái sự kiện sang ${newStatus}?`)) {
+        if (!window.confirm(`Are you sure you want to change this event status to ${newStatus}?`)) {
             return;
         }
-        const loadingToast = toast.loading(`Đang cập nhật trạng thái sự kiện sang ${newStatus}...`);
+        const loadingToast = toast.loading(`Updating event status to ${newStatus}...`);
         try {
             await api.patch(`/hackathon-events/${eventId}/status?status=${newStatus}`);
-            toast.success(`Trạng thái sự kiện được cập nhật sang ${newStatus} thành công!`, { id: loadingToast });
+            toast.success(`Event status updated to ${newStatus} successfully!`, { id: loadingToast });
             await fetchMyEvents();
         } catch (err: any) {
             console.error('Failed to update event status:', err);
-            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Cập nhật trạng thái thất bại.', { id: loadingToast });
+            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update event status.', { id: loadingToast });
         }
     };
 
@@ -75,14 +75,14 @@ const OrganizerEventsPage: React.FC = () => {
 
     const handleCreateEvent = async () => {
         if (!newEvent.name || !newEvent.startTime || !newEvent.endTime) {
-            toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+            toast.error('Please fill in all required fields.');
             return;
         }
 
         const start = new Date(newEvent.startTime);
         const end = new Date(newEvent.endTime);
         if (start >= end) {
-            toast.error('Thời gian kết thúc sự kiện phải sau thời gian bắt đầu.');
+            toast.error('Event end time must be after start time.');
             return;
         }
 
@@ -90,7 +90,7 @@ const OrganizerEventsPage: React.FC = () => {
             const regStart = new Date(newEvent.registrationStart);
             const regEnd = new Date(newEvent.registrationEnd);
             if (regStart >= regEnd) {
-                toast.error('Thời gian kết thúc đăng ký phải sau thời gian bắt đầu đăng ký.');
+                toast.error('Registration end time must be after registration start time.');
                 return;
             }
         }
@@ -98,7 +98,7 @@ const OrganizerEventsPage: React.FC = () => {
         if (newEvent.registrationStart) {
             const regStart = new Date(newEvent.registrationStart);
             if (regStart >= start) {
-                toast.error('Thời gian bắt đầu đăng ký phải trước thời gian bắt đầu sự kiện.');
+                toast.error('Registration start time must be before event start time.');
                 return;
             }
         }
@@ -106,21 +106,21 @@ const OrganizerEventsPage: React.FC = () => {
         if (newEvent.registrationEnd) {
             const regEnd = new Date(newEvent.registrationEnd);
             if (regEnd >= end) {
-                toast.error('Thời gian kết thúc đăng ký phải trước thời gian kết thúc sự kiện.');
+                toast.error('Registration end time must be before event end time.');
                 return;
             }
         }
 
-        const loadingToast = toast.loading('Đang tạo sự kiện...');
+        const loadingToast = toast.loading('Creating event...');
         try {
             await HackathonEventService.createHackathonEvent(newEvent);
             await fetchMyEvents();
             setIsCreateModalOpen(false);
             setNewEvent({ name: '', description: '', startTime: '', endTime: '', registrationStart: '', registrationEnd: '' });
-            toast.success('Tạo sự kiện thành công', { id: loadingToast });
+            toast.success('Event created successfully', { id: loadingToast });
         } catch (err: any) {
             console.error('Failed to create hackathon event:', err);
-            toast.error('Tạo sự kiện thất bại: ' + (err.response?.data?.message || err.message), { id: loadingToast });
+            toast.error('Failed to create event: ' + (err.response?.data?.message || err.message), { id: loadingToast });
         }
     };
 
@@ -128,14 +128,14 @@ const OrganizerEventsPage: React.FC = () => {
         if (!editingEvent) return;
 
         if (!editingEvent.name || !editingEvent.startTime || !editingEvent.endTime) {
-            toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+            toast.error('Please fill in all required fields.');
             return;
         }
 
         const start = new Date(editingEvent.startTime);
         const end = new Date(editingEvent.endTime);
         if (start >= end) {
-            toast.error('Thời gian kết thúc sự kiện phải sau thời gian bắt đầu.');
+            toast.error('Event end time must be after start time.');
             return;
         }
 
@@ -143,7 +143,7 @@ const OrganizerEventsPage: React.FC = () => {
             const regStart = new Date(editingEvent.registrationStart);
             const regEnd = new Date(editingEvent.registrationEnd);
             if (regStart >= regEnd) {
-                toast.error('Thời gian kết thúc đăng ký phải sau thời gian bắt đầu đăng ký.');
+                toast.error('Registration end time must be after registration start time.');
                 return;
             }
         }
@@ -151,7 +151,7 @@ const OrganizerEventsPage: React.FC = () => {
         if (editingEvent.registrationStart) {
             const regStart = new Date(editingEvent.registrationStart);
             if (regStart >= start) {
-                toast.error('Thời gian bắt đầu đăng ký phải trước thời gian bắt đầu sự kiện.');
+                toast.error('Registration start time must be before event start time.');
                 return;
             }
         }
@@ -159,12 +159,12 @@ const OrganizerEventsPage: React.FC = () => {
         if (editingEvent.registrationEnd) {
             const regEnd = new Date(editingEvent.registrationEnd);
             if (regEnd >= end) {
-                toast.error('Thời gian kết thúc đăng ký phải trước thời gian kết thúc sự kiện.');
+                toast.error('Registration end time must be before event end time.');
                 return;
             }
         }
 
-        const loadingToast = toast.loading('Đang cập nhật sự kiện...');
+        const loadingToast = toast.loading('Updating event...');
         try {
             await HackathonEventService.updateHackathonEvent(editingEvent.id, {
                 name: editingEvent.name,
@@ -177,10 +177,10 @@ const OrganizerEventsPage: React.FC = () => {
             await fetchMyEvents();
             setIsEditModalOpen(false);
             setEditingEvent(null);
-            toast.success('Cập nhật sự kiện thành công', { id: loadingToast });
+            toast.success('Event updated successfully', { id: loadingToast });
         } catch (err: any) {
             console.error('Failed to update event:', err);
-            toast.error('Cập nhật sự kiện thất bại: ' + (err.response?.data?.message || err.message), { id: loadingToast });
+            toast.error('Failed to update event: ' + (err.response?.data?.message || err.message), { id: loadingToast });
         }
     };
 
