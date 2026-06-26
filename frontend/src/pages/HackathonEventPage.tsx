@@ -6,12 +6,24 @@ import { Plus, Edit2, Trash2, Calendar, Loader2 } from 'lucide-react';
 import Authorizable from '../components/Authorizable';
 import { Role } from '../services/authUtils';
 
+const formatDateTimeLocal = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  } catch {
+    return '';
+  }
+};
+
 const HackathonEventPage: React.FC = () => {
   const [events, setEvents] = useState<HackathonEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '' });
+  const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '', registrationStart: '', registrationEnd: '' });
   const [selectedEvent, setSelectedEvent] = useState<HackathonEvent | null>(null);
 
   useEffect(() => {
@@ -25,7 +37,7 @@ const HackathonEventPage: React.FC = () => {
       setEvents(data);
     } catch (error) {
       console.error('Failed to fetch hackathon events:', error);
-      toast.error('Failed to load hackathon events.');
+      toast.error('Không thể tải danh sách sự kiện.');
     } finally {
       setIsLoading(false);
     }
@@ -33,59 +45,136 @@ const HackathonEventPage: React.FC = () => {
 
   const handleCreateEvent = async () => {
     if (!newEvent.name || !newEvent.startTime || !newEvent.endTime) {
-      toast.error('Please fill in all required fields.');
+      toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
       return;
     }
-    const loadingToast = toast.loading('Creating event...');
+
+    const start = new Date(newEvent.startTime);
+    const end = new Date(newEvent.endTime);
+    if (start >= end) {
+      toast.error('Thời gian kết thúc sự kiện phải sau thời gian bắt đầu.');
+      return;
+    }
+
+    if (newEvent.registrationStart && newEvent.registrationEnd) {
+      const regStart = new Date(newEvent.registrationStart);
+      const regEnd = new Date(newEvent.registrationEnd);
+      if (regStart >= regEnd) {
+        toast.error('Thời gian kết thúc đăng ký phải sau thời gian bắt đầu đăng ký.');
+        return;
+      }
+    }
+
+    if (newEvent.registrationStart) {
+      const regStart = new Date(newEvent.registrationStart);
+      if (regStart >= start) {
+        toast.error('Thời gian bắt đầu đăng ký phải trước thời gian bắt đầu sự kiện.');
+        return;
+      }
+    }
+
+    if (newEvent.registrationEnd) {
+      const regEnd = new Date(newEvent.registrationEnd);
+      if (regEnd >= end) {
+        toast.error('Thời gian kết thúc đăng ký phải trước thời gian kết thúc sự kiện.');
+        return;
+      }
+    }
+
+    const loadingToast = toast.loading('Đang tạo sự kiện...');
     try {
       await HackathonEventService.createHackathonEvent(newEvent);
       fetchEvents();
       setIsCreateModalOpen(false);
-      setNewEvent({ name: '', description: '', startTime: '', endTime: '' });
-      toast.success('Event created successfully', { id: loadingToast });
+      setNewEvent({ name: '', description: '', startTime: '', endTime: '', registrationStart: '', registrationEnd: '' });
+      toast.success('Tạo sự kiện thành công', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to create hackathon event:', error);
-      toast.error('Failed to create event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+      toast.error('Tạo sự kiện thất bại: ' + (error.response?.data?.message || error.message), { id: loadingToast });
     }
   };
 
   const handleUpdateEvent = async () => {
     if (!selectedEvent) return;
-    const loadingToast = toast.loading('Updating event...');
+
+    if (selectedEvent.startTime && selectedEvent.endTime) {
+      const start = new Date(selectedEvent.startTime);
+      const end = new Date(selectedEvent.endTime);
+      if (start >= end) {
+        toast.error('Thời gian kết thúc sự kiện phải sau thời gian bắt đầu.');
+        return;
+      }
+    }
+
+    if (selectedEvent.registrationStart && selectedEvent.registrationEnd) {
+      const regStart = new Date(selectedEvent.registrationStart);
+      const regEnd = new Date(selectedEvent.registrationEnd);
+      if (regStart >= regEnd) {
+        toast.error('Thời gian kết thúc đăng ký phải sau thời gian bắt đầu đăng ký.');
+        return;
+      }
+    }
+
+    if (selectedEvent.registrationStart && selectedEvent.startTime) {
+      const regStart = new Date(selectedEvent.registrationStart);
+      const start = new Date(selectedEvent.startTime);
+      if (regStart >= start) {
+        toast.error('Thời gian bắt đầu đăng ký phải trước thời gian bắt đầu sự kiện.');
+        return;
+      }
+    }
+
+    if (selectedEvent.registrationEnd && selectedEvent.endTime) {
+      const regEnd = new Date(selectedEvent.registrationEnd);
+      const end = new Date(selectedEvent.endTime);
+      if (regEnd >= end) {
+        toast.error('Thời gian kết thúc đăng ký phải trước thời gian kết thúc sự kiện.');
+        return;
+      }
+    }
+
+    const loadingToast = toast.loading('Đang cập nhật sự kiện...');
     try {
       const updateRequest: UpdateHackathonEventRequest = {
         name: selectedEvent.name,
         description: selectedEvent.description,
         startTime: selectedEvent.startTime,
         endTime: selectedEvent.endTime,
+        registrationStart: selectedEvent.registrationStart || undefined,
+        registrationEnd: selectedEvent.registrationEnd || undefined,
       };
       await HackathonEventService.updateHackathonEvent(selectedEvent.id, updateRequest);
       fetchEvents();
       setIsEditModalOpen(false);
       setSelectedEvent(null);
-      toast.success('Event updated successfully', { id: loadingToast });
+      toast.success('Cập nhật sự kiện thành công', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to update hackathon event:', error);
-      toast.error('Failed to update event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+      toast.error('Cập nhật sự kiện thất bại: ' + (error.response?.data?.message || error.message), { id: loadingToast });
     }
   };
 
   const handleDeleteEvent = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this event?')) return;
-    
-    const loadingToast = toast.loading('Deleting event...');
+    if (!window.confirm('Bạn có chắc chắn muốn xóa sự kiện này?')) return;
+    const loadingToast = toast.loading('Đang xóa sự kiện...');
     try {
       await HackathonEventService.deleteHackathonEvent(id);
       fetchEvents();
-      toast.success('Event deleted successfully', { id: loadingToast });
+      toast.success('Xóa sự kiện thành công', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to delete hackathon event:', error);
-      toast.error('Failed to delete event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+      toast.error('Xóa sự kiện thất bại: ' + (error.response?.data?.message || error.message), { id: loadingToast });
     }
   };
 
   const openEditModal = (event: HackathonEvent) => {
-    setSelectedEvent(event);
+    setSelectedEvent({
+      ...event,
+      startTime: formatDateTimeLocal(event.startTime),
+      endTime: formatDateTimeLocal(event.endTime),
+      registrationStart: formatDateTimeLocal(event.registrationStart),
+      registrationEnd: formatDateTimeLocal(event.registrationEnd)
+    });
     setIsEditModalOpen(true);
   };
 
@@ -215,6 +304,26 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                    <input
+                        type="datetime-local"
+                        value={newEvent.registrationStart}
+                        onChange={(e) => setNewEvent({ ...newEvent, registrationStart: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                    <input
+                        type="datetime-local"
+                        value={newEvent.registrationEnd}
+                        onChange={(e) => setNewEvent({ ...newEvent, registrationEnd: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+            </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
             <button
@@ -275,6 +384,26 @@ const HackathonEventPage: React.FC = () => {
                     type="datetime-local"
                     value={selectedEvent.endTime}
                     onChange={(e) => setSelectedEvent({ ...selectedEvent, endTime: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                  <input
+                    type="datetime-local"
+                    value={selectedEvent.registrationStart || ''}
+                    onChange={(e) => setSelectedEvent({ ...selectedEvent, registrationStart: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                  <input
+                    type="datetime-local"
+                    value={selectedEvent.registrationEnd || ''}
+                    onChange={(e) => setSelectedEvent({ ...selectedEvent, registrationEnd: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                 </div>

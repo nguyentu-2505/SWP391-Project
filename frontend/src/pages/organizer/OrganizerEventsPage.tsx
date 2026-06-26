@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
-import { PlusCircle, Eye, Calendar, Loader2 } from 'lucide-react';
+import { PlusCircle, Eye, Calendar, Loader2, Edit } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import toast from 'react-hot-toast';
 import Modal from '../../components/Modal';
@@ -10,27 +10,58 @@ import { HackathonEventService } from '../../services/HackathonEventService';
 interface MyEvent {
     id: number;
     name: string;
+    description?: string;
     status: string;
     startTime: string;
     endTime: string;
     registrationStart: string;
     registrationEnd: string;
+    allowedStatusTransitions?: string[];
 }
+
+const formatDateTimeLocal = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    } catch {
+        return '';
+    }
+};
 
 const OrganizerEventsPage: React.FC = () => {
     const [events, setEvents] = useState<MyEvent[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [newEvent, setNewEvent] = useState({ name: '', description: '', startTime: '', endTime: '' });
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [newEvent, setNewEvent] = useState({ name: '', description: '', startTime: '', endTime: '', registrationStart: '', registrationEnd: '' });
+    const [editingEvent, setEditingEvent] = useState<MyEvent | null>(null);
 
     const fetchMyEvents = async () => {
         try {
             const response = await api.get('/hackathon-events/my-events');
             setEvents(response.data.data);
         } catch (err) {
-            setError('Failed to fetch your events.');
-            toast.error('Failed to fetch events.');
+            setError('Không thể tải danh sách sự kiện của bạn.');
+            toast.error('Không thể tải danh sách sự kiện.');
+        }
+    };
+
+    const handleStatusChange = async (eventId: number, newStatus: string) => {
+        if (!window.confirm(`Bạn có chắc chắn muốn thay đổi trạng thái sự kiện sang ${newStatus}?`)) {
+            return;
+        }
+        const loadingToast = toast.loading(`Đang cập nhật trạng thái sự kiện sang ${newStatus}...`);
+        try {
+            await api.patch(`/hackathon-events/${eventId}/status?status=${newStatus}`);
+            toast.success(`Trạng thái sự kiện được cập nhật sang ${newStatus} thành công!`, { id: loadingToast });
+            await fetchMyEvents();
+        } catch (err: any) {
+            console.error('Failed to update event status:', err);
+            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Cập nhật trạng thái thất bại.', { id: loadingToast });
         }
     };
 
@@ -44,20 +75,124 @@ const OrganizerEventsPage: React.FC = () => {
 
     const handleCreateEvent = async () => {
         if (!newEvent.name || !newEvent.startTime || !newEvent.endTime) {
-            toast.error('Please fill in all required fields.');
+            toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
             return;
         }
-        const loadingToast = toast.loading('Creating event...');
+
+        const start = new Date(newEvent.startTime);
+        const end = new Date(newEvent.endTime);
+        if (start >= end) {
+            toast.error('Thời gian kết thúc sự kiện phải sau thời gian bắt đầu.');
+            return;
+        }
+
+        if (newEvent.registrationStart && newEvent.registrationEnd) {
+            const regStart = new Date(newEvent.registrationStart);
+            const regEnd = new Date(newEvent.registrationEnd);
+            if (regStart >= regEnd) {
+                toast.error('Thời gian kết thúc đăng ký phải sau thời gian bắt đầu đăng ký.');
+                return;
+            }
+        }
+
+        if (newEvent.registrationStart) {
+            const regStart = new Date(newEvent.registrationStart);
+            if (regStart >= start) {
+                toast.error('Thời gian bắt đầu đăng ký phải trước thời gian bắt đầu sự kiện.');
+                return;
+            }
+        }
+
+        if (newEvent.registrationEnd) {
+            const regEnd = new Date(newEvent.registrationEnd);
+            if (regEnd >= end) {
+                toast.error('Thời gian kết thúc đăng ký phải trước thời gian kết thúc sự kiện.');
+                return;
+            }
+        }
+
+        const loadingToast = toast.loading('Đang tạo sự kiện...');
         try {
             await HackathonEventService.createHackathonEvent(newEvent);
             await fetchMyEvents();
             setIsCreateModalOpen(false);
-            setNewEvent({ name: '', description: '', startTime: '', endTime: '' });
-            toast.success('Event created successfully', { id: loadingToast });
+            setNewEvent({ name: '', description: '', startTime: '', endTime: '', registrationStart: '', registrationEnd: '' });
+            toast.success('Tạo sự kiện thành công', { id: loadingToast });
         } catch (err: any) {
             console.error('Failed to create hackathon event:', err);
-            toast.error('Failed to create event: ' + (err.response?.data?.message || err.message), { id: loadingToast });
+            toast.error('Tạo sự kiện thất bại: ' + (err.response?.data?.message || err.message), { id: loadingToast });
         }
+    };
+
+    const handleUpdateEvent = async () => {
+        if (!editingEvent) return;
+
+        if (!editingEvent.name || !editingEvent.startTime || !editingEvent.endTime) {
+            toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+            return;
+        }
+
+        const start = new Date(editingEvent.startTime);
+        const end = new Date(editingEvent.endTime);
+        if (start >= end) {
+            toast.error('Thời gian kết thúc sự kiện phải sau thời gian bắt đầu.');
+            return;
+        }
+
+        if (editingEvent.registrationStart && editingEvent.registrationEnd) {
+            const regStart = new Date(editingEvent.registrationStart);
+            const regEnd = new Date(editingEvent.registrationEnd);
+            if (regStart >= regEnd) {
+                toast.error('Thời gian kết thúc đăng ký phải sau thời gian bắt đầu đăng ký.');
+                return;
+            }
+        }
+
+        if (editingEvent.registrationStart) {
+            const regStart = new Date(editingEvent.registrationStart);
+            if (regStart >= start) {
+                toast.error('Thời gian bắt đầu đăng ký phải trước thời gian bắt đầu sự kiện.');
+                return;
+            }
+        }
+
+        if (editingEvent.registrationEnd) {
+            const regEnd = new Date(editingEvent.registrationEnd);
+            if (regEnd >= end) {
+                toast.error('Thời gian kết thúc đăng ký phải trước thời gian kết thúc sự kiện.');
+                return;
+            }
+        }
+
+        const loadingToast = toast.loading('Đang cập nhật sự kiện...');
+        try {
+            await HackathonEventService.updateHackathonEvent(editingEvent.id, {
+                name: editingEvent.name,
+                description: editingEvent.description,
+                startTime: editingEvent.startTime,
+                endTime: editingEvent.endTime,
+                registrationStart: editingEvent.registrationStart || undefined,
+                registrationEnd: editingEvent.registrationEnd || undefined,
+            });
+            await fetchMyEvents();
+            setIsEditModalOpen(false);
+            setEditingEvent(null);
+            toast.success('Cập nhật sự kiện thành công', { id: loadingToast });
+        } catch (err: any) {
+            console.error('Failed to update event:', err);
+            toast.error('Cập nhật sự kiện thất bại: ' + (err.response?.data?.message || err.message), { id: loadingToast });
+        }
+    };
+
+    const openEditModal = (event: MyEvent) => {
+        setEditingEvent({
+            ...event,
+            startTime: formatDateTimeLocal(event.startTime),
+            endTime: formatDateTimeLocal(event.endTime),
+            registrationStart: formatDateTimeLocal(event.registrationStart),
+            registrationEnd: formatDateTimeLocal(event.registrationEnd)
+        });
+        setIsEditModalOpen(true);
     };
 
     if (loading) return (
@@ -123,14 +258,44 @@ const OrganizerEventsPage: React.FC = () => {
                                                 : '—'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <Link
-                                                to={`/organizer/events/${event.id}/dashboard`}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                                                title="Manage Event"
-                                            >
-                                                <Eye size={14} />
-                                                Manage
-                                            </Link>
+                                            <div className="flex items-center justify-end gap-2">
+                                                {event.allowedStatusTransitions?.map((nextStatus) => (
+                                                    <button
+                                                        key={nextStatus}
+                                                        onClick={() => handleStatusChange(event.id, nextStatus)}
+                                                        className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer ${
+                                                            nextStatus === 'PUBLISHED' ? 'bg-green-600 hover:bg-green-700 text-white' :
+                                                            nextStatus === 'IN_PROGRESS' ? 'bg-blue-600 hover:bg-blue-700 text-white' :
+                                                            nextStatus === 'COMPLETED' ? 'bg-purple-600 hover:bg-purple-700 text-white' :
+                                                            nextStatus === 'CANCELLED' ? 'bg-red-600 hover:bg-red-700 text-white' :
+                                                            'bg-gray-600 hover:bg-gray-700 text-white'
+                                                        }`}
+                                                    >
+                                                        {nextStatus === 'PUBLISHED' ? 'Publish' :
+                                                         nextStatus === 'IN_PROGRESS' ? 'Start' :
+                                                         nextStatus === 'COMPLETED' ? 'Complete' :
+                                                         nextStatus === 'CANCELLED' ? 'Cancel' : nextStatus}
+                                                    </button>
+                                                ))}
+                                                {(event.status === 'DRAFT' || event.status === 'PUBLISHED') && (
+                                                    <button
+                                                        onClick={() => openEditModal(event)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                                                        title="Edit Event"
+                                                    >
+                                                        <Edit size={14} />
+                                                        Edit
+                                                    </button>
+                                                )}
+                                                <Link
+                                                    to={`/organizer/events/${event.id}/dashboard`}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                                    title="Manage Event"
+                                                >
+                                                    <Eye size={14} />
+                                                    Manage
+                                                </Link>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -187,6 +352,26 @@ const OrganizerEventsPage: React.FC = () => {
                                 />
                             </div>
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                                <input
+                                    type="datetime-local"
+                                    value={newEvent.registrationStart}
+                                    onChange={(e) => setNewEvent({ ...newEvent, registrationStart: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                                <input
+                                    type="datetime-local"
+                                    value={newEvent.registrationEnd}
+                                    onChange={(e) => setNewEvent({ ...newEvent, registrationEnd: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                />
+                            </div>
+                        </div>
                     </div>
                     <div className="mt-6 flex justify-end gap-3">
                         <button
@@ -203,6 +388,93 @@ const OrganizerEventsPage: React.FC = () => {
                         </button>
                     </div>
                 </div>
+            </Modal>
+
+            <Modal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingEvent(null); }}>
+                {editingEvent && (
+                    <div className="p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <Calendar size={20} className="text-blue-600" />
+                            Edit Hackathon Event
+                        </h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Event Name *</label>
+                                <input
+                                    type="text"
+                                    value={editingEvent.name}
+                                    onChange={(e) => setEditingEvent({ ...editingEvent, name: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                    placeholder="Enter event name"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea
+                                    value={editingEvent.description || ''}
+                                    onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                    placeholder="Enter event description"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time *</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={editingEvent.startTime}
+                                        onChange={(e) => setEditingEvent({ ...editingEvent, startTime: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time *</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={editingEvent.endTime}
+                                        onChange={(e) => setEditingEvent({ ...editingEvent, endTime: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={editingEvent.registrationStart}
+                                        onChange={(e) => setEditingEvent({ ...editingEvent, registrationStart: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={editingEvent.registrationEnd}
+                                        onChange={(e) => setEditingEvent({ ...editingEvent, registrationEnd: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => { setIsEditModalOpen(false); setEditingEvent(null); }}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleUpdateEvent}
+                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer"
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );
