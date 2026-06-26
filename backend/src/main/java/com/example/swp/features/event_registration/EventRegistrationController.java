@@ -30,4 +30,11 @@ public class EventRegistrationController {
         List<EventRegistrationResponse> responses = eventRegistrationService.getRegistrationsForEvent(eventId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
+
+    @GetMapping("/event/{eventId}/my-status")
+    @PreAuthorize("hasRole('PARTICIPANT')")
+    public ResponseEntity<ApiResponse<Boolean>> getMyRegistrationStatus(@PathVariable Long eventId) {
+        boolean isRegistered = eventRegistrationService.isCurrentUserRegistered(eventId);
+        return ResponseEntity.ok(ApiResponse.success(isRegistered));
+    }
 }

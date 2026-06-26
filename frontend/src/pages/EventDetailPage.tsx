@@ -44,8 +44,8 @@ const EventDetailPage: React.FC = () => {
 
         const checkRegistrationStatus = async (eventId: number) => {
             try {
-                const response = await api.get(`/event-registrations/event/${eventId}`);
-                setIsRegistered(response.data.data.isRegistered);
+                const response = await api.get(`/event-registrations/event/${eventId}/my-status`);
+                setIsRegistered(response.data.data);
             } catch (err) {
                 // Ignore error, maybe the user is not logged in
             }
@@ -61,8 +61,8 @@ const EventDetailPage: React.FC = () => {
             await api.post('/event-registrations', null, { params: { eventId: event.id } });
             setIsRegistered(true);
             toast.success('Successfully registered for the event!');
-        } catch (err) {
-            toast.error('Failed to register for the event.');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to register for the event.');
         } finally {
             setIsRegistering(false);
         }
@@ -166,14 +166,26 @@ const EventDetailPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {event.status === 'PUBLISHED' && (
+                                {event.status === 'PUBLISHED' ? (
                                     <div className="pt-2">
                                         <button 
-                                            className="w-full py-2.5 text-sm font-bold text-white bg-primary-container hover:bg-[#d9611b] rounded-lg shadow-sm transition-colors disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed"
+                                            className="w-full py-2.5 text-sm font-bold text-white bg-primary-container hover:bg-[#d9611b] rounded-lg shadow-sm transition-colors disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer"
                                             onClick={handleRegister}
                                             disabled={isRegistered || isRegistering}
                                         >
                                             {isRegistered ? 'Successfully Registered' : (isRegistering ? 'Registering...' : 'Register Now')}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="pt-2">
+                                        <button 
+                                            className="w-full py-2.5 text-sm font-bold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed border border-slate-200"
+                                            disabled
+                                        >
+                                            {event.status === 'DRAFT' ? 'Registration Not Open (Draft)' : 
+                                             event.status === 'IN_PROGRESS' ? 'Registration Closed (In Progress)' : 
+                                             event.status === 'COMPLETED' ? 'Event Ended (Completed)' : 
+                                             event.status === 'CANCELLED' ? 'Event Cancelled' : 'Registration Closed'}
                                         </button>
                                     </div>
                                 )}

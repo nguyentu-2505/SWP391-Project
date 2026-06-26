@@ -9,6 +9,8 @@ export interface HackathonEvent {
     slug: string;
     startTime: string;
     endTime: string;
+    registrationStart?: string;
+    registrationEnd?: string;
 }
 
 export interface CreateHackathonEventRequest {
@@ -16,6 +18,8 @@ export interface CreateHackathonEventRequest {
     description: string;
     startTime: string;
     endTime: string;
+    registrationStart?: string;
+    registrationEnd?: string;
 }
 
 export interface UpdateHackathonEventRequest {
@@ -23,6 +27,8 @@ export interface UpdateHackathonEventRequest {
     description?: string;
     startTime?: string;
     endTime?: string;
+    registrationStart?: string;
+    registrationEnd?: string;
 }
 
 const createHackathonEvent = async (event: CreateHackathonEventRequest): Promise<HackathonEvent> => {

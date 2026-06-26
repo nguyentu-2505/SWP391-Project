@@ -433,6 +433,13 @@ INSERT INTO criterion (name, description, max_score, weight, hackathon_event_id)
                                                                                      (N'Tính khả thi',        N'Khả năng triển khai thực tế, mô hình kinh doanh rõ ràng',          10, 3, 1),  -- criterion id=2
                                                                                      (N'Chất lượng kỹ thuật', N'Code sạch, kiến trúc tốt, performance, test coverage',             10, 4, 1);  -- criterion id=3
 
+-- Tiêu chí mặc định (template cho tính năng auto-seeding)
+INSERT INTO criterion (name, description, max_score, weight, hackathon_event_id) VALUES
+                                                                                     (N'Tiêu chí mặc định 1', N'Mô tả tiêu chí mặc định 1',                                       10, 1, NULL),
+                                                                                     (N'Tiêu chí mặc định 2', N'Mô tả tiêu chí mặc định 2',                                       10, 2, NULL),
+                                                                                     (N'Tiêu chí mặc định 3', N'Mô tả tiêu chí mặc định 3',                                       10, 1, NULL);
+
+
 -- -----------------------------------------------
 -- 5.7 team (3 teams cho event 1)
 -- -----------------------------------------------
