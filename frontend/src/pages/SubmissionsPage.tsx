@@ -19,9 +19,9 @@ const SubmissionsPage: React.FC = () => {
             // For now, fetching submissions for round 1.
             const allSubmissions = await SubmissionService.getSubmissionsByRound(1);
             setSubmissions(allSubmissions);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to fetch submissions:', err);
-            toast.error('Failed to fetch submissions.');
+            toast.error(err.response?.data?.error?.message || 'Failed to fetch submissions.');
         } finally {
             setLoading(false);
         }

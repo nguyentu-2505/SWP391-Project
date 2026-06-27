@@ -33,8 +33,8 @@ const SubmissionsTab: React.FC = () => {
                 const response = await api.get(`/submissions/event/${eventId}`);
                 const data = response.data.data ?? response.data;
                 setSubmissions(Array.isArray(data) ? data : []);
-            } catch (err) {
-                toast.error('Failed to fetch submissions for this event.');
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || 'Failed to fetch submissions for this event.');
             } finally {
                 setLoading(false);
             }
@@ -201,3 +201,4 @@ const SubmissionsTab: React.FC = () => {
 };
 
 export default SubmissionsTab;
+

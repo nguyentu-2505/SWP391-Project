@@ -21,8 +21,8 @@ const RankingsPage: React.FC = () => {
                 if (eventRounds.length > 0) {
                     setSelectedRoundId(eventRounds[0].id);
                 }
-            } catch (err) {
-                toast.error('Failed to fetch rounds for this event.');
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || 'Failed to fetch rounds for this event.');
             }
         };
         fetchRounds();

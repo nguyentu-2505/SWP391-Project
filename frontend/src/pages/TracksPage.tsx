@@ -19,9 +19,9 @@ const TracksPage: React.FC = () => {
             // For now, fetching tracks for hackathon event 1.
             const allTracks = await TrackService.getTracksByHackathonEvent(1);
             setTracks(allTracks);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to fetch tracks:', err);
-            toast.error('Failed to fetch tracks.');
+            toast.error(err.response?.data?.error?.message || 'Failed to fetch tracks.');
         } finally {
             setLoading(false);
         }
