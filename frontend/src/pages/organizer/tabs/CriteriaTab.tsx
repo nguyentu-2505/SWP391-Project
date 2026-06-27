@@ -38,7 +38,7 @@ const CriteriaTab: React.FC = () => {
             const data = res.data.data ?? res.data;
             setCriteria(Array.isArray(data) ? data : []);
         } catch {
-            toast.error(err.response?.data?.error?.message || 'Failed to load criteria.');
+            toast.error('Failed to load criteria.');
         } finally {
             setLoading(false);
         }
@@ -74,7 +74,7 @@ const CriteriaTab: React.FC = () => {
             toast.success('Criterion deleted.');
             setCriteria(prev => prev.filter(c => c.id !== id));
         } catch {
-            toast.error(err.response?.data?.error?.message || 'Failed to delete criterion.');
+            toast.error('Failed to delete criterion.');
         }
     };
 
@@ -202,4 +202,3 @@ const CriteriaTab: React.FC = () => {
 };
 
 export default CriteriaTab;
-
