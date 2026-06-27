@@ -22,9 +22,9 @@ const TeamMemberPage: React.FC = () => {
         try {
             const data = await TeamMemberService.getTeamMembers(viewTeamId);
             setMembers(data);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to fetch team members:', error);
-            toast.error('Failed to load team members.');
+            toast.error(err.response?.data?.error?.message || 'Failed to load team members.');
         } finally {
             setLoading(false);
         }
@@ -219,3 +219,4 @@ const TeamMemberPage: React.FC = () => {
 };
 
 export default TeamMemberPage;
+

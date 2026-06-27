@@ -49,7 +49,7 @@ const ProfilePage: React.FC = () => {
                     skills: data.skills ?? '',
                 });
             } catch {
-                toast.error('Failed to load profile data.');
+                toast.error(err.response?.data?.error?.message || 'Failed to load profile data.');
             } finally {
                 setLoading(false);
             }
@@ -65,7 +65,7 @@ const ProfilePage: React.FC = () => {
             setProfile(prev => prev ? { ...prev, ...response.data.data } : prev);
             toast.success('Profile updated successfully!');
         } catch {
-            toast.error('Failed to update profile.');
+            toast.error(err.response?.data?.error?.message || 'Failed to update profile.');
         } finally {
             setForm(f => ({
                 ...f,
@@ -229,3 +229,4 @@ const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
+

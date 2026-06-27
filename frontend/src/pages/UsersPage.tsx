@@ -40,8 +40,8 @@ const UsersPage: React.FC = () => {
                 setUsers(data);
                 setTotalPages(1);
             }
-        } catch (err) {
-            toast.error('Failed to fetch users. You may not have permissions.');
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || 'Failed to fetch users. You may not have permissions.');
         } finally {
             setLoading(false);
         }
@@ -53,7 +53,7 @@ const UsersPage: React.FC = () => {
             const updatedUser = await UserService.approveUser(id);
             setUsers(users.map(user => user.id === id ? updatedUser : user));
             toast.success('User approved successfully', { id: loadingToast });
-        } catch (err) {
+        } catch (err: any) {
             toast.error('Failed to approve user.', { id: loadingToast });
         }
     };

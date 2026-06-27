@@ -27,9 +27,9 @@ const CriterionPage: React.FC = () => {
             const defaultCrit = await CriterionService.getDefaultCriteria();
             setCriteria(eventCriteria);
             setDefaultCriteria(defaultCrit);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to fetch criteria:', error);
-            toast.error('Failed to load criteria.');
+            toast.error(err.response?.data?.error?.message || 'Failed to load criteria.');
         } finally {
             setLoading(false);
         }
@@ -296,3 +296,4 @@ const CriterionPage: React.FC = () => {
 };
 
 export default CriterionPage;
+
