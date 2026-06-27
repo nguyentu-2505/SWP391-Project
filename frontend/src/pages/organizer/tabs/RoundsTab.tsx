@@ -66,32 +66,32 @@ const RoundsTab: React.FC = () => {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!form.name.trim()) { toast.error('Tên vòng thi không được để trống.'); return; }
-        if (!form.startTime || !form.endTime) { toast.error('Vui lòng điền đầy đủ thời gian bắt đầu và kết thúc.'); return; }
-        if (form.startTime >= form.endTime) { toast.error('Thời gian kết thúc phải sau thời gian bắt đầu.'); return; }
+        if (!form.name.trim()) { toast.error('Round name cannot be empty.'); return; }
+        if (!form.startTime || !form.endTime) { toast.error('Start and end times are required.'); return; }
+        if (form.startTime >= form.endTime) { toast.error('End time must be after start time.'); return; }
 
         setSaving(true);
         try {
             await api.post('/rounds', { ...form, hackathonEventId: Number(eventId) });
-            toast.success('Tạo vòng thi thành công!');
+            toast.success('Round created successfully!');
             setForm(emptyForm);
             setShowForm(false);
             fetchRounds();
         } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || 'Tạo vòng thi thất bại.');
+            toast.error(err.response?.data?.error?.message || 'Failed to create round.');
         } finally {
             setSaving(false);
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm('Bạn có chắc chắn muốn xóa vòng thi này không? Hành động này cũng sẽ xóa toàn bộ bài nộp và điểm số thuộc vòng thi này.')) return;
+        if (!confirm('Are you sure you want to delete this round? This action will also delete all submissions and scores in this round.')) return;
         try {
             await api.delete(`/rounds/${id}`);
-            toast.success('Xóa vòng thi thành công.');
+            toast.success('Round deleted successfully.');
             setRounds(prev => prev.filter(r => r.id !== id));
         } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Không thể xóa vòng thi.');
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete round.');
         }
     };
 
@@ -103,18 +103,18 @@ const RoundsTab: React.FC = () => {
     const handleUpdateRound = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingRound || !editingRound.name.trim()) {
-            toast.error('Tên vòng thi là bắt buộc.');
+            toast.error('Round name is required.');
             return;
         }
         if (!editingRound.startTime || !editingRound.endTime) {
-            toast.error('Vui lòng điền đầy đủ thời gian bắt đầu và kết thúc.');
+            toast.error('Start and end times are required.');
             return;
         }
         if (editingRound.startTime >= editingRound.endTime) {
-            toast.error('Thời gian kết thúc phải sau thời gian bắt đầu.');
+            toast.error('End time must be after start time.');
             return;
         }
-        const loadingToast = toast.loading('Đang cập nhật vòng thi...');
+        const loadingToast = toast.loading('Updating round...');
         try {
             await api.put(`/rounds/${editingRound.id}`, {
                 name: editingRound.name,
@@ -123,12 +123,12 @@ const RoundsTab: React.FC = () => {
                 endTime: editingRound.endTime,
                 hackathonEventId: Number(eventId),
             });
-            toast.success('Cập nhật thành công!', { id: loadingToast });
+            toast.success('Round updated successfully!', { id: loadingToast });
             setIsEditModalOpen(false);
             setEditingRound(null);
             fetchRounds();
         } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Cập nhật thất bại.', { id: loadingToast });
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to update round.', { id: loadingToast });
         }
     };
 
@@ -144,7 +144,7 @@ const RoundsTab: React.FC = () => {
                     <h2 className="text-xl font-semibold text-gray-800">Rounds</h2>
                     {eventDetails && (
                         <p className="text-xs text-gray-500 mt-0.5">
-                            Thời gian sự kiện: <span className="font-semibold text-blue-600">{new Date(eventDetails.startTime).toLocaleString()}</span> đến <span className="font-semibold text-blue-600">{new Date(eventDetails.endTime).toLocaleString()}</span>
+                            Event Duration: <span className="font-semibold text-blue-600">{new Date(eventDetails.startTime).toLocaleString()}</span> to <span className="font-semibold text-blue-600">{new Date(eventDetails.endTime).toLocaleString()}</span>
                         </p>
                     )}
                 </div>
@@ -162,8 +162,8 @@ const RoundsTab: React.FC = () => {
                     <h3 className="text-sm font-semibold text-blue-800">New Round</h3>
                     {eventDetails && (
                         <div className="text-xs text-blue-700 bg-blue-100/50 p-2.5 rounded-lg border border-blue-200/50">
-                            <strong>Thời gian sự kiện:</strong> {new Date(eventDetails.startTime).toLocaleString()} đến {new Date(eventDetails.endTime).toLocaleString()}
-                            <p className="text-gray-500 mt-0.5">Vui lòng chọn thời gian bắt đầu và kết thúc của vòng thi nằm trong khoảng thời gian này.</p>
+                            <strong>Event Duration:</strong> {new Date(eventDetails.startTime).toLocaleString()} to {new Date(eventDetails.endTime).toLocaleString()}
+                            <p className="text-gray-500 mt-0.5">Please choose start and end times for the round within this timeframe.</p>
                         </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -236,18 +236,17 @@ const RoundsTab: React.FC = () => {
                                     {new Date(round.startTime).toLocaleString()} → {new Date(round.endTime).toLocaleString()}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                                <button
+                            <div className="flex items-center gap-1">                                 <button
                                     onClick={() => openEditModal(round)}
                                     className="text-blue-400 hover:text-blue-600 transition-colors p-1 cursor-pointer"
-                                    title="Chỉnh sửa vòng thi"
+                                    title="Edit round"
                                 >
                                     <Edit2 size={16} />
                                 </button>
                                 <button
                                     onClick={() => handleDelete(round.id)}
                                     className="text-red-400 hover:text-red-600 transition-colors p-1 cursor-pointer"
-                                    title="Xóa vòng thi"
+                                    title="Delete round"
                                 >
                                     <Trash2 size={16} />
                                 </button>
@@ -262,16 +261,16 @@ const RoundsTab: React.FC = () => {
                     <form onSubmit={handleUpdateRound} className="p-6 max-w-lg space-y-4">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                             <Clock size={20} className="text-blue-600" />
-                            Chỉnh sửa vòng thi
+                            Edit Round
                         </h3>
                         {eventDetails && (
                             <div className="text-xs text-blue-700 bg-blue-100/50 p-2.5 rounded-lg border border-blue-200/50">
-                                <strong>Thời gian sự kiện:</strong> {new Date(eventDetails.startTime).toLocaleString()} đến {new Date(eventDetails.endTime).toLocaleString()}
-                                <p className="text-gray-500 mt-0.5">Vui lòng chọn thời gian bắt đầu và kết thúc của vòng thi nằm trong khoảng thời gian này.</p>
+                                <strong>Event Duration:</strong> {new Date(eventDetails.startTime).toLocaleString()} to {new Date(eventDetails.endTime).toLocaleString()}
+                                <p className="text-gray-500 mt-0.5">Please choose start and end times for the round within this timeframe.</p>
                             </div>
                         )}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tên vòng thi *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Round Name *</label>
                             <input
                                 type="text"
                                 value={editingRound.name}
@@ -281,7 +280,7 @@ const RoundsTab: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả vòng thi</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                             <textarea
                                 value={editingRound.description || ''}
                                 onChange={e => setEditingRound({ ...editingRound, description: e.target.value })}
@@ -291,7 +290,7 @@ const RoundsTab: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Thời gian bắt đầu *</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time *</label>
                                 <input
                                     type="datetime-local"
                                     value={editingRound.startTime ? editingRound.startTime.slice(0, 16) : ''}
@@ -301,7 +300,7 @@ const RoundsTab: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Thời gian kết thúc *</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">End Time *</label>
                                 <input
                                     type="datetime-local"
                                     value={editingRound.endTime ? editingRound.endTime.slice(0, 16) : ''}
@@ -317,13 +316,13 @@ const RoundsTab: React.FC = () => {
                                 onClick={() => { setIsEditModalOpen(false); setEditingRound(null); }}
                                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
                             >
-                                Hủy
+                                Cancel
                             </button>
                             <button
                                 type="submit"
                                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer"
                             >
-                                Lưu thay đổi
+                                Save Changes
                             </button>
                         </div>
                     </form>

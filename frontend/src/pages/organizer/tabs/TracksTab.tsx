@@ -82,13 +82,13 @@ const TracksTab: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm('Bạn có chắc chắn muốn xóa bảng đấu này không? Các đội trong bảng đấu này sẽ trở thành chưa được phân bảng.')) return;
+        if (!confirm('Are you sure you want to delete this track? Teams in this track will become unassigned.')) return;
         try {
             await api.delete(`/tracks/${id}`);
-            toast.success('Xóa bảng đấu thành công.');
+            toast.success('Track deleted successfully.');
             setTracks(prev => prev.filter(t => t.id !== id));
         } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Không thể xóa bảng đấu.');
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete track.');
         }
     };
 
@@ -100,22 +100,22 @@ const TracksTab: React.FC = () => {
     const handleUpdateTrack = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingTrack || !editingTrack.name.trim()) {
-            toast.error('Tên bảng đấu là bắt buộc.');
+            toast.error('Track name is required.');
             return;
         }
-        const loadingToast = toast.loading('Đang cập nhật bảng đấu...');
+        const loadingToast = toast.loading('Updating track...');
         try {
             await api.put(`/tracks/${editingTrack.id}`, {
                 name: editingTrack.name,
                 description: editingTrack.description,
                 hackathonEventId: Number(eventId),
             });
-            toast.success('Cập nhật thành công!', { id: loadingToast });
+            toast.success('Track updated successfully!', { id: loadingToast });
             setIsEditModalOpen(false);
             setEditingTrack(null);
             fetchTracks();
         } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Cập nhật thất bại.', { id: loadingToast });
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to update track.', { id: loadingToast });
         }
     };
 
@@ -349,10 +349,10 @@ const TracksTab: React.FC = () => {
                     <form onSubmit={handleUpdateTrack} className="p-6 max-w-lg space-y-4">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                             <Tag size={20} className="text-blue-600" />
-                            Chỉnh sửa bảng đấu
+                            Edit Track
                         </h3>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tên bảng đấu *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Track Name *</label>
                             <input
                                 type="text"
                                 value={editingTrack.name}
@@ -362,7 +362,7 @@ const TracksTab: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả bảng đấu</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Track Description</label>
                             <textarea
                                 value={editingTrack.description || ''}
                                 onChange={e => setEditingTrack({ ...editingTrack, description: e.target.value })}
@@ -376,13 +376,13 @@ const TracksTab: React.FC = () => {
                                 onClick={() => { setIsEditModalOpen(false); setEditingTrack(null); }}
                                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
                             >
-                                Hủy
+                                Cancel
                             </button>
                             <button
                                 type="submit"
                                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer"
                             >
-                                Lưu thay đổi
+                                Save Changes
                             </button>
                         </div>
                     </form>

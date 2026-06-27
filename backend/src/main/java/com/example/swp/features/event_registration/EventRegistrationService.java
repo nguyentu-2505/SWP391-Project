@@ -83,6 +83,14 @@ public class EventRegistrationService {
         return registrations.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public boolean isUserRegisteredForEvent(Long eventId) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return eventRegistrationRepository.existsByEventIdAndUserId(eventId, currentUser.getId());
+    }
+
     private EventRegistrationResponse mapToResponse(EventRegistration registration) {
         return EventRegistrationResponse.builder()
                 .id(registration.getId())

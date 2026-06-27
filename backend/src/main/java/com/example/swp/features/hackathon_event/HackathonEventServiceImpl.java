@@ -134,7 +134,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     @Override
     @Transactional(readOnly = true)
     public Page<HackathonEventResponse> getAllEventsForAdmin(Pageable pageable) {
-        return hackathonEventRepository.findAll(pageable)
+        return hackathonEventRepository.findByIsDeletedFalse(pageable)
                 .map(this::mapToResponse);
     }
 
@@ -258,8 +258,19 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         if (!currentStatus.canTransitionTo(newStatus)) {
             String hint = buildTransitionHint(currentStatus, newStatus);
             throw new IllegalStateException(String.format(
-                    "Không thể chuyển trạng thái từ %s sang %s. %s",
+                    "Cannot transition status from %s to %s. %s",
                     currentStatus, newStatus, hint));
+        }
+
+        // Validate single active event constraint
+        if (newStatus == HackathonStatus.PUBLISHED || newStatus == HackathonStatus.IN_PROGRESS) {
+            boolean hasActiveEvent = hackathonEventRepository.existsByStatusInAndIsDeletedFalseAndIdNot(
+                    List.of(HackathonStatus.PUBLISHED, HackathonStatus.IN_PROGRESS), id);
+            if (hasActiveEvent) {
+                throw new IllegalStateException(
+                        "Cannot activate this event: Another event is currently active (PUBLISHED or IN_PROGRESS). " +
+                        "Only one event can take place at any given time.");
+            }
         }
 
         // Validate registration times before publishing
@@ -274,13 +285,23 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             // Check if tracks exist
             boolean hasTracks = !trackRepository.findByHackathonEventId(event.getId()).isEmpty();
             if (!hasTracks) {
-                throw new IllegalStateException("Không thể công bố sự kiện: Sự kiện phải có ít nhất một bảng đấu (Track).");
+                throw new IllegalStateException("Cannot publish event: Event must have at least one Track.");
             }
 
             // Check if rounds exist
             boolean hasRounds = !roundRepository.findByHackathonEventId(event.getId()).isEmpty();
             if (!hasRounds) {
-                throw new IllegalStateException("Không thể công bố sự kiện: Sự kiện phải có ít nhất một vòng thi (Round).");
+                throw new IllegalStateException("Cannot publish event: Event must have at least one Round.");
+            }
+
+            // Check if criteria exist and sum of weights is exactly 100%
+            List<com.example.swp.features.criterion.Criterion> criteria = criterionRepository.findByHackathonEventId(event.getId());
+            if (criteria.isEmpty()) {
+                throw new IllegalStateException("Cannot publish event: Event must have at least one scoring criterion.");
+            }
+            int totalWeight = criteria.stream().mapToInt(com.example.swp.features.criterion.Criterion::getWeight).sum();
+            if (totalWeight != 100) {
+                throw new IllegalStateException("Cannot publish event: Total criteria weight must be exactly 100% (currently " + totalWeight + "%).");
             }
         }
 
@@ -359,18 +380,18 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         HackathonEvent event = findEventById(id);
         requireOrganizerOrAdmin(event);
 
-        // Chỉ cho phép xóa sự kiện ở trạng thái DRAFT hoặc CANCELLED
+        // Only allow deleting events in DRAFT or CANCELLED status
         if (event.getStatus() == HackathonStatus.PUBLISHED) {
             throw new IllegalStateException(
-                    "Không thể xóa sự kiện đang ở trạng thái PUBLISHED. Vui lòng hủy (CANCEL) sự kiện trước rồi mới xóa.");
+                    "Cannot delete event in PUBLISHED status. Please cancel the event first.");
         }
         if (event.getStatus() == HackathonStatus.IN_PROGRESS) {
             throw new IllegalStateException(
-                    "Không thể xóa sự kiện đang diễn ra (IN_PROGRESS). Vui lòng hủy (CANCEL) sự kiện trước rồi mới xóa.");
+                    "Cannot delete event in IN_PROGRESS status. Please cancel the event first.");
         }
         if (event.getStatus() == HackathonStatus.COMPLETED) {
             throw new IllegalStateException(
-                    "Không thể xóa sự kiện đã kết thúc (COMPLETED).");
+                    "Cannot delete event in COMPLETED status.");
         }
 
         event.setDeleted(true);

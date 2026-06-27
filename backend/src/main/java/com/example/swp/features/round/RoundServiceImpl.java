@@ -21,22 +21,9 @@ public class RoundServiceImpl implements RoundService {
     @Override
     public RoundResponse createRound(CreateRoundRequest request) {
         HackathonEvent hackathonEvent = hackathonEventRepository.findById(request.getHackathonEventId())
-                .orElseThrow(() -> new RuntimeException("Hackathon event not found")); // Replace with custom exception
+                .orElseThrow(() -> new com.example.swp.exception.ResourceNotFoundException("Hackathon event not found"));
 
-        // Validation 1: Round start time must be before end time
-        if (request.getStartTime().isAfter(request.getEndTime()) || request.getStartTime().isEqual(request.getEndTime())) {
-            throw new IllegalArgumentException("Thời gian bắt đầu của vòng thi phải trước thời gian kết thúc.");
-        }
-
-        // Validation 2: Round start time must be within event duration
-        if (request.getStartTime().isBefore(hackathonEvent.getStartTime())) {
-            throw new IllegalArgumentException("Thời gian bắt đầu của vòng thi không được trước thời gian bắt đầu của sự kiện (" + hackathonEvent.getStartTime() + ").");
-        }
-
-        // Validation 3: Round end time must be within event duration
-        if (request.getEndTime().isAfter(hackathonEvent.getEndTime())) {
-            throw new IllegalArgumentException("Thời gian kết thúc của vòng thi không được sau thời gian kết thúc của sự kiện (" + hackathonEvent.getEndTime() + ").");
-        }
+        validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, null);
 
         Round newRound = Round.builder()
                 .name(request.getName())
@@ -68,7 +55,7 @@ public class RoundServiceImpl implements RoundService {
 
         // Check if event status is DRAFT
         if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT) {
-            throw new IllegalStateException("Không thể xóa vòng thi: Chỉ sự kiện ở trạng thái DRAFT mới được phép xóa vòng thi.");
+            throw new IllegalStateException("Cannot delete round: Only events in DRAFT status can have their rounds deleted.");
         }
 
         roundRepository.delete(round);
@@ -84,23 +71,10 @@ public class RoundServiceImpl implements RoundService {
 
         // Check if event status is DRAFT
         if (hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT) {
-            throw new IllegalStateException("Không thể chỉnh sửa vòng thi: Chỉ sự kiện ở trạng thái DRAFT mới được phép chỉnh sửa vòng thi.");
+            throw new IllegalStateException("Cannot edit round: Only events in DRAFT status can have their rounds modified.");
         }
 
-        // Validation 1: Round start time must be before end time
-        if (request.getStartTime().isAfter(request.getEndTime()) || request.getStartTime().isEqual(request.getEndTime())) {
-            throw new IllegalArgumentException("Thời gian bắt đầu của vòng thi phải trước thời gian kết thúc.");
-        }
-
-        // Validation 2: Round start time must be within event duration
-        if (request.getStartTime().isBefore(hackathonEvent.getStartTime())) {
-            throw new IllegalArgumentException("Thời gian bắt đầu của vòng thi không được trước thời gian bắt đầu của sự kiện (" + hackathonEvent.getStartTime() + ").");
-        }
-
-        // Validation 3: Round end time must be within event duration
-        if (request.getEndTime().isAfter(hackathonEvent.getEndTime())) {
-            throw new IllegalArgumentException("Thời gian kết thúc của vòng thi không được sau thời gian kết thúc của sự kiện (" + hackathonEvent.getEndTime() + ").");
-        }
+        validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, id);
 
         round.setName(request.getName());
         round.setDescription(request.getDescription());
@@ -112,6 +86,32 @@ public class RoundServiceImpl implements RoundService {
 
         Round updatedRound = roundRepository.save(round);
         return mapToResponse(updatedRound);
+    }
+
+    private void validateRoundTimeline(java.time.LocalDateTime start, java.time.LocalDateTime end, HackathonEvent event, Long currentRoundId) {
+        if (start.isAfter(end) || start.isEqual(end)) {
+            throw new IllegalArgumentException("Round start time must be before end time.");
+        }
+        if (start.isBefore(event.getStartTime())) {
+            throw new IllegalArgumentException("Round start time cannot be before event start time (" + event.getStartTime() + ").");
+        }
+        if (end.isAfter(event.getEndTime())) {
+            throw new IllegalArgumentException("Round end time cannot be after event end time (" + event.getEndTime() + ").");
+        }
+        if (event.getRegistrationEnd() != null && start.isBefore(event.getRegistrationEnd())) {
+            throw new IllegalArgumentException("Round start time must be after event registration end time (" + event.getRegistrationEnd() + ").");
+        }
+
+        List<Round> existingRounds = roundRepository.findByHackathonEventId(event.getId());
+        for (Round r : existingRounds) {
+            if (currentRoundId != null && r.getId().equals(currentRoundId)) {
+                continue;
+            }
+            // Check overlap
+            if (start.isBefore(r.getEndTime()) && end.isAfter(r.getStartTime())) {
+                throw new IllegalArgumentException("Round times overlap with an existing round: " + r.getName() + " (" + r.getStartTime() + " to " + r.getEndTime() + ").");
+            }
+        }
     }
 
     private RoundResponse mapToResponse(Round round) {

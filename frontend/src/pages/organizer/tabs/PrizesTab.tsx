@@ -100,13 +100,13 @@ const PrizesTab: React.FC = () => {
     };
 
     const handleDeletePrize = async (id: number) => {
-        if (!confirm('Bạn có chắc chắn muốn xóa giải thưởng này không?')) return;
+        if (!confirm('Are you sure you want to delete this prize?')) return;
         try {
             await api.delete(`/prizes/${id}`);
-            toast.success('Xóa giải thưởng thành công.');
+            toast.success('Prize deleted successfully.');
             setPrizes(prev => prev.filter(p => p.id !== id));
         } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Không thể xóa giải thưởng.');
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete prize.');
         }
     };
 
@@ -118,22 +118,22 @@ const PrizesTab: React.FC = () => {
     const handleUpdatePrize = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingPrize || !editingPrize.name.trim()) {
-            toast.error('Tên giải thưởng là bắt buộc.');
+            toast.error('Prize name is required.');
             return;
         }
-        const loadingToast = toast.loading('Đang cập nhật giải thưởng...');
+        const loadingToast = toast.loading('Updating prize...');
         try {
             await api.put(`/prizes/${editingPrize.id}`, {
                 name: editingPrize.name,
                 description: editingPrize.description,
                 rank: editingPrize.rank,
             });
-            toast.success('Cập nhật thành công!', { id: loadingToast });
+            toast.success('Prize updated successfully!', { id: loadingToast });
             setIsEditModalOpen(false);
             setEditingPrize(null);
             fetchData();
         } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Cập nhật thất bại.', { id: loadingToast });
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to update prize.', { id: loadingToast });
         }
     };
 
@@ -302,14 +302,14 @@ const PrizesTab: React.FC = () => {
                                     <button
                                         onClick={() => openEditModal(prize)}
                                         className="p-1 text-blue-600 hover:text-blue-900 transition-colors cursor-pointer"
-                                        title="Chỉnh sửa giải thưởng"
+                                        title="Edit prize"
                                     >
                                         <Edit2 size={16} />
                                     </button>
                                     <button
                                         onClick={() => handleDeletePrize(prize.id)}
                                         className="p-1 text-red-600 hover:text-red-900 transition-colors cursor-pointer"
-                                        title="Xóa giải thưởng"
+                                        title="Delete prize"
                                     >
                                         <Trash2 size={16} />
                                     </button>
@@ -325,10 +325,10 @@ const PrizesTab: React.FC = () => {
                     <form onSubmit={handleUpdatePrize} className="p-6 max-w-lg space-y-4">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                             <Trophy size={20} className="text-blue-600" />
-                            Chỉnh sửa giải thưởng
+                            Edit Prize
                         </h3>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tên giải thưởng *</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Prize Name *</label>
                             <input
                                 type="text"
                                 value={editingPrize.name}
@@ -338,7 +338,7 @@ const PrizesTab: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Rank (Thứ hạng)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Rank</label>
                             <input
                                 type="number"
                                 min="1"
@@ -349,7 +349,7 @@ const PrizesTab: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả giải thưởng</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                             <textarea
                                 value={editingPrize.description}
                                 onChange={e => setEditingPrize({ ...editingPrize, description: e.target.value })}
@@ -363,13 +363,13 @@ const PrizesTab: React.FC = () => {
                                 onClick={() => { setIsEditModalOpen(false); setEditingPrize(null); }}
                                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
                             >
-                                Hủy
+                                Cancel
                             </button>
                             <button
                                 type="submit"
                                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer"
                             >
-                                Lưu thay đổi
+                                Save Changes
                             </button>
                         </div>
                     </form>
