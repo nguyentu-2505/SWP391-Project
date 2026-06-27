@@ -41,6 +41,10 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         String name = oAuth2User.getAttribute("name");
         String avatar = oAuth2User.getAttribute("picture");
 
+        if (email == null) {
+            throw new RuntimeException("Email not found from OAuth2 provider");
+        }
+
         User user = userRepository.findByEmail(email).orElseGet(() -> {
             log.info("Registering new user via Google OAuth2: {}", email);
             User newUser = new User();
@@ -56,7 +60,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             newUser.setFullName(name);
             newUser.setAvatarUrl(avatar);
             newUser.setRole(Role.PARTICIPANT);
-            newUser.setApproved(true);
+            newUser.setApproved(false);
             newUser.setVerified(true);
             
             // Set a random impossible password for OAuth users

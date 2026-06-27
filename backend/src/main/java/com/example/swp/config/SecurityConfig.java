@@ -29,6 +29,7 @@ import java.util.Arrays;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true) // This enables @PreAuthorize annotations
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.lang.NonNull;
 
 @Repository
 public interface TeamRepository extends JpaRepository<Team, Long> {
@@ -18,5 +19,5 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     List<Team> findByEventId(Long eventId);
 
     @EntityGraph(attributePaths = {"teamMembers", "teamMembers.user"})
-    Optional<Team> findById(Long id);
+    @NonNull Optional<Team> findById(@NonNull Long id);
 }

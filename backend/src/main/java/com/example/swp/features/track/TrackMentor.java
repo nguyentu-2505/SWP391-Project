@@ -4,7 +4,6 @@ import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;

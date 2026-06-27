@@ -2,10 +2,7 @@ package com.example.swp;
 
 import com.example.swp.features.export.ExportService;
 import com.example.swp.features.round.RoundAdvancementService;
-import com.example.swp.features.score.ScoreService;
 import com.example.swp.features.submission.SubmissionService;
-import com.example.swp.features.team.TeamService;
-import com.example.swp.features.track.TrackService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

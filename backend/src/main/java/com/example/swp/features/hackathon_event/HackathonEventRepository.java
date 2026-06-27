@@ -8,12 +8,13 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.lang.NonNull;
 
 @Repository
 public interface HackathonEventRepository extends JpaRepository<HackathonEvent, Long> {
     @Override
     @EntityGraph(attributePaths = {"organizer"})
-    Page<HackathonEvent> findAll(Pageable pageable);
+    @NonNull Page<HackathonEvent> findAll(@NonNull Pageable pageable);
 
     @EntityGraph(attributePaths = {"organizer"})
     Optional<HackathonEvent> findBySlugAndIsDeletedFalse(String slug);
@@ -26,7 +27,7 @@ public interface HackathonEventRepository extends JpaRepository<HackathonEvent, 
 
     @EntityGraph(attributePaths = {"organizer"})
     List<HackathonEvent> findByOrganizerIdAndIsDeletedFalseOrderByCreatedAtDesc(Long organizerId);
-
+    @Override
     @EntityGraph(attributePaths = {"organizer"})
-    Optional<HackathonEvent> findById(Long id);
+    @NonNull Optional<HackathonEvent> findById(@NonNull Long id);
 }

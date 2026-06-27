@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Service
+@SuppressWarnings("null")
 public class SseEmitterService {
 
     /**

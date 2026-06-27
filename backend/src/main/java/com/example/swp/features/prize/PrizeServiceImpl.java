@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@SuppressWarnings("null")
 public class PrizeServiceImpl implements PrizeService {
 
     private final PrizeRepository prizeRepository;

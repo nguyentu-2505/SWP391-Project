@@ -17,6 +17,7 @@ import com.example.swp.features.audit_log.AuditLogService;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class TeamMemberServiceImpl implements TeamMemberService {
 
     private final TeamMemberRepository teamMemberRepository;

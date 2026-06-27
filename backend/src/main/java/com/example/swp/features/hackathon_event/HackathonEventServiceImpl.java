@@ -8,7 +8,6 @@ import com.example.swp.features.hackathon_event.event.HackathonCompletedEvent;
 import com.example.swp.features.notification.NotificationService;
 import com.example.swp.features.ranking.RankingService;
 import com.example.swp.features.ranking.dto.TeamRankingResponse;
-import com.example.swp.features.round.Round;
 import com.example.swp.features.round.RoundRepository;
 import com.example.swp.features.user.Role;
 import com.example.swp.features.user.User;
@@ -33,6 +32,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class HackathonEventServiceImpl implements HackathonEventService {
 
     private final HackathonEventRepository hackathonEventRepository;

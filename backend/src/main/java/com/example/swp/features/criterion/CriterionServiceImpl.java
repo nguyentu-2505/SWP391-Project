@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class CriterionServiceImpl implements CriterionService {
 
     private final CriterionRepository criterionRepository;
