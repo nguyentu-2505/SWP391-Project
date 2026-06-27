@@ -7,8 +7,13 @@ export interface HackathonEvent {
     name: string;
     description: string;
     slug: string;
+    status: string;
     startTime: string;
     endTime: string;
+    registrationStart?: string;
+    registrationEnd?: string;
+    minTeamSize: number;
+    maxTeamSize: number;
 }
 
 export interface CreateHackathonEventRequest {
@@ -16,6 +21,10 @@ export interface CreateHackathonEventRequest {
     description: string;
     startTime: string;
     endTime: string;
+    registrationStart?: string;
+    registrationEnd?: string;
+    minTeamSize?: number;
+    maxTeamSize?: number;
 }
 
 export interface UpdateHackathonEventRequest {
@@ -23,6 +32,10 @@ export interface UpdateHackathonEventRequest {
     description?: string;
     startTime?: string;
     endTime?: string;
+    registrationStart?: string;
+    registrationEnd?: string;
+    minTeamSize?: number;
+    maxTeamSize?: number;
 }
 
 const createHackathonEvent = async (event: CreateHackathonEventRequest): Promise<HackathonEvent> => {
@@ -59,6 +72,11 @@ const updateHackathonEvent = async (id: number, event: UpdateHackathonEventReque
     return response.data.data;
 };
 
+const updateHackathonEventStatus = async (id: number, status: string): Promise<HackathonEvent> => {
+    const response = await api.patch(`${API_URL}/${id}/status?status=${status}`);
+    return response.data.data;
+};
+
 const deleteHackathonEvent = async (id: number): Promise<void> => {
     await api.delete(`${API_URL}/${id}`);
 };
@@ -69,5 +87,6 @@ export const HackathonEventService = {
     getAllEventsForAdmin,
     getHackathonEventBySlug,
     updateHackathonEvent,
+    updateHackathonEventStatus,
     deleteHackathonEvent,
 };

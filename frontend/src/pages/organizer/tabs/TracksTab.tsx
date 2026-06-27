@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
-import { Tag, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Tag, Plus, Trash2, Loader2, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Modal from '../../../components/Modal';
 
 interface Track {
     id: number;
@@ -24,6 +25,12 @@ const TracksTab: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState<TrackForm>(emptyForm);
     const [saving, setSaving] = useState(false);
+
+    // Mentor Management State
+    const [mentorModalTrackId, setMentorModalTrackId] = useState<number | null>(null);
+    const [trackMentors, setTrackMentors] = useState<any[]>([]);
+    const [mentorUserIdInput, setMentorUserIdInput] = useState('');
+    const [mentorLoading, setMentorLoading] = useState(false);
 
     const fetchTracks = async () => {
         if (!eventId) return;
@@ -69,6 +76,58 @@ const TracksTab: React.FC = () => {
         }
     };
 
+    const openMentorModal = async (trackId: number) => {
+        setMentorModalTrackId(trackId);
+        setTrackMentors([]);
+        fetchMentors(trackId);
+    };
+
+    const fetchMentors = async (trackId: number) => {
+        setMentorLoading(true);
+        try {
+            const res = await api.get(`/tracks/${trackId}/mentors`);
+            const data = res.data.data ?? res.data;
+            setTrackMentors(Array.isArray(data) ? data : []);
+        } catch (err) {
+            toast.error('Failed to fetch mentors for track.');
+        } finally {
+            setMentorLoading(false);
+        }
+    };
+
+    const handleAssignMentor = async () => {
+        if (!mentorModalTrackId || !mentorUserIdInput) {
+            toast.error('Please enter a user ID.');
+            return;
+        }
+        setMentorLoading(true);
+        try {
+            await api.post(`/tracks/${mentorModalTrackId}/mentors/${mentorUserIdInput}`);
+            toast.success('Mentor assigned successfully!');
+            setMentorUserIdInput('');
+            fetchMentors(mentorModalTrackId);
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to assign mentor.');
+        } finally {
+            setMentorLoading(false);
+        }
+    };
+
+    const handleRemoveMentor = async (mentorId: number) => {
+        if (!mentorModalTrackId) return;
+        if (!confirm('Remove this mentor from the track?')) return;
+        setMentorLoading(true);
+        try {
+            await api.delete(`/tracks/${mentorModalTrackId}/mentors/${mentorId}`);
+            toast.success('Mentor removed.');
+            fetchMentors(mentorModalTrackId);
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to remove mentor.');
+        } finally {
+            setMentorLoading(false);
+        }
+    };
+
     if (loading) return (
         <div className="flex justify-center py-10"><Loader2 className="animate-spin text-blue-500" size={28} /></div>
     );
@@ -88,7 +147,7 @@ const TracksTab: React.FC = () => {
                 <h2 className="text-xl font-semibold text-gray-800">Competition Tracks</h2>
                 <button
                     onClick={() => setShowForm(s => !s)}
-                    className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
                 >
                     <Plus size={14} />
                     Add Track
@@ -120,8 +179,8 @@ const TracksTab: React.FC = () => {
                         </div>
                     </div>
                     <div className="flex gap-2 justify-end">
-                        <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-                        <button type="submit" disabled={saving} className="px-3 py-1.5 text-xs text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                        <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">Cancel</button>
+                        <button type="submit" disabled={saving} className="px-3 py-1.5 text-xs text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 cursor-pointer">
                             {saving ? 'Saving...' : 'Create Track'}
                         </button>
                     </div>
@@ -138,24 +197,95 @@ const TracksTab: React.FC = () => {
                     {tracks.map((track, idx) => (
                         <div
                             key={track.id}
-                            className={`flex items-start gap-3 p-4 border rounded-lg ${tagColors[idx % tagColors.length]}`}
+                            className={`flex flex-col gap-2 p-4 border rounded-lg ${tagColors[idx % tagColors.length]}`}
                         >
-                            <Tag size={18} className="flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                                <p className="font-semibold text-sm">{track.name}</p>
-                                {track.description && <p className="text-xs opacity-80 mt-0.5">{track.description}</p>}
+                            <div className="flex items-start gap-3">
+                                <Tag size={18} className="flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <p className="font-semibold text-sm">{track.name}</p>
+                                    {track.description && <p className="text-xs opacity-80 mt-0.5">{track.description}</p>}
+                                </div>
+                                <button
+                                    onClick={() => handleDelete(track.id)}
+                                    className="opacity-60 hover:opacity-100 transition-opacity p-1 cursor-pointer"
+                                    title="Delete track"
+                                >
+                                    <Trash2 size={15} />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => handleDelete(track.id)}
-                                className="opacity-60 hover:opacity-100 transition-opacity p-1"
-                                title="Delete track"
-                            >
-                                <Trash2 size={15} />
-                            </button>
+                            <div className="mt-2 border-t pt-2 border-current opacity-60">
+                                <button
+                                    onClick={() => openMentorModal(track.id)}
+                                    className="inline-flex items-center gap-1 text-xs font-medium hover:opacity-100 cursor-pointer"
+                                >
+                                    <Users size={14} />
+                                    Manage Mentors
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
             )}
+
+            <Modal isOpen={mentorModalTrackId !== null} onClose={() => setMentorModalTrackId(null)}>
+                <div className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Users size={20} className="text-blue-600" />
+                        Manage Track Mentors
+                    </h3>
+                    <div className="space-y-4">
+                        <div className="flex gap-2">
+                            <input
+                                type="number"
+                                placeholder="Enter Mentor User ID"
+                                value={mentorUserIdInput}
+                                onChange={(e) => setMentorUserIdInput(e.target.value)}
+                                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button
+                                onClick={handleAssignMentor}
+                                disabled={mentorLoading}
+                                className="px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+                            >
+                                Assign Mentor
+                            </button>
+                        </div>
+
+                        {mentorLoading && trackMentors.length === 0 ? (
+                            <div className="flex justify-center py-4"><Loader2 className="animate-spin text-blue-500" size={20} /></div>
+                        ) : trackMentors.length === 0 ? (
+                            <p className="text-sm text-gray-500 py-4 text-center">No mentors assigned to this track yet.</p>
+                        ) : (
+                            <ul className="divide-y divide-gray-100 border border-gray-200 rounded-md overflow-hidden">
+                                {trackMentors.map((tm: any) => (
+                                    <li key={tm.mentorId} className="flex justify-between items-center p-3 text-sm hover:bg-gray-50">
+                                        <div>
+                                            <p className="font-medium text-gray-800">{tm.mentorFullName || tm.mentorUsername}</p>
+                                            <p className="text-xs text-gray-500">ID: {tm.mentorId}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleRemoveMentor(tm.mentorId)}
+                                            disabled={mentorLoading}
+                                            className="text-red-500 hover:text-red-700 disabled:opacity-50 cursor-pointer"
+                                            title="Remove mentor"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                        <button
+                            onClick={() => setMentorModalTrackId(null)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

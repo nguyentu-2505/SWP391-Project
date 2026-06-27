@@ -23,6 +23,9 @@ public interface HackathonEventRepository extends JpaRepository<HackathonEvent, 
     Page<HackathonEvent> findByIsDeletedFalseAndStatus(HackathonStatus status, Pageable pageable);
     
     @EntityGraph(attributePaths = {"organizer"})
+    Page<HackathonEvent> findByIsDeletedFalseAndStatusIn(List<HackathonStatus> statuses, Pageable pageable);
+    
+    @EntityGraph(attributePaths = {"organizer"})
     List<HackathonEvent> findByOrganizerIdAndIsDeletedFalseOrderByCreatedAtDesc(Long organizerId);
     
     @Override

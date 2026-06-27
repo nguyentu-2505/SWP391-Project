@@ -5,13 +5,22 @@ import toast from 'react-hot-toast';
 import { Plus, Edit2, Trash2, Calendar, Loader2 } from 'lucide-react';
 import Authorizable from '../components/Authorizable';
 import { Role } from '../services/authUtils';
+import StatusBadge from '../components/StatusBadge';
+
+const formatDateTimeLocal = (dateString?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    // Lấy YYYY-MM-DDTHH:mm
+    return date.toISOString().slice(0, 16);
+};
 
 const HackathonEventPage: React.FC = () => {
   const [events, setEvents] = useState<HackathonEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '' });
+  const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 2, maxTeamSize: 5 });
   const [selectedEvent, setSelectedEvent] = useState<HackathonEvent | null>(null);
 
   useEffect(() => {
@@ -41,7 +50,7 @@ const HackathonEventPage: React.FC = () => {
       await HackathonEventService.createHackathonEvent(newEvent);
       fetchEvents();
       setIsCreateModalOpen(false);
-      setNewEvent({ name: '', description: '', startTime: '', endTime: '' });
+      setNewEvent({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 2, maxTeamSize: 5 });
       toast.success('Event created successfully', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to create hackathon event:', error);
@@ -58,6 +67,10 @@ const HackathonEventPage: React.FC = () => {
         description: selectedEvent.description,
         startTime: selectedEvent.startTime,
         endTime: selectedEvent.endTime,
+        registrationStart: selectedEvent.registrationStart,
+        registrationEnd: selectedEvent.registrationEnd,
+        minTeamSize: selectedEvent.minTeamSize,
+        maxTeamSize: selectedEvent.maxTeamSize,
       };
       await HackathonEventService.updateHackathonEvent(selectedEvent.id, updateRequest);
       fetchEvents();
@@ -67,6 +80,18 @@ const HackathonEventPage: React.FC = () => {
     } catch (error: any) {
       console.error('Failed to update hackathon event:', error);
       toast.error('Failed to update event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+    }
+  };
+
+  const handleStatusChange = async (id: number, newStatus: string) => {
+    const loadingToast = toast.loading('Updating status...');
+    try {
+      await HackathonEventService.updateHackathonEventStatus(id, newStatus);
+      fetchEvents();
+      toast.success('Status updated successfully', { id: loadingToast });
+    } catch (error: any) {
+      console.error('Failed to update status:', error);
+      toast.error('Failed to update status: ' + (error.response?.data?.message || error.message), { id: loadingToast });
     }
   };
 
@@ -85,7 +110,13 @@ const HackathonEventPage: React.FC = () => {
   };
 
   const openEditModal = (event: HackathonEvent) => {
-    setSelectedEvent(event);
+    setSelectedEvent({
+      ...event,
+      startTime: formatDateTimeLocal(event.startTime),
+      endTime: formatDateTimeLocal(event.endTime),
+      registrationStart: formatDateTimeLocal(event.registrationStart),
+      registrationEnd: formatDateTimeLocal(event.registrationEnd),
+    });
     setIsEditModalOpen(true);
   };
 
@@ -130,6 +161,7 @@ const HackathonEventPage: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -139,12 +171,28 @@ const HackathonEventPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{event.id}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{event.name}</td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{event.description}</td>
+                    <td className="px-6 py-4 text-sm font-medium">
+                        <StatusBadge status={event.status} />
+                        <Authorizable allowedRoles={[Role.ADMIN, Role.ORGANIZER]}>
+                            <select 
+                                value={event.status} 
+                                onChange={(e) => handleStatusChange(event.id, e.target.value)}
+                                className="mt-2 block w-full pl-3 pr-10 py-1 text-xs border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-gray-50"
+                            >
+                                <option value="DRAFT">DRAFT</option>
+                                <option value="PUBLISHED">PUBLISHED</option>
+                                <option value="IN_PROGRESS">IN_PROGRESS</option>
+                                <option value="COMPLETED">COMPLETED</option>
+                                <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                        </Authorizable>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <Authorizable 
                         allowedRoles={[Role.ADMIN, Role.ORGANIZER]} 
                         fallback={<span className="text-gray-400 text-xs italic">View Only</span>}
                       >
-                        <div className="flex space-x-3">
+                        <div className="flex space-x-3 items-center">
                           <button
                             onClick={() => openEditModal(event)}
                             className="text-blue-600 hover:text-blue-900 transition-colors"
@@ -171,7 +219,7 @@ const HackathonEventPage: React.FC = () => {
       )}
 
       <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
-        <div className="p-6">
+        <div className="p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Calendar size={20} className="text-blue-600" />
                 Create New Hackathon Event
@@ -191,13 +239,31 @@ const HackathonEventPage: React.FC = () => {
                 <textarea
                     value={newEvent.description}
                     onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                    rows={3}
+                    rows={2}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                    <input
+                        type="datetime-local"
+                        value={newEvent.registrationStart || ''}
+                        onChange={(e) => setNewEvent({ ...newEvent, registrationStart: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                    <input
+                        type="datetime-local"
+                        value={newEvent.registrationEnd || ''}
+                        onChange={(e) => setNewEvent({ ...newEvent, registrationEnd: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time *</label>
                     <input
                         type="datetime-local"
                         value={newEvent.startTime}
@@ -206,11 +272,31 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time *</label>
                     <input
                         type="datetime-local"
                         value={newEvent.endTime}
                         onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Min Team Size</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={newEvent.minTeamSize}
+                        onChange={(e) => setNewEvent({ ...newEvent, minTeamSize: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Team Size</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={newEvent.maxTeamSize}
+                        onChange={(e) => setNewEvent({ ...newEvent, maxTeamSize: Number(e.target.value) })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                 </div>
@@ -235,7 +321,7 @@ const HackathonEventPage: React.FC = () => {
 
       {selectedEvent && (
         <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
-          <div className="p-6">
+          <div className="p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Edit2 size={20} className="text-blue-600" />
                 Edit Hackathon Event
@@ -255,13 +341,31 @@ const HackathonEventPage: React.FC = () => {
                 <textarea
                   value={selectedEvent.description}
                   onChange={(e) => setSelectedEvent({ ...selectedEvent, description: e.target.value })}
-                  rows={3}
+                  rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                    <input
+                        type="datetime-local"
+                        value={selectedEvent.registrationStart || ''}
+                        onChange={(e) => setSelectedEvent({ ...selectedEvent, registrationStart: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                    <input
+                        type="datetime-local"
+                        value={selectedEvent.registrationEnd || ''}
+                        onChange={(e) => setSelectedEvent({ ...selectedEvent, registrationEnd: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time *</label>
                   <input
                     type="datetime-local"
                     value={selectedEvent.startTime}
@@ -270,13 +374,33 @@ const HackathonEventPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time *</label>
                   <input
                     type="datetime-local"
                     value={selectedEvent.endTime}
                     onChange={(e) => setSelectedEvent({ ...selectedEvent, endTime: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Min Team Size</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={selectedEvent.minTeamSize}
+                        onChange={(e) => setSelectedEvent({ ...selectedEvent, minTeamSize: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Team Size</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={selectedEvent.maxTeamSize}
+                        onChange={(e) => setSelectedEvent({ ...selectedEvent, maxTeamSize: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
                 </div>
               </div>
             </div>

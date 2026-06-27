@@ -60,7 +60,12 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         // Validate: registration window (nếu có)
         if (request.getRegistrationStart() != null && request.getRegistrationEnd() != null) {
             validateTimeRange(request.getRegistrationStart(), request.getRegistrationEnd(),
-                    "Registration end time must be after registration start time.");
+                    "Registration start time must be before registration end time.");
+        }
+        // Validate: registrationEnd must be before startTime
+        if (request.getRegistrationEnd() != null && request.getStartTime() != null) {
+            validateTimeRange(request.getRegistrationEnd(), request.getStartTime(),
+                    "Registration time must be before the event starts.");
         }
 
         // Validate: minTeamSize <= maxTeamSize (nếu có)
@@ -116,7 +121,8 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     @Override
     @Transactional(readOnly = true)
     public Page<HackathonEventResponse> getAllHackathonEvents(Pageable pageable) {
-        return hackathonEventRepository.findByIsDeletedFalseAndStatus(HackathonStatus.PUBLISHED, pageable)
+        return hackathonEventRepository.findByIsDeletedFalseAndStatusIn(
+                List.of(HackathonStatus.PUBLISHED, HackathonStatus.IN_PROGRESS, HackathonStatus.COMPLETED), pageable)
                 .map(this::mapToResponse);
     }
 
@@ -198,7 +204,13 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         // Validate: registration window (nếu cả 2 đều có)
         if (event.getRegistrationStart() != null && event.getRegistrationEnd() != null) {
             validateTimeRange(event.getRegistrationStart(), event.getRegistrationEnd(),
-                    "Registration end time must be after registration start time.");
+                    "Registration start time must be before registration end time.");
+        }
+        
+        // Validate registrationEnd must be before startTime
+        if (event.getRegistrationEnd() != null && event.getStartTime() != null) {
+            validateTimeRange(event.getRegistrationEnd(), event.getStartTime(),
+                    "Registration time must be before the event starts.");
         }
 
         // Validate: minTeamSize <= maxTeamSize

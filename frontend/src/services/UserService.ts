@@ -52,9 +52,15 @@ const createUser = async (userData: any): Promise<User> => {
     return response.data.data;
 };
 
+const getUsersByRole = async (role: string): Promise<User[]> => {
+    const response = await api.get(`/users/role/${role}`);
+    return response.data.data;
+};
+
 export const UserService = {
     getUsers,
     approveUser,
     getPendingUsers,
     createUser,
+    getUsersByRole,
 };

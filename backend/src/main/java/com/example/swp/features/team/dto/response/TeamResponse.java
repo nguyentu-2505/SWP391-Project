@@ -26,12 +26,14 @@ public class TeamResponse {
     public static class TeamMemberInfo {
         private Long userId;
         private String username;
+        @com.fasterxml.jackson.annotation.JsonProperty("isLeader")
         private boolean isLeader;
         
         public static TeamMemberInfoBuilder builder() { return new TeamMemberInfoBuilder(); }
         public static class TeamMemberInfoBuilder {
             private Long userId;
             private String username;
+            @com.fasterxml.jackson.annotation.JsonProperty("isLeader")
             private boolean isLeader;
             public TeamMemberInfoBuilder userId(Long userId) { this.userId = userId; return this; }
             public TeamMemberInfoBuilder username(String username) { this.username = username; return this; }
