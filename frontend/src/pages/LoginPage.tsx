@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Code, ArrowRight, Eye, EyeOff, User, Lock, ArrowLeft } from 'lucide-react';
 import AuthLayout from '../components/AuthLayout';
 import Input from '../components/ui/Input';
@@ -12,7 +12,23 @@ const LoginPage: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [oauthMessage, setOauthMessage] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
+
+    React.useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const oauthError = params.get('error');
+        const stateError = (location.state as any)?.error;
+
+        if (oauthError?.includes('pending_approval') || oauthError?.includes('Account_is_locked')) {
+            setOauthMessage('Your account is pending administrator approval. Please wait for the confirmation email before signing in.');
+        } else if (stateError?.includes('pending_approval') || stateError?.includes('Account_is_locked')) {
+            setOauthMessage('Your account is pending administrator approval. Please wait for the confirmation email before signing in.');
+        } else if (stateError) {
+            setError(stateError);
+        }
+    }, [location]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,8 +45,15 @@ const LoginPage: React.FC = () => {
             localStorage.setItem('refreshToken', refreshToken);
             navigate('/dashboard');
         } catch (err: any) {
-            const message = err.response?.data?.message || 'Invalid username or password';
-            setError(message);
+            const message = err.response?.data?.error?.message || err.response?.data?.message || 'Incorrect username or password';
+            
+            if (message.toLowerCase().includes('approved')) {
+                setOauthMessage('Your account is pending administrator approval. Please wait for the confirmation email before signing in.');
+                setError('');
+            } else {
+                setError('Incorrect username or password');
+                setOauthMessage('');
+            }
         } finally {
             setLoading(false);
         }
@@ -119,6 +142,16 @@ const LoginPage: React.FC = () => {
                     rightIcon={showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     onRightIconClick={() => setShowPassword(!showPassword)}
                 />
+
+                {/* OAuth2 Pending Approval Message */}
+                {oauthMessage && (
+                    <div className="flex items-start gap-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                        <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                        </svg>
+                        <span>{oauthMessage}</span>
+                    </div>
+                )}
 
                 {/* Error Message */}
                 {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded-lg">{error}</p>}

@@ -34,7 +34,7 @@ const VerifyOtpPage: React.FC = () => {
         try {
             // Fix: send 'otp' instead of 'otpCode' to match the backend VerifyOtpRequest DTO
             await api.post('/auth/verify-otp', { email, otp });
-            setSuccess('Account verified successfully! You can now log in.');
+            setSuccess('Account verified successfully! Your account is currently pending administrator approval. You will receive an email notification once approved, after which you may log in.');
             setTimeout(() => navigate('/login'), 3000);
         } catch (err: any) {
             setError(err.response?.data?.error?.message || 'Invalid or expired OTP. Please try again.');
