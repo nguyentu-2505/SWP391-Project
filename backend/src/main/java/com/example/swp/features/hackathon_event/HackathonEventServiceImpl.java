@@ -239,9 +239,10 @@ public class HackathonEventServiceImpl implements HackathonEventService {
 
         // Validate state machine transition
         if (!currentStatus.canTransitionTo(newStatus)) {
+            String hint = buildTransitionHint(currentStatus, newStatus);
             throw new IllegalStateException(String.format(
-                    "Cannot transition from %s to %s. Allowed transitions: %s",
-                    currentStatus, newStatus, currentStatus.getAllowedTransitions()));
+                    "Không thể chuyển trạng thái từ %s sang %s. %s",
+                    currentStatus, newStatus, hint));
         }
 
         // Validate registration times before publishing
@@ -339,10 +340,18 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         HackathonEvent event = findEventById(id);
         requireOrganizerOrAdmin(event);
 
-        // Không cho phép xóa event đang diễn ra
+        // Chỉ cho phép xóa sự kiện ở trạng thái DRAFT hoặc CANCELLED
+        if (event.getStatus() == HackathonStatus.PUBLISHED) {
+            throw new IllegalStateException(
+                    "Không thể xóa sự kiện đang ở trạng thái PUBLISHED. Vui lòng hủy (CANCEL) sự kiện trước rồi mới xóa.");
+        }
         if (event.getStatus() == HackathonStatus.IN_PROGRESS) {
             throw new IllegalStateException(
-                    "Cannot delete an event that is currently IN_PROGRESS. Cancel it first.");
+                    "Không thể xóa sự kiện đang diễn ra (IN_PROGRESS). Vui lòng hủy (CANCEL) sự kiện trước rồi mới xóa.");
+        }
+        if (event.getStatus() == HackathonStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "Không thể xóa sự kiện đã kết thúc (COMPLETED).");
         }
 
         event.setDeleted(true);
@@ -419,7 +428,33 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .organizerName(event.getOrganizer() != null ? event.getOrganizer().getUsername() : null)
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
-                .allowedStatusTransitions(event.getStatus().getAllowedTransitions())
                 .build();
+    }
+
+    private String buildTransitionHint(HackathonStatus from, HackathonStatus to) {
+        // Specific, actionable hints for each invalid transition
+        if (from == HackathonStatus.DRAFT && to == HackathonStatus.IN_PROGRESS) {
+            return "Sự kiện đang ở trạng thái DRAFT chưa thể chuyển thẳng sang IN_PROGRESS. Vui lòng PUBLISH sự kiện trước, sau đó mới chuyển sang IN_PROGRESS.";
+        }
+        if (from == HackathonStatus.DRAFT && to == HackathonStatus.COMPLETED) {
+            return "Sự kiện đang ở DRAFT không thể kết thúc. Cần đi qua: DRAFT → PUBLISHED → IN_PROGRESS → COMPLETED.";
+        }
+        if (from == HackathonStatus.PUBLISHED && to == HackathonStatus.COMPLETED) {
+            return "Sự kiện đang ở PUBLISHED chưa thể kết thúc. Vui lòng chuyển sang IN_PROGRESS trước, rồi mới COMPLETED.";
+        }
+        if (from == HackathonStatus.IN_PROGRESS && to == HackathonStatus.PUBLISHED) {
+            return "Sự kiện đang diễn ra (IN_PROGRESS) không thể quay lại trạng thái PUBLISHED.";
+        }
+        if (from == HackathonStatus.IN_PROGRESS && to == HackathonStatus.DRAFT) {
+            return "Sự kiện đang diễn ra không thể quay lại DRAFT.";
+        }
+        if (from == HackathonStatus.COMPLETED) {
+            return "Sự kiện đã kết thúc (COMPLETED) là trạng thái cuối cùng, không thể thay đổi thêm.";
+        }
+        if (from == HackathonStatus.CANCELLED) {
+            return "Sự kiện đã bị hủy (CANCELLED) là trạng thái cuối cùng, không thể thay đổi thêm.";
+        }
+        return String.format("Luồng hợp lệ: DRAFT → PUBLISHED → IN_PROGRESS → COMPLETED. Từ %s chỉ có thể chuyển sang: %s.",
+                from, from.getAllowedTransitions());
     }
 }
