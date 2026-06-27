@@ -14,7 +14,7 @@ interface SubmissionDetails {
     repositoryUrl: string;
     demoUrl: string;
     reportUrl: string;
-    eventId?: number;
+    eventSlug?: string;
 }
 
 interface Criterion {
@@ -26,7 +26,6 @@ interface Criterion {
 }
 
 interface ScoreInput {
-    scoreId?: number;
     criterionId: number;
     scoreValue: number;
     comment: string;
@@ -51,16 +50,15 @@ const ScoringPage: React.FC = () => {
                 const submissionData = subRes.data.data;
                 setSubmission(submissionData);
 
-                // Fetch criteria: try eventId first, fallback to default criteria
+                // Fetch criteria: assuming hackathon event ID 1 for now
                 let critData = [];
                 try {
-                    if (submissionData && submissionData.eventId) {
-                        const critRes = await api.get(`/criteria/event/${submissionData.eventId}`);
-                        critData = critRes.data.data ?? [];
-                    } else {
-                        // Fallback to default criteria if backend doesn't provide eventSlug
-                        const critRes = await api.get(`/criteria/default`);
-                        critData = critRes.data.data ?? [];
+                    const critRes = await api.get(`/criteria/event/1`);
+                    critData = critRes.data.data ?? [];
+                    
+                    if (critData.length === 0) {
+                        const defaultRes = await api.get(`/criteria/default`);
+                        critData = defaultRes.data.data ?? [];
                     }
                 } catch (critErr) {
                     console.error("Failed to load criteria", critErr);
@@ -68,27 +66,13 @@ const ScoringPage: React.FC = () => {
                     critData = [];
                 }
                 
-                // Fetch my existing scores for this submission
-                let existingScores: any[] = [];
-                try {
-                    const myScoresRes = await api.get(`/scores/my-scores/round/${submissionData.roundId}`);
-                    const allMyScores = myScoresRes.data.data || [];
-                    existingScores = allMyScores.filter((s: any) => s.submissionId === Number(submissionId));
-                } catch (scoreErr) {
-                    console.error("Failed to fetch existing scores", scoreErr);
-                }
-
                 setCriteria(critData);
                 
-                const initialScores = critData.map((c: Criterion) => {
-                    const existing = existingScores.find(es => es.criterionId === c.id);
-                    return {
-                        criterionId: c.id,
-                        scoreId: existing?.id, // Store scoreId to update later if needed
-                        scoreValue: existing ? existing.scoreValue : 0,
-                        comment: existing && existing.comment ? existing.comment : ''
-                    };
-                });
+                const initialScores = critData.map((c: Criterion) => ({
+                    criterionId: c.id,
+                    scoreValue: 0,
+                    comment: ''
+                }));
                 setScores(initialScores);
                 
             } catch (err) {
