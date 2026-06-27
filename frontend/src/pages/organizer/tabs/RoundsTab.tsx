@@ -39,7 +39,7 @@ const RoundsTab: React.FC = () => {
             const data = res.data.data ?? res.data;
             setRounds(Array.isArray(data) ? data : []);
         } catch {
-            toast.error('Failed to load rounds.');
+            toast.error(err.response?.data?.error?.message || 'Failed to load rounds.');
         } finally {
             setLoading(false);
         }
@@ -74,7 +74,7 @@ const RoundsTab: React.FC = () => {
             toast.success('Round deleted.');
             setRounds(prev => prev.filter(r => r.id !== id));
         } catch {
-            toast.error('Failed to delete round.');
+            toast.error(err.response?.data?.error?.message || 'Failed to delete round.');
         }
     };
 
@@ -185,3 +185,4 @@ const RoundsTab: React.FC = () => {
 };
 
 export default RoundsTab;
+

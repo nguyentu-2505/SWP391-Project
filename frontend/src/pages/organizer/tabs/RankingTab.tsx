@@ -40,7 +40,7 @@ const RankingTab: React.FC = () => {
                 // Auto-select first round
                 if (list.length > 0) setSelectedRoundId(list[0].id);
             } catch {
-                toast.error('Failed to load rounds.');
+                toast.error(err.response?.data?.error?.message || 'Failed to load rounds.');
             } finally {
                 setLoadingRounds(false);
             }
@@ -56,7 +56,7 @@ const RankingTab: React.FC = () => {
                 const res = await api.get(`/rankings/round/${selectedRoundId}`);
                 setRankings(res.data.data ?? []);
             } catch {
-                toast.error('Failed to load rankings for this round.');
+                toast.error(err.response?.data?.error?.message || 'Failed to load rankings for this round.');
                 setRankings([]);
             } finally {
                 setLoadingRankings(false);
@@ -216,3 +216,4 @@ const RankingTab: React.FC = () => {
 };
 
 export default RankingTab;
+

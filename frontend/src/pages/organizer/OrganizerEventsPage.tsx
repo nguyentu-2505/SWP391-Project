@@ -29,9 +29,9 @@ const OrganizerEventsPage: React.FC = () => {
         try {
             const response = await api.get('/hackathon-events/my-events');
             setEvents(response.data.data);
-        } catch (err) {
+        } catch (err: any) {
             setError('Failed to fetch your events.');
-            toast.error('Failed to fetch events.');
+            toast.error(err.response?.data?.error?.message || 'Failed to fetch events.');
         }
     };
 
@@ -422,3 +422,4 @@ const OrganizerEventsPage: React.FC = () => {
 };
 
 export default OrganizerEventsPage;
+

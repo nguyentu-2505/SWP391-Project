@@ -19,9 +19,9 @@ const RoundsPage: React.FC = () => {
             // For now, fetching rounds for hackathon event 1.
             const allRounds = await RoundService.getRoundsByHackathonEvent(1);
             setRounds(allRounds);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to fetch rounds:', err);
-            toast.error('Failed to fetch rounds.');
+            toast.error(err.response?.data?.error?.message || 'Failed to fetch rounds.');
         } finally {
             setLoading(false);
         }

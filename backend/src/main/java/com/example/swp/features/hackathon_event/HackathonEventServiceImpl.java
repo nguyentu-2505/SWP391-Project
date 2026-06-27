@@ -129,7 +129,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     @Override
     @Transactional(readOnly = true)
     public Page<HackathonEventResponse> getAllEventsForAdmin(Pageable pageable) {
-        return hackathonEventRepository.findAll(pageable)
+        return hackathonEventRepository.findByIsDeletedFalse(pageable)
                 .map(this::mapToResponse);
     }
 
@@ -245,12 +245,22 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
 
         // Validate registration times before publishing
+        // Validate registration times before publishing
         if (newStatus == HackathonStatus.PUBLISHED) {
             if (event.getRegistrationStart() == null || event.getRegistrationEnd() == null) {
                 throw new IllegalStateException("Cannot publish event: Registration Start and End times must be set.");
             }
             if (event.getRegistrationEnd().isBefore(event.getRegistrationStart())) {
                 throw new IllegalStateException("Cannot publish event: Registration End time must be after Start time.");
+            }
+        }
+
+        // Enforce that only ONE event can be PUBLISHED or IN_PROGRESS at a time
+        if (newStatus == HackathonStatus.PUBLISHED || newStatus == HackathonStatus.IN_PROGRESS) {
+            boolean hasActiveEvent = hackathonEventRepository.existsByStatusInAndIsDeletedFalseAndIdNot(
+                    List.of(HackathonStatus.PUBLISHED, HackathonStatus.IN_PROGRESS), event.getId());
+            if (hasActiveEvent) {
+                throw new IllegalStateException("Cannot change status to " + newStatus + ": There is already an active event (PUBLISHED or IN_PROGRESS). Please wait until it is COMPLETED or CANCELLED.");
             }
         }
 

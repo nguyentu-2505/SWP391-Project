@@ -32,9 +32,9 @@ const HackathonEventPage: React.FC = () => {
     try {
       const data = await HackathonEventService.getAllEventsForAdmin();
       setEvents(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch hackathon events:', error);
-      toast.error('Failed to load hackathon events.');
+      toast.error(err.response?.data?.error?.message || 'Failed to load hackathon events.');
     } finally {
       setIsLoading(false);
     }
@@ -426,3 +426,4 @@ const HackathonEventPage: React.FC = () => {
 };
 
 export default HackathonEventPage;
+
