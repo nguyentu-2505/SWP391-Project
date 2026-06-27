@@ -19,9 +19,9 @@ const ScoresPage: React.FC = () => {
             // For now, fetching scores for submission 1.
             const allScores = await ScoreService.getScoresForSubmission(1);
             setScores(allScores);
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to fetch scores:', err);
-            toast.error(err.response?.data?.error?.message || 'Failed to fetch scores.');
+            toast.error('Failed to fetch scores.');
         } finally {
             setLoading(false);
         }

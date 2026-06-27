@@ -19,9 +19,9 @@ const PrizesPage: React.FC = () => {
             // For now, fetching prizes for hackathon event 1.
             const allPrizes = await PrizeService.getPrizesByEvent(1);
             setPrizes(allPrizes);
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to fetch prizes:', err);
-            toast.error(err.response?.data?.error?.message || 'Failed to fetch prizes.');
+            toast.error('Failed to fetch prizes.');
         } finally {
             setLoading(false);
         }

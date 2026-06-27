@@ -21,9 +21,9 @@ const AdminPendingApprovalsPage: React.FC = () => {
             // Assuming the API supports pagination, but for now fetching without params
             const response = await api.get('/users/pending');
             setUsers(response.data.data);
-        } catch (err: any) {
+        } catch (err) {
             setError('Failed to fetch users awaiting approval.');
-            toast.error(err.response?.data?.error?.message || 'Failed to fetch users awaiting approval.');
+            toast.error('Failed to fetch users awaiting approval.');
         } finally {
             setLoading(false);
         }
@@ -39,8 +39,8 @@ const AdminPendingApprovalsPage: React.FC = () => {
             toast.success('User approved successfully!');
             // Refresh the list by removing the approved user from the state
             setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || 'Failed to approve user.');
+        } catch (err) {
+            toast.error('Failed to approve user.');
         }
     };
 
@@ -94,4 +94,3 @@ const AdminPendingApprovalsPage: React.FC = () => {
 };
 
 export default AdminPendingApprovalsPage;
-

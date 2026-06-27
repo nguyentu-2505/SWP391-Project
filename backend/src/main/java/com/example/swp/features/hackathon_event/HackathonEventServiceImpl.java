@@ -134,7 +134,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     @Override
     @Transactional(readOnly = true)
     public Page<HackathonEventResponse> getAllEventsForAdmin(Pageable pageable) {
-        return hackathonEventRepository.findByIsDeletedFalse(pageable)
+        return hackathonEventRepository.findAll(pageable)
                 .map(this::mapToResponse);
     }
 
@@ -281,15 +281,6 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             boolean hasRounds = !roundRepository.findByHackathonEventId(event.getId()).isEmpty();
             if (!hasRounds) {
                 throw new IllegalStateException("Không thể công bố sự kiện: Sự kiện phải có ít nhất một vòng thi (Round).");
-            }
-        }
-
-        // Enforce that only ONE event can be PUBLISHED or IN_PROGRESS at a time
-        if (newStatus == HackathonStatus.PUBLISHED || newStatus == HackathonStatus.IN_PROGRESS) {
-            boolean hasActiveEvent = hackathonEventRepository.existsByStatusInAndIsDeletedFalseAndIdNot(
-                    List.of(HackathonStatus.PUBLISHED, HackathonStatus.IN_PROGRESS), event.getId());
-            if (hasActiveEvent) {
-                throw new IllegalStateException("Cannot change status to " + newStatus + ": There is already an active event (PUBLISHED or IN_PROGRESS). Please wait until it is COMPLETED or CANCELLED.");
             }
         }
 
