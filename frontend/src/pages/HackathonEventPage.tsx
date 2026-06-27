@@ -32,9 +32,9 @@ const HackathonEventPage: React.FC = () => {
     try {
       const data = await HackathonEventService.getAllEventsForAdmin();
       setEvents(data);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to fetch hackathon events:', error);
-      toast.error(err.response?.data?.error?.message || 'Failed to load hackathon events.');
+      toast.error('Failed to load hackathon events.');
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +79,8 @@ const HackathonEventPage: React.FC = () => {
       toast.success('Event updated successfully', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to update hackathon event:', error);
-      toast.error('Failed to update event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+      const errMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Cập nhật thất bại: ' + errMsg, { id: loadingToast });
     }
   };
 
@@ -91,7 +92,8 @@ const HackathonEventPage: React.FC = () => {
       toast.success('Status updated successfully', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to update status:', error);
-      toast.error('Failed to update status: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+      const errMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Cập nhật trạng thái thất bại: ' + errMsg, { id: loadingToast });
     }
   };
 
@@ -243,9 +245,19 @@ const HackathonEventPage: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
             </div>
+            {/* Time Rules Hint */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700 space-y-1">
+                <p className="font-semibold">📋 Quy tắc đặt thời gian:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li>Ngày <b>Mở đăng ký</b> phải trước ngày <b>Đóng đăng ký</b></li>
+                  <li>Ngày <b>Đóng đăng ký</b> phải trước ngày <b>Bắt đầu sự kiện</b></li>
+                  <li>Ngày <b>Bắt đầu sự kiện</b> phải trước ngày <b>Kết thúc sự kiện</b></li>
+                  <li>Ví dụ: Mở ĐK → Đóng ĐK → Bắt đầu → Kết thúc</li>
+                </ul>
+            </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start (Mở đăng ký)</label>
                     <input
                         type="datetime-local"
                         value={newEvent.registrationStart || ''}
@@ -254,7 +266,7 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End (Đóng đăng ký)</label>
                     <input
                         type="datetime-local"
                         value={newEvent.registrationEnd || ''}
@@ -263,7 +275,7 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time * (Bắt đầu sự kiện)</label>
                     <input
                         type="datetime-local"
                         value={newEvent.startTime}
@@ -272,7 +284,7 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time * (Kết thúc sự kiện)</label>
                     <input
                         type="datetime-local"
                         value={newEvent.endTime}
@@ -345,9 +357,19 @@ const HackathonEventPage: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
               </div>
+              {/* Time Rules Hint */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700 space-y-1">
+                <p className="font-semibold">📋 Quy tắc đặt thời gian:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li>Ngày <b>Mở đăng ký</b> phải trước ngày <b>Đóng đăng ký</b></li>
+                  <li>Ngày <b>Đóng đăng ký</b> phải trước ngày <b>Bắt đầu sự kiện</b></li>
+                  <li>Ngày <b>Bắt đầu sự kiện</b> phải trước ngày <b>Kết thúc sự kiện</b></li>
+                  <li>Ví dụ: Mở ĐK → Đóng ĐK → Bắt đầu → Kết thúc</li>
+                </ul>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start (Mở đăng ký)</label>
                     <input
                         type="datetime-local"
                         value={selectedEvent.registrationStart || ''}
@@ -356,7 +378,7 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End (Đóng đăng ký)</label>
                     <input
                         type="datetime-local"
                         value={selectedEvent.registrationEnd || ''}
@@ -365,7 +387,7 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time * (Bắt đầu sự kiện)</label>
                   <input
                     type="datetime-local"
                     value={selectedEvent.startTime}
@@ -374,7 +396,7 @@ const HackathonEventPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time * (Kết thúc sự kiện)</label>
                   <input
                     type="datetime-local"
                     value={selectedEvent.endTime}
@@ -426,4 +448,3 @@ const HackathonEventPage: React.FC = () => {
 };
 
 export default HackathonEventPage;
-

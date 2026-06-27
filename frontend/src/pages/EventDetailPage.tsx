@@ -44,10 +44,10 @@ const EventDetailPage: React.FC = () => {
 
         const checkRegistrationStatus = async (eventId: number) => {
             try {
-                const response = await api.get(`/event-registrations/my-registration/event/${eventId}`);
-                setIsRegistered(response.data.data); // data is boolean now
+                const response = await api.get(`/event-registrations/event/${eventId}`);
+                setIsRegistered(response.data.data.isRegistered);
             } catch (err) {
-                // Ignore error, maybe the user is not logged in or not a participant
+                // Ignore error, maybe the user is not logged in
             }
         };
 
@@ -61,8 +61,8 @@ const EventDetailPage: React.FC = () => {
             await api.post('/event-registrations', null, { params: { eventId: event.id } });
             setIsRegistered(true);
             toast.success('Successfully registered for the event!');
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || 'Failed to register for the event.');
+        } catch (err) {
+            toast.error('Failed to register for the event.');
         } finally {
             setIsRegistering(false);
         }

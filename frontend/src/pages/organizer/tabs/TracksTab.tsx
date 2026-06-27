@@ -40,7 +40,7 @@ const TracksTab: React.FC = () => {
             const data = res.data.data ?? res.data;
             setTracks(Array.isArray(data) ? data : []);
         } catch {
-            toast.error(err.response?.data?.error?.message || 'Failed to load tracks.');
+            toast.error('Failed to load tracks.');
         } finally {
             setLoading(false);
         }
@@ -86,7 +86,7 @@ const TracksTab: React.FC = () => {
             toast.success('Track deleted.');
             setTracks(prev => prev.filter(t => t.id !== id));
         } catch {
-            toast.error(err.response?.data?.error?.message || 'Failed to delete track.');
+            toast.error('Failed to delete track.');
         }
     };
 
@@ -102,8 +102,8 @@ const TracksTab: React.FC = () => {
             const res = await api.get(`/tracks/${trackId}/mentors`);
             const data = res.data.data ?? res.data;
             setTrackMentors(Array.isArray(data) ? data : []);
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || 'Failed to fetch mentors for track.');
+        } catch (err) {
+            toast.error('Failed to fetch mentors for track.');
         } finally {
             setMentorLoading(false);
         }
@@ -310,4 +310,3 @@ const TracksTab: React.FC = () => {
 };
 
 export default TracksTab;
-

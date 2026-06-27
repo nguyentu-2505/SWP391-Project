@@ -49,9 +49,9 @@ const PrizesTab: React.FC = () => {
             const teamData = teamRes.data.data ?? teamRes.data;
             setPrizes(Array.isArray(prizeData) ? prizeData : []);
             setTeams(Array.isArray(teamData) ? teamData : []);
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to load prize data', err);
-            toast.error(err.response?.data?.error?.message || 'Failed to load prize data.');
+            toast.error('Failed to load prize data.');
         } finally {
             setLoading(false);
         }
@@ -265,4 +265,3 @@ const PrizesTab: React.FC = () => {
 };
 
 export default PrizesTab;
-
