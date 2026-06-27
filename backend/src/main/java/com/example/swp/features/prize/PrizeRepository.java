@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.lang.NonNull;
 
 @Repository
 public interface PrizeRepository extends JpaRepository<Prize, Long> {
@@ -19,5 +20,5 @@ public interface PrizeRepository extends JpaRepository<Prize, Long> {
     List<Prize> findByTrackId(Long trackId);
 
     @EntityGraph(attributePaths = {"hackathonEvent", "track", "winningTeam"})
-    Optional<Prize> findById(Long id);
+    @NonNull Optional<Prize> findById(@NonNull Long id);
 }

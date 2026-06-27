@@ -22,7 +22,7 @@ const SubmitProjectPage: React.FC = () => {
     const [roundId, setRoundId] = useState<number | ''>('');
     const [repositoryUrl, setRepositoryUrl] = useState('');
     const [demoUrl, setDemoUrl] = useState('');
-    const [reportUrl, setReportUrl] = useState('');
+    const [reportUrl] = useState('');
     
     const [myTeam, setMyTeam] = useState<TeamDetails | null>(null);
     const [rounds, setRounds] = useState<Round[]>([]);

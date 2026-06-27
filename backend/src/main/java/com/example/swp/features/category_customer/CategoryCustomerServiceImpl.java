@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class CategoryCustomerServiceImpl implements CategoryCustomerService {
 
     private final CategoryCustomerRepository categoryCustomerRepository;

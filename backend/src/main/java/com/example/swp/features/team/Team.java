@@ -47,6 +47,7 @@ public class Team {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 50)
+    @Builder.Default
     private TeamStatus status = TeamStatus.ACTIVE;
 
     @Column(name = "disqualification_reason", columnDefinition = "NVARCHAR(MAX)")

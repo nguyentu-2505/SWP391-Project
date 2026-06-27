@@ -22,6 +22,7 @@ import com.example.swp.features.hackathon_event.HackathonStatus;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class TeamInvitationService {
 
     private final TeamInvitationRepository invitationRepository;

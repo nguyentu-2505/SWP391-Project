@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Users, Crown, X, Plus, AlertCircle, Mail, Info, CheckCircle, Lock, Send } from 'lucide-react';
+import { Users, Crown, X, Plus, Mail, Info, CheckCircle, Lock, Send } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Skeleton from '../../components/Skeleton';
@@ -29,7 +29,7 @@ interface HackathonEvent {
 }
 
 const MyTeamPage: React.FC = () => {
-    const { slug } = useParams<{ slug: string }>();
+    useParams<{ slug: string }>();
     const navigate = useNavigate();
     
     const [events, setEvents] = useState<HackathonEvent[]>([]);

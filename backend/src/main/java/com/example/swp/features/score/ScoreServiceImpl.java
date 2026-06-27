@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class ScoreServiceImpl implements ScoreService {
 
     private final ScoreRepository scoreRepository;

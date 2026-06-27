@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.lang.NonNull;
 
 @Repository
 public interface MentorshipRequestRepository extends JpaRepository<MentorshipRequest, Long> {
@@ -19,5 +20,5 @@ public interface MentorshipRequestRepository extends JpaRepository<MentorshipReq
     List<MentorshipRequest> findByStatus(MentorshipRequestStatus status);
 
     @EntityGraph(attributePaths = {"team", "mentor"})
-    Optional<MentorshipRequest> findById(Long id);
+    @NonNull Optional<MentorshipRequest> findById(@NonNull Long id);
 }

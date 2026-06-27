@@ -30,10 +30,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class AuthServiceImpl implements AuthService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    private static final String TEMP_PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     private final AuthenticationManager authenticationManager;  
     private final UserRepository userRepository;
@@ -42,7 +42,6 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final AuditLogService auditLogService;
     private final RefreshTokenService refreshTokenService;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Override
     public LoginResponse login(LoginRequest request) {

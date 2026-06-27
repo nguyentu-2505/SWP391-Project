@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;

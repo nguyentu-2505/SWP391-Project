@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.lang.NonNull;
 
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
@@ -24,5 +25,5 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     List<Submission> findByEventId(Long eventId);
 
     @EntityGraph(attributePaths = {"team", "round", "team.event"})
-    Optional<Submission> findById(Long id);
+    @NonNull Optional<Submission> findById(@NonNull Long id);
 }
