@@ -80,10 +80,10 @@ public class TrackServiceImpl implements TrackService {
             throw new AccessDeniedException("Guest judges cannot be assigned as track mentors.");
         }
 
-        // Validation: only MENTOR or JUDGE (internal) roles can mentor tracks
-        if (mentor.getRole() != Role.MENTOR && mentor.getRole() != Role.JUDGE) {
+        // Validation: only MENTOR role can mentor tracks
+        if (mentor.getRole() != Role.MENTOR) {
             throw new IllegalArgumentException(
-                "Only users with MENTOR or JUDGE role can be assigned as track mentors. " +
+                "Only users with MENTOR role can be assigned as track mentors. " +
                 "User '" + mentor.getUsername() + "' has role: " + mentor.getRole()
             );
         }

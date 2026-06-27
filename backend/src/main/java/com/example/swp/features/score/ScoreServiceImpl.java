@@ -117,6 +117,14 @@ public class ScoreServiceImpl implements ScoreService {
     }
 
     @Override
+    public List<ScoreResponse> getMyScoresForRound(Long roundId) {
+        User judge = getCurrentUser();
+        return scoreRepository.findByRoundIdAndJudgeId(roundId, judge.getId()).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public ScoreResponse updateScore(Long scoreId, com.example.swp.features.score.dto.request.UpdateScoreRequest request) {
         User judge = getCurrentUser();

@@ -29,6 +29,7 @@ import InvitationsPage from './pages/participant/InvitationsPage';
 import SubmitProjectPage from './pages/participant/SubmitProjectPage';
 // Judge Pages
 import JudgeDashboardPage from './pages/judge/JudgeDashboardPage';
+import AssignmentSubmissionsPage from './pages/judge/AssignmentSubmissionsPage';
 import ScoringPage from './pages/judge/ScoringPage';
 // Mentor Pages
 import MentorDashboardPage from './pages/mentor/MentorDashboardPage';
@@ -109,6 +110,7 @@ function App() {
               {/* Judge Routes */}
               <Route element={<PrivateRoute allowedRoles={[Role.JUDGE]} />}>
                 <Route path="/judge/dashboard" element={<JudgeDashboardPage />} />
+                <Route path="/judge/assignments/:assignmentId/submissions" element={<AssignmentSubmissionsPage />} />
                 <Route path="/judge/score/:submissionId" element={<ScoringPage />} />
               </Route>
 

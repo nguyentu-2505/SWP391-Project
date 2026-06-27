@@ -14,7 +14,7 @@ interface SubmissionDetails {
     repositoryUrl: string;
     demoUrl: string;
     reportUrl: string;
-    eventSlug?: string;
+    eventId?: number;
 }
 
 interface Criterion {
@@ -26,6 +26,7 @@ interface Criterion {
 }
 
 interface ScoreInput {
+    scoreId?: number;
     criterionId: number;
     scoreValue: number;
     comment: string;
@@ -50,11 +51,11 @@ const ScoringPage: React.FC = () => {
                 const submissionData = subRes.data.data;
                 setSubmission(submissionData);
 
-                // Fetch criteria: try eventSlug first, fallback to default criteria
+                // Fetch criteria: try eventId first, fallback to default criteria
                 let critData = [];
                 try {
-                    if (submissionData && submissionData.eventSlug) {
-                        const critRes = await api.get(`/criteria/event/${submissionData.eventSlug}`);
+                    if (submissionData && submissionData.eventId) {
+                        const critRes = await api.get(`/criteria/event/${submissionData.eventId}`);
                         critData = critRes.data.data ?? [];
                     } else {
                         // Fallback to default criteria if backend doesn't provide eventSlug
@@ -67,13 +68,27 @@ const ScoringPage: React.FC = () => {
                     critData = [];
                 }
                 
+                // Fetch my existing scores for this submission
+                let existingScores: any[] = [];
+                try {
+                    const myScoresRes = await api.get(`/scores/my-scores/round/${submissionData.roundId}`);
+                    const allMyScores = myScoresRes.data.data || [];
+                    existingScores = allMyScores.filter((s: any) => s.submissionId === Number(submissionId));
+                } catch (scoreErr) {
+                    console.error("Failed to fetch existing scores", scoreErr);
+                }
+
                 setCriteria(critData);
                 
-                const initialScores = critData.map((c: Criterion) => ({
-                    criterionId: c.id,
-                    scoreValue: 0,
-                    comment: ''
-                }));
+                const initialScores = critData.map((c: Criterion) => {
+                    const existing = existingScores.find(es => es.criterionId === c.id);
+                    return {
+                        criterionId: c.id,
+                        scoreId: existing?.id, // Store scoreId to update later if needed
+                        scoreValue: existing ? existing.scoreValue : 0,
+                        comment: existing && existing.comment ? existing.comment : ''
+                    };
+                });
                 setScores(initialScores);
                 
             } catch (err) {

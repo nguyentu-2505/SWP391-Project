@@ -6,13 +6,9 @@ const EventDashboardPage: React.FC = () => {
     const { eventId } = useParams<{ eventId: string }>();
 
     const navLinks = [
-        { to: `/organizer/events/${eventId}/dashboard/submissions`, icon: <FileText size={16} />, label: 'Submissions' },
-        { to: `/organizer/events/${eventId}/dashboard/teams`, icon: <Users size={16} />, label: 'Teams' },
         { to: `/organizer/events/${eventId}/dashboard/rounds`, icon: <Clock size={16} />, label: 'Rounds' },
         { to: `/organizer/events/${eventId}/dashboard/criteria`, icon: <Target size={16} />, label: 'Criteria' },
         { to: `/organizer/events/${eventId}/dashboard/tracks`, icon: <Tag size={16} />, label: 'Tracks' },
-        { to: `/organizer/events/${eventId}/dashboard/judges`, icon: <LayoutDashboard size={16} />, label: 'Judges' },
-        { to: `/organizer/events/${eventId}/dashboard/ranking`, icon: <ListOrdered size={16} />, label: 'Ranking' },
         { to: `/organizer/events/${eventId}/dashboard/prizes`, icon: <Award size={16} />, label: 'Prizes' },
     ];
 

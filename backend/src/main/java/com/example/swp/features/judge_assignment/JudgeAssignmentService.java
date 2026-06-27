@@ -90,6 +90,8 @@ public class JudgeAssignmentService {
                 .round(round)
                 .track(track)
                 .organizer(assigner)
+                .status(JudgeAssignmentStatus.ASSIGNED)
+                .assignedAt(java.time.LocalDateTime.now())
                 .build();
         
         JudgeAssignment savedAssignment = assignmentRepository.save(assignment);
@@ -109,6 +111,12 @@ public class JudgeAssignmentService {
 
     public List<JudgeAssignmentResponse> getAssignmentsForRound(Long roundId) {
         return assignmentRepository.findByRoundId(roundId).stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+
+    public List<JudgeAssignmentResponse> getAssignmentsForEvent(Long eventId) {
+        return assignmentRepository.findByRoundHackathonEventId(eventId).stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }

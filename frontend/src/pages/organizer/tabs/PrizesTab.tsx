@@ -41,7 +41,7 @@ const PrizesTab: React.FC = () => {
         if (!eventId) return;
         try {
             const [prizeRes, teamRes] = await Promise.all([
-                api.get(`/prizes/event/${eventId}`, { baseURL: api.defaults.baseURL?.replace('/api/v1', '') }),
+                api.get(`/prizes/event/${eventId}`),
                 api.get(`/teams/event/${eventId}`),
             ]);
             // Handle both raw array and wrapped response
@@ -71,7 +71,7 @@ const PrizesTab: React.FC = () => {
                 rank: form.rank,
                 hackathonEventId: Number(eventId),
                 ...(form.trackId ? { trackId: form.trackId } : {}),
-            }, { baseURL: api.defaults.baseURL?.replace('/api/v1', '') });
+            });
             toast.success('Prize created!');
             setForm({ name: '', description: '', rank: 1, trackId: '' });
             setShowForm(false);
@@ -86,7 +86,7 @@ const PrizesTab: React.FC = () => {
     const handleAssign = async (prizeId: number) => {
         if (!assignTeamId) { toast.error('Please select a team.'); return; }
         try {
-            await api.patch(`/prizes/${prizeId}/assign`, { teamId: assignTeamId }, { baseURL: api.defaults.baseURL?.replace('/api/v1', '') });
+            await api.patch(`/prizes/${prizeId}/assign`, { teamId: assignTeamId });
             toast.success('Prize assigned successfully!');
             setAssigningPrizeId(null);
             setAssignTeamId('');
@@ -99,14 +99,10 @@ const PrizesTab: React.FC = () => {
     const [autoAssigning, setAutoAssigning] = useState(false);
 
     const handleAutoAssign = async () => {
-        if (!eventId) return;
-        if (!window.confirm('Are you sure you want to auto-assign prizes based on rankings?')) {
-            return;
-        }
-        
+        if (!confirm('Auto-assign will evaluate all completed submissions and award prizes based on score rank. Continue?')) return;
         setAutoAssigning(true);
         try {
-            await api.post(`/prizes/event/${eventId}/auto-assign`, {}, { baseURL: api.defaults.baseURL?.replace('/api/v1', '') });
+            await api.post(`/prizes/event/${eventId}/auto-assign`);
             toast.success('Prizes auto-assigned successfully!');
             fetchData();
         } catch (err: any) {

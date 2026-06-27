@@ -200,6 +200,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .submittedAt(submission.getSubmittedAt())
                 .trackId(track != null ? track.getId() : null)
                 .trackName(track != null ? track.getName() : null)
+                .eventId(submission.getRound().getHackathonEvent().getId())
                 .build();
     }
 }

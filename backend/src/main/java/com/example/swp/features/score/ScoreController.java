@@ -39,6 +39,13 @@ public class ScoreController {
         List<ScoreResponse> responses = scoreService.getScoresForSubmissionByJudge(submissionId, judgeId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
+
+    @GetMapping("/my-scores/round/{roundId}")
+    @PreAuthorize("hasAnyRole('JUDGE', 'GUEST_JUDGE')")
+    public ResponseEntity<ApiResponse<List<ScoreResponse>>> getMyScoresForRound(@PathVariable Long roundId) {
+        List<ScoreResponse> responses = scoreService.getMyScoresForRound(roundId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
     
     @PostMapping("/finalize/round/{roundId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")

@@ -47,6 +47,13 @@ public class JudgeAssignmentController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
+    @GetMapping("/event/{eventId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getAssignmentsForEvent(@PathVariable Long eventId) {
+        List<JudgeAssignmentResponse> responses = assignmentService.getAssignmentsForEvent(eventId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
     @DeleteMapping("/{assignmentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<ApiResponse<Void>> unassignJudge(@PathVariable Long assignmentId) {

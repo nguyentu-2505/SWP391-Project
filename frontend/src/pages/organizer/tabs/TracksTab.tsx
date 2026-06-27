@@ -31,6 +31,7 @@ const TracksTab: React.FC = () => {
     const [trackMentors, setTrackMentors] = useState<any[]>([]);
     const [mentorUserIdInput, setMentorUserIdInput] = useState('');
     const [mentorLoading, setMentorLoading] = useState(false);
+    const [availableMentors, setAvailableMentors] = useState<any[]>([]);
 
     const fetchTracks = async () => {
         if (!eventId) return;
@@ -45,7 +46,20 @@ const TracksTab: React.FC = () => {
         }
     };
 
-    useEffect(() => { fetchTracks(); }, [eventId]);
+    const fetchAvailableMentors = async () => {
+        try {
+            const res = await api.get('/users/role/MENTOR');
+            const data = res.data.data ?? res.data;
+            setAvailableMentors(Array.isArray(data) ? data : []);
+        } catch (e) {
+            console.error("Failed to load mentors", e);
+        }
+    };
+
+    useEffect(() => { 
+        fetchTracks(); 
+        fetchAvailableMentors();
+    }, [eventId]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -235,16 +249,21 @@ const TracksTab: React.FC = () => {
                     </h3>
                     <div className="space-y-4">
                         <div className="flex gap-2">
-                            <input
-                                type="number"
-                                placeholder="Enter Mentor User ID"
+                            <select
                                 value={mentorUserIdInput}
                                 onChange={(e) => setMentorUserIdInput(e.target.value)}
                                 className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                            >
+                                <option value="">-- Select a Mentor --</option>
+                                {availableMentors.map(m => (
+                                    <option key={m.id} value={m.id}>
+                                        {m.username} ({m.email})
+                                    </option>
+                                ))}
+                            </select>
                             <button
                                 onClick={handleAssignMentor}
-                                disabled={mentorLoading}
+                                disabled={mentorLoading || !mentorUserIdInput}
                                 className="px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
                             >
                                 Assign Mentor

@@ -2,59 +2,86 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
 import toast from 'react-hot-toast';
-
-interface Submission {
-    id: number;
-    teamName: string;
-    roundName: string;
-}
+import { Trash2 } from 'lucide-react';
 
 interface Judge {
     id: number;
     username: string;
 }
 
+interface JudgeAssignment {
+    id: number;
+    judgeName: string;
+    roundName: string;
+    trackName: string;
+    status: string;
+}
+
 const JudgesTab: React.FC = () => {
     const { eventId } = useParams<{ eventId: string }>();
-    const [submissions, setSubmissions] = useState<Submission[]>([]);
+    const [rounds, setRounds] = useState<any[]>([]);
+    const [tracks, setTracks] = useState<any[]>([]);
     const [judges, setJudges] = useState<Judge[]>([]);
-    const [selectedSubmission, setSelectedSubmission] = useState<number | null>(null);
+    const [assignments, setAssignments] = useState<JudgeAssignment[]>([]);
+    
+    const [selectedRound, setSelectedRound] = useState<number | ''>('');
+    const [selectedTrack, setSelectedTrack] = useState<number | ''>('');
     const [selectedJudge, setSelectedJudge] = useState<number | ''>('');
     const [loading, setLoading] = useState(true);
 
+    const fetchData = async () => {
+        if (!eventId) return;
+        try {
+            const [roundRes, trackRes, judgeRes, assignmentRes] = await Promise.all([
+                api.get(`/rounds/hackathon/${eventId}`),
+                api.get(`/tracks/hackathon/${eventId}`),
+                api.get(`/users/role/JUDGE`),
+                api.get(`/judge-assignments/event/${eventId}`)
+            ]);
+            setRounds(roundRes.data.data || []);
+            setTracks(trackRes.data.data || []);
+            setJudges(judgeRes.data.data || []);
+            setAssignments(assignmentRes.data.data || []);
+        } catch (err) {
+            toast.error("Failed to load data for judge assignment.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            if (!eventId) return;
-            try {
-                const [subRes, judgeRes] = await Promise.all([
-                    api.get(`/submissions/event/${eventId}`),
-                    api.get(`/users/role/JUDGE`)
-                ]);
-                setSubmissions(subRes.data.data);
-                setJudges(judgeRes.data.data);
-            } catch (err) {
-                toast.error("Failed to load data for judge assignment.");
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchData();
     }, [eventId]);
 
     const handleAssignJudge = async () => {
-        if (!selectedSubmission || !selectedJudge) {
-            toast.error("Please select a submission and a judge.");
+        if (!selectedRound || !selectedJudge) {
+            toast.error("Please select a round and a judge.");
             return;
         }
         try {
             await api.post('/judge-assignments', {
-                submissionId: selectedSubmission,
+                roundId: selectedRound,
+                trackId: selectedTrack || null,
                 judgeId: selectedJudge
             });
             toast.success("Judge assigned successfully!");
-            // Optionally, refresh data here
+            setSelectedRound('');
+            setSelectedTrack('');
+            setSelectedJudge('');
+            fetchData();
         } catch (err: any) {
             toast.error(err.response?.data?.error?.message || "Failed to assign judge.");
+        }
+    };
+
+    const handleUnassign = async (id: number) => {
+        if (!confirm('Are you sure you want to unassign this judge?')) return;
+        try {
+            await api.delete(`/judge-assignments/${id}`);
+            toast.success("Judge unassigned successfully.");
+            fetchData();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || "Failed to unassign judge.");
         }
     };
 
@@ -63,21 +90,35 @@ const JudgesTab: React.FC = () => {
     return (
         <div>
             <h2 className="text-2xl font-semibold mb-4">Assign Judges</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-gray-50 p-4 rounded-lg items-end">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">1. Select Submission</label>
+                    <label className="block text-sm font-medium text-gray-700">1. Select Round</label>
                     <select 
-                        onChange={(e) => setSelectedSubmission(Number(e.target.value))}
+                        value={selectedRound}
+                        onChange={(e) => setSelectedRound(Number(e.target.value))}
                         className="w-full mt-1 input-style"
                     >
-                        <option value="">-- Select a submission --</option>
-                        {submissions.map(s => (
-                            <option key={s.id} value={s.id}>{s.teamName} - {s.roundName}</option>
+                        <option value="">-- Select a round --</option>
+                        {rounds.map(r => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
                         ))}
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">2. Select Judge</label>
+                    <label className="block text-sm font-medium text-gray-700">2. Select Track (Optional)</label>
+                    <select 
+                        value={selectedTrack}
+                        onChange={(e) => setSelectedTrack(Number(e.target.value) || '')}
+                        className="w-full mt-1 input-style"
+                    >
+                        <option value="">-- All Tracks --</option>
+                        {tracks.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">3. Select Judge</label>
                     <select
                         value={selectedJudge}
                         onChange={(e) => setSelectedJudge(Number(e.target.value))}
@@ -89,16 +130,54 @@ const JudgesTab: React.FC = () => {
                         ))}
                     </select>
                 </div>
-                <div className="self-end">
-                    <button onClick={handleAssignJudge} className="w-full btn-primary">
+                <div>
+                    <button onClick={handleAssignJudge} className="w-full btn-primary py-2">
                         Assign Judge
                     </button>
                 </div>
             </div>
             <div className="mt-8">
-                <h3 className="text-xl font-semibold">Current Assignments</h3>
-                {/* TODO: Display a list of current assignments for this event */}
-                <p className="text-gray-500 mt-2">(Displaying current assignments is a future improvement)</p>
+                <h3 className="text-xl font-semibold mb-4">Current Assignments</h3>
+                {assignments.length === 0 ? (
+                    <div className="text-sm text-gray-500">No judges assigned yet.</div>
+                ) : (
+                    <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judge</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Round</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Track</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {assignments.map(a => (
+                                    <tr key={a.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{a.judgeName}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.roundName}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.trackName}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                                                {a.status || 'ASSIGNED'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button 
+                                                onClick={() => handleUnassign(a.id)}
+                                                className="text-red-600 hover:text-red-900"
+                                                title="Unassign"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

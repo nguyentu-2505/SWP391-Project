@@ -244,6 +244,16 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                     currentStatus, newStatus, currentStatus.getAllowedTransitions()));
         }
 
+        // Validate registration times before publishing
+        if (newStatus == HackathonStatus.PUBLISHED) {
+            if (event.getRegistrationStart() == null || event.getRegistrationEnd() == null) {
+                throw new IllegalStateException("Cannot publish event: Registration Start and End times must be set.");
+            }
+            if (event.getRegistrationEnd().isBefore(event.getRegistrationStart())) {
+                throw new IllegalStateException("Cannot publish event: Registration End time must be after Start time.");
+            }
+        }
+
         event.setStatus(newStatus);
         HackathonEvent updatedEvent = hackathonEventRepository.save(event);
 

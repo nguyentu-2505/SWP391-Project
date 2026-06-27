@@ -56,8 +56,8 @@ const OrganizerEventsPage: React.FC = () => {
             setNewEvent({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 2, maxTeamSize: 5 });
             toast.success('Event created successfully', { id: loadingToast });
         } catch (err: any) {
-            console.error('Failed to create hackathon event:', err);
-            toast.error('Failed to create event: ' + (err.response?.data?.message || err.message), { id: loadingToast });
+            const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message;
+            toast.error('Failed to create event: ' + errorMessage, { id: loadingToast });
         }
     };
 
@@ -82,7 +82,8 @@ const OrganizerEventsPage: React.FC = () => {
             toast.success('Event updated successfully', { id: loadingToast });
         } catch (error: any) {
             console.error('Failed to update hackathon event:', error);
-            toast.error('Failed to update event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+            const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+            toast.error('Failed to update event: ' + errorMessage, { id: loadingToast });
         }
     };
 
@@ -94,7 +95,8 @@ const OrganizerEventsPage: React.FC = () => {
             toast.success('Status updated successfully', { id: loadingToast });
         } catch (error: any) {
             console.error('Failed to update status:', error);
-            toast.error('Failed to update status: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+            const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+            toast.error('Failed to update status: ' + errorMessage, { id: loadingToast });
         }
     };
 
