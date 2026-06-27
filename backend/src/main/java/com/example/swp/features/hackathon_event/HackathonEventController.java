@@ -23,7 +23,7 @@ public class HackathonEventController {
     private final HackathonEventService hackathonEventService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<HackathonEventResponse>> createHackathonEvent(@Valid @RequestBody CreateHackathonEventRequest request) {
         HackathonEventResponse response = hackathonEventService.createHackathonEvent(request);
         return new ResponseEntity<>(ApiResponse.success(response, "Hackathon event created successfully."), HttpStatus.CREATED);
@@ -52,6 +52,12 @@ public class HackathonEventController {
     @GetMapping("/{slug}")
     public ResponseEntity<ApiResponse<HackathonEventResponse>> getHackathonEventBySlug(@PathVariable String slug) {
         HackathonEventResponse response = hackathonEventService.getHackathonEventBySlug(slug);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/id/{id}")
+    public ResponseEntity<ApiResponse<HackathonEventResponse>> getHackathonEventById(@PathVariable Long id) {
+        HackathonEventResponse response = hackathonEventService.getHackathonEventById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

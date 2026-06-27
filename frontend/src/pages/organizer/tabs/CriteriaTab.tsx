@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
-import { Target, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Target, Plus, Trash2, Loader2, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Modal from '../../../components/Modal';
 
 interface Criterion {
     id: number;
@@ -28,6 +29,8 @@ const CriteriaTab: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState<CriterionForm>(emptyForm);
     const [saving, setSaving] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingCriterion, setEditingCriterion] = useState<Criterion | null>(null);
 
     const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
 
@@ -68,13 +71,42 @@ const CriteriaTab: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm('Delete this criterion? Existing scores for this criterion will be affected.')) return;
+        if (!confirm('Bạn có chắc chắn muốn xóa tiêu chí này không? Điểm số hiện tại của tiêu chí này sẽ bị ảnh hưởng.')) return;
         try {
-            await api.delete(`/criteria/${id}`);
-            toast.success('Criterion deleted.');
+            await api.delete(`/criteria/${id}?eventId=${eventId}`);
+            toast.success('Xóa tiêu chí thành công.');
             setCriteria(prev => prev.filter(c => c.id !== id));
-        } catch {
-            toast.error(err.response?.data?.error?.message || 'Failed to delete criterion.');
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Không thể xóa tiêu chí.');
+        }
+    };
+
+    const openEditModal = (criterion: Criterion) => {
+        setEditingCriterion({ ...criterion });
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateCriterion = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingCriterion || !editingCriterion.name.trim()) {
+            toast.error('Tên tiêu chí là bắt buộc.');
+            return;
+        }
+        const loadingToast = toast.loading('Đang cập nhật tiêu chí...');
+        try {
+            await api.put(`/criteria/${editingCriterion.id}`, {
+                name: editingCriterion.name,
+                description: editingCriterion.description,
+                weight: editingCriterion.weight,
+                maxScore: editingCriterion.maxScore,
+                hackathonEventId: Number(eventId),
+            });
+            toast.success('Cập nhật thành công!', { id: loadingToast });
+            setIsEditModalOpen(false);
+            setEditingCriterion(null);
+            fetchCriteria();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Cập nhật thất bại.', { id: loadingToast });
         }
     };
 
@@ -186,16 +218,97 @@ const CriteriaTab: React.FC = () => {
                                 </div>
                                 <span className="text-xs text-gray-400 w-8 text-right">{c.weight}%</span>
                             </div>
-                            <button
-                                onClick={() => handleDelete(c.id)}
-                                className="text-red-400 hover:text-red-600 transition-colors p-1"
-                                title="Delete criterion"
-                            >
-                                <Trash2 size={16} />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => openEditModal(c)}
+                                    className="text-blue-400 hover:text-blue-600 transition-colors p-1 cursor-pointer"
+                                    title="Chỉnh sửa tiêu chí"
+                                >
+                                    <Edit2 size={16} />
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(c.id)}
+                                    className="text-red-400 hover:text-red-600 transition-colors p-1 cursor-pointer"
+                                    title="Xóa tiêu chí"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
+            )}
+
+            {isEditModalOpen && editingCriterion && (
+                <Modal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingCriterion(null); }}>
+                    <form onSubmit={handleUpdateCriterion} className="p-6 max-w-lg space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <Target size={20} className="text-blue-600" />
+                            Chỉnh sửa tiêu chí chấm điểm
+                        </h3>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Tên tiêu chí *</label>
+                            <input
+                                type="text"
+                                value={editingCriterion.name}
+                                onChange={e => setEditingCriterion({ ...editingCriterion, name: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                                required
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Hệ số (Weight %) *</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    value={editingCriterion.weight}
+                                    onChange={e => setEditingCriterion({ ...editingCriterion, weight: Number(e.target.value) })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                                    required
+                                />
+                                <p className="text-xs text-gray-400 mt-1">Còn lại tối đa: {100 - totalWeight + (criteria.find(x => x.id === editingCriterion.id)?.weight || 0)}%</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Điểm tối đa *</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    value={editingCriterion.maxScore}
+                                    onChange={e => setEditingCriterion({ ...editingCriterion, maxScore: Number(e.target.value) })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả tiêu chí</label>
+                            <textarea
+                                value={editingCriterion.description}
+                                onChange={e => setEditingCriterion({ ...editingCriterion, description: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                                rows={3}
+                            />
+                        </div>
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => { setIsEditModalOpen(false); setEditingCriterion(null); }}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer"
+                            >
+                                Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
             )}
         </div>
     );

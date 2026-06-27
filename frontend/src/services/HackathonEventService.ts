@@ -14,6 +14,8 @@ export interface HackathonEvent {
     registrationEnd?: string;
     minTeamSize: number;
     maxTeamSize: number;
+    organizerId?: number;
+    organizerName?: string;
 }
 
 export interface CreateHackathonEventRequest {
@@ -25,6 +27,7 @@ export interface CreateHackathonEventRequest {
     registrationEnd?: string;
     minTeamSize?: number;
     maxTeamSize?: number;
+    organizerId?: number;
 }
 
 export interface UpdateHackathonEventRequest {
@@ -36,6 +39,7 @@ export interface UpdateHackathonEventRequest {
     registrationEnd?: string;
     minTeamSize?: number;
     maxTeamSize?: number;
+    organizerId?: number;
 }
 
 const createHackathonEvent = async (event: CreateHackathonEventRequest): Promise<HackathonEvent> => {

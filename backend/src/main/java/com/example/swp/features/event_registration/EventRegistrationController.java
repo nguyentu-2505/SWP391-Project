@@ -18,6 +18,7 @@ public class EventRegistrationController {
     private final EventRegistrationService eventRegistrationService;
 
     @PostMapping
+
     @PreAuthorize("hasRole('PARTICIPANT')")
     public ResponseEntity<ApiResponse<EventRegistrationResponse>> registerForEvent(@RequestParam Long eventId) {
         EventRegistrationResponse response = eventRegistrationService.registerForEvent(eventId);

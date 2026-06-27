@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
-import { Tag, Plus, Trash2, Loader2, Users } from 'lucide-react';
+import { Tag, Plus, Trash2, Loader2, Users, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../../components/Modal';
 
@@ -25,6 +25,8 @@ const TracksTab: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState<TrackForm>(emptyForm);
     const [saving, setSaving] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingTrack, setEditingTrack] = useState<Track | null>(null);
 
     // Mentor Management State
     const [mentorModalTrackId, setMentorModalTrackId] = useState<number | null>(null);
@@ -39,7 +41,7 @@ const TracksTab: React.FC = () => {
             const res = await api.get(`/tracks/hackathon/${eventId}`);
             const data = res.data.data ?? res.data;
             setTracks(Array.isArray(data) ? data : []);
-        } catch {
+        } catch (err: any) {
             toast.error(err.response?.data?.error?.message || 'Failed to load tracks.');
         } finally {
             setLoading(false);
@@ -80,13 +82,40 @@ const TracksTab: React.FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm('Delete this track? Teams in this track will become untracked.')) return;
+        if (!confirm('Bạn có chắc chắn muốn xóa bảng đấu này không? Các đội trong bảng đấu này sẽ trở thành chưa được phân bảng.')) return;
         try {
             await api.delete(`/tracks/${id}`);
-            toast.success('Track deleted.');
+            toast.success('Xóa bảng đấu thành công.');
             setTracks(prev => prev.filter(t => t.id !== id));
-        } catch {
-            toast.error(err.response?.data?.error?.message || 'Failed to delete track.');
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Không thể xóa bảng đấu.');
+        }
+    };
+
+    const openEditModal = (track: Track) => {
+        setEditingTrack({ ...track });
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateTrack = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingTrack || !editingTrack.name.trim()) {
+            toast.error('Tên bảng đấu là bắt buộc.');
+            return;
+        }
+        const loadingToast = toast.loading('Đang cập nhật bảng đấu...');
+        try {
+            await api.put(`/tracks/${editingTrack.id}`, {
+                name: editingTrack.name,
+                description: editingTrack.description,
+                hackathonEventId: Number(eventId),
+            });
+            toast.success('Cập nhật thành công!', { id: loadingToast });
+            setIsEditModalOpen(false);
+            setEditingTrack(null);
+            fetchTracks();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Cập nhật thất bại.', { id: loadingToast });
         }
     };
 
@@ -219,13 +248,22 @@ const TracksTab: React.FC = () => {
                                     <p className="font-semibold text-sm">{track.name}</p>
                                     {track.description && <p className="text-xs opacity-80 mt-0.5">{track.description}</p>}
                                 </div>
-                                <button
-                                    onClick={() => handleDelete(track.id)}
-                                    className="opacity-60 hover:opacity-100 transition-opacity p-1 cursor-pointer"
-                                    title="Delete track"
-                                >
-                                    <Trash2 size={15} />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => openEditModal(track)}
+                                        className="opacity-60 hover:opacity-100 transition-opacity p-1 cursor-pointer"
+                                        title="Chỉnh sửa bảng đấu"
+                                    >
+                                        <Edit2 size={15} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(track.id)}
+                                        className="opacity-60 hover:opacity-100 transition-opacity p-1 cursor-pointer"
+                                        title="Xóa bảng đấu"
+                                    >
+                                        <Trash2 size={15} />
+                                    </button>
+                                </div>
                             </div>
                             <div className="mt-2 border-t pt-2 border-current opacity-60">
                                 <button
@@ -305,6 +343,51 @@ const TracksTab: React.FC = () => {
                     </div>
                 </div>
             </Modal>
+
+            {isEditModalOpen && editingTrack && (
+                <Modal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingTrack(null); }}>
+                    <form onSubmit={handleUpdateTrack} className="p-6 max-w-lg space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <Tag size={20} className="text-blue-600" />
+                            Chỉnh sửa bảng đấu
+                        </h3>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Tên bảng đấu *</label>
+                            <input
+                                type="text"
+                                value={editingTrack.name}
+                                onChange={e => setEditingTrack({ ...editingTrack, name: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả bảng đấu</label>
+                            <textarea
+                                value={editingTrack.description || ''}
+                                onChange={e => setEditingTrack({ ...editingTrack, description: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                                rows={3}
+                            />
+                        </div>
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => { setIsEditModalOpen(false); setEditingTrack(null); }}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                type="submit"
+                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer"
+                            >
+                                Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
+            )}
         </div>
     );
 };

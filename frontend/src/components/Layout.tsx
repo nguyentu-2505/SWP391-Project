@@ -101,8 +101,6 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                         {role === Role.ORGANIZER && (
                             <>
                                 <SidebarItem to="/organizer/events" icon={<Trophy size={18} />} label="My Events" onClick={closeSidebar} />
-                                <SidebarItem to="/teams" icon={<Users size={18} />} label="Teams" onClick={closeSidebar} />
-                                <SidebarItem to="/submissions" icon={<Layers size={18} />} label="Submissions" onClick={closeSidebar} />
                             </>
                         )}
 

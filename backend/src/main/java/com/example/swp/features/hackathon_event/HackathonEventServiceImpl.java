@@ -45,6 +45,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final CriterionRepository criterionRepository;
     private final com.example.swp.features.team.TeamRepository teamRepository;
     private final com.example.swp.features.team_member.TeamMemberRepository teamMemberRepository;
+    private final com.example.swp.features.track.TrackRepository trackRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     // ==================== CREATE ====================
@@ -53,6 +54,10 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     @Transactional
     public HackathonEventResponse createHackathonEvent(CreateHackathonEventRequest request) {
         User organizer = getCurrentUser();
+        if (request.getOrganizerId() != null) {
+            organizer = userRepository.findById(request.getOrganizerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Organizer not found with id: " + request.getOrganizerId()));
+        }
 
         // Validate: endTime phải sau startTime
         validateTimeRange(request.getStartTime(), request.getEndTime(), "Event end time must be after start time.");
@@ -151,6 +156,13 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         return mapToResponse(event);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public HackathonEventResponse getHackathonEventById(Long id) {
+        HackathonEvent event = findEventById(id);
+        return mapToResponse(event);
+    }
+
     // ==================== UPDATE ====================
 
     @Override
@@ -196,6 +208,11 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
         if (request.getImageUrl() != null) {
             event.setImageUrl(request.getImageUrl());
+        }
+        if (request.getOrganizerId() != null) {
+            User newOrganizer = userRepository.findById(request.getOrganizerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Organizer not found with id: " + request.getOrganizerId()));
+            event.setOrganizer(newOrganizer);
         }
 
         // Validate sau khi merge: endTime > startTime
@@ -246,13 +263,24 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
 
         // Validate registration times before publishing
-        // Validate registration times before publishing
         if (newStatus == HackathonStatus.PUBLISHED) {
             if (event.getRegistrationStart() == null || event.getRegistrationEnd() == null) {
                 throw new IllegalStateException("Cannot publish event: Registration Start and End times must be set.");
             }
             if (event.getRegistrationEnd().isBefore(event.getRegistrationStart())) {
                 throw new IllegalStateException("Cannot publish event: Registration End time must be after Start time.");
+            }
+
+            // Check if tracks exist
+            boolean hasTracks = !trackRepository.findByHackathonEventId(event.getId()).isEmpty();
+            if (!hasTracks) {
+                throw new IllegalStateException("Không thể công bố sự kiện: Sự kiện phải có ít nhất một bảng đấu (Track).");
+            }
+
+            // Check if rounds exist
+            boolean hasRounds = !roundRepository.findByHackathonEventId(event.getId()).isEmpty();
+            if (!hasRounds) {
+                throw new IllegalStateException("Không thể công bố sự kiện: Sự kiện phải có ít nhất một vòng thi (Round).");
             }
         }
 
