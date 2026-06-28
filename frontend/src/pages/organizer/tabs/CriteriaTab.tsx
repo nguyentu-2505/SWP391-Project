@@ -81,6 +81,46 @@ const CriteriaTab: React.FC = () => {
         }
     };
 
+    const handleApplyTemplate = async (templateType: 'standard' | 'tech' | 'business') => {
+        let templateCriteria: Omit<Criterion, 'id'>[] = [];
+        if (templateType === 'standard') {
+            templateCriteria = [
+                { name: 'Innovation', description: 'Evaluates the originality, creativity, and uniqueness of the idea.', weight: 30, maxScore: 10 },
+                { name: 'Technical Execution', description: 'Evaluates code quality, software architecture, and technical complexity.', weight: 30, maxScore: 10 },
+                { name: 'Feasibility', description: 'Evaluates the business model viability, implementation realism, and market fit.', weight: 30, maxScore: 10 },
+                { name: 'Pitch & Presentation', description: 'Evaluates communication quality, demo flow, and slide layout.', weight: 10, maxScore: 10 }
+            ];
+        } else if (templateType === 'tech') {
+            templateCriteria = [
+                { name: 'Technical Execution', description: 'Evaluates code quality, technical complexity, completeness, and stack robustness.', weight: 50, maxScore: 10 },
+                { name: 'Innovation', description: 'Evaluates originality, creativity, and problem-solving uniqueness.', weight: 30, maxScore: 10 },
+                { name: 'Pitch & Q&A', description: 'Evaluates demo delivery, communication, and answering judges questions.', weight: 20, maxScore: 10 }
+            ];
+        } else if (templateType === 'business') {
+            templateCriteria = [
+                { name: 'Feasibility & Business', description: 'Evaluates business model viability, scalability, and market-fit analysis.', weight: 50, maxScore: 10 },
+                { name: 'Innovation', description: 'Evaluates originality, creative approach, and competitive advantage.', weight: 30, maxScore: 10 },
+                { name: 'Pitch & Presentation', description: 'Evaluates presentation design, storytelling, and delivery.', weight: 20, maxScore: 10 }
+            ];
+        }
+
+        const loadingToast = toast.loading('Applying template criteria...');
+        try {
+            for (const c of templateCriteria) {
+                await api.post('/criteria', {
+                    ...c,
+                    hackathonEventId: Number(eventId)
+                });
+            }
+            toast.success('Template applied successfully!', { id: loadingToast });
+            fetchCriteria();
+        } catch (err: any) {
+            console.error('Failed to apply template:', err);
+            const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message;
+            toast.error('Failed to apply template: ' + errorMessage, { id: loadingToast });
+        }
+    };
+
     const openEditModal = (criterion: Criterion) => {
         setEditingCriterion({ ...criterion });
         setIsEditModalOpen(true);
@@ -168,6 +208,38 @@ const CriteriaTab: React.FC = () => {
                     <p className="text-[11px] text-gray-500 mt-1.5">
                         * Note: Total criteria weight must be exactly 100% to publish the event.
                     </p>
+                )}
+
+                {criteria.length === 0 && (
+                    <div className="mt-4 pt-3 border-t border-gray-200">
+                        <p className="text-xs font-semibold text-gray-700 mb-2">💡 Quick Setup Templates:</p>
+                        <div className="flex flex-wrap gap-3">
+                            <button
+                                type="button"
+                                onClick={() => handleApplyTemplate('standard')}
+                                className="text-left px-3 py-2 text-xs bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-blue-500 hover:text-blue-600 transition-colors shadow-xs cursor-pointer font-medium"
+                            >
+                                📋 Standard Hackathon
+                                <span className="block text-[10px] text-gray-400 font-normal mt-0.5">Innovation (30%), Tech (30%), Feasibility (30%), Pitch (10%)</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleApplyTemplate('tech')}
+                                className="text-left px-3 py-2 text-xs bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-blue-500 hover:text-blue-600 transition-colors shadow-xs cursor-pointer font-medium"
+                            >
+                                💻 Tech Heavy
+                                <span className="block text-[10px] text-gray-400 font-normal mt-0.5">Tech Execution (50%), Innovation (30%), Pitch (20%)</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleApplyTemplate('business')}
+                                className="text-left px-3 py-2 text-xs bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-blue-500 hover:text-blue-600 transition-colors shadow-xs cursor-pointer font-medium"
+                            >
+                                📊 Business Pitch
+                                <span className="block text-[10px] text-gray-400 font-normal mt-0.5">Feasibility & Business (50%), Innovation (30%), Pitch (20%)</span>
+                            </button>
+                        </div>
+                    </div>
                 )}
             </div>
 

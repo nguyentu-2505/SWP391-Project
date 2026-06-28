@@ -23,7 +23,10 @@ public class RoundServiceImpl implements RoundService {
         HackathonEvent hackathonEvent = hackathonEventRepository.findById(request.getHackathonEventId())
                 .orElseThrow(() -> new com.example.swp.exception.ResourceNotFoundException("Hackathon event not found"));
 
-        validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, null);
+        validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, null, request.getAdvancementSlots());
+
+        List<Round> existing = roundRepository.findByHackathonEventId(hackathonEvent.getId());
+        int nextOrder = existing.size() + 1;
 
         Round newRound = Round.builder()
                 .name(request.getName())
@@ -31,6 +34,7 @@ public class RoundServiceImpl implements RoundService {
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .hackathonEvent(hackathonEvent)
+                .roundOrder(nextOrder)
                 .advancementSlots(request.getAdvancementSlots() != null && request.getAdvancementSlots() > 0 ? request.getAdvancementSlots() : 2)
                 .build();
 
@@ -59,6 +63,16 @@ public class RoundServiceImpl implements RoundService {
         }
 
         roundRepository.delete(round);
+
+        // Re-order remaining rounds
+        List<Round> remaining = roundRepository.findByHackathonEventId(event.getId()).stream()
+                .filter(r -> !r.getId().equals(id))
+                .sorted(java.util.Comparator.comparing(Round::getStartTime))
+                .collect(Collectors.toList());
+        for (int i = 0; i < remaining.size(); i++) {
+            remaining.get(i).setRoundOrder(i + 1);
+            roundRepository.save(remaining.get(i));
+        }
     }
 
     @Override
@@ -74,7 +88,7 @@ public class RoundServiceImpl implements RoundService {
             throw new IllegalStateException("Cannot edit round: Only events in DRAFT status can have their rounds modified.");
         }
 
-        validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, id);
+        validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, id, request.getAdvancementSlots());
 
         round.setName(request.getName());
         round.setDescription(request.getDescription());
@@ -88,7 +102,7 @@ public class RoundServiceImpl implements RoundService {
         return mapToResponse(updatedRound);
     }
 
-    private void validateRoundTimeline(java.time.LocalDateTime start, java.time.LocalDateTime end, HackathonEvent event, Long currentRoundId) {
+    private void validateRoundTimeline(java.time.LocalDateTime start, java.time.LocalDateTime end, HackathonEvent event, Long currentRoundId, Integer newAdvancementSlots) {
         if (start.isAfter(end) || start.isEqual(end)) {
             throw new IllegalArgumentException("Round start time must be before end time.");
         }
@@ -102,14 +116,45 @@ public class RoundServiceImpl implements RoundService {
             throw new IllegalArgumentException("Round start time must be after event registration end time (" + event.getRegistrationEnd() + ").");
         }
 
-        List<Round> existingRounds = roundRepository.findByHackathonEventId(event.getId());
-        for (Round r : existingRounds) {
-            if (currentRoundId != null && r.getId().equals(currentRoundId)) {
-                continue;
+        List<Round> allRounds = new java.util.ArrayList<>(roundRepository.findByHackathonEventId(event.getId()));
+        if (currentRoundId == null) {
+            Round temp = Round.builder()
+                    .name("New Round")
+                    .startTime(start)
+                    .endTime(end)
+                    .advancementSlots(newAdvancementSlots != null && newAdvancementSlots > 0 ? newAdvancementSlots : 2)
+                    .build();
+            allRounds.add(temp);
+        } else {
+            for (int i = 0; i < allRounds.size(); i++) {
+                if (allRounds.get(i).getId().equals(currentRoundId)) {
+                    allRounds.get(i).setStartTime(start);
+                    allRounds.get(i).setEndTime(end);
+                    if (newAdvancementSlots != null && newAdvancementSlots > 0) {
+                        allRounds.get(i).setAdvancementSlots(newAdvancementSlots);
+                    }
+                }
             }
-            // Check overlap
-            if (start.isBefore(r.getEndTime()) && end.isAfter(r.getStartTime())) {
-                throw new IllegalArgumentException("Round times overlap with an existing round: " + r.getName() + " (" + r.getStartTime() + " to " + r.getEndTime() + ").");
+        }
+
+        // Sort chronologically
+        allRounds.sort(java.util.Comparator.comparing(Round::getStartTime));
+
+        // Check overlaps and sequential slots
+        for (int i = 0; i < allRounds.size(); i++) {
+            Round current = allRounds.get(i);
+            if (i < allRounds.size() - 1) {
+                Round next = allRounds.get(i + 1);
+                if (current.getEndTime().isAfter(next.getStartTime())) {
+                    throw new IllegalArgumentException("Round times overlap: '" + current.getName() + "' ends at " + current.getEndTime() + 
+                            ", but next round starts at " + next.getStartTime() + ".");
+                }
+                if (current.getAdvancementSlots() != null && next.getAdvancementSlots() != null) {
+                    if (next.getAdvancementSlots() > current.getAdvancementSlots()) {
+                        throw new IllegalArgumentException("Advancement slots of subsequent rounds must be less than or equal to the previous round. Round '" + 
+                                current.getName() + "' has " + current.getAdvancementSlots() + " slots, but next round has " + next.getAdvancementSlots() + " slots.");
+                    }
+                }
             }
         }
     }
