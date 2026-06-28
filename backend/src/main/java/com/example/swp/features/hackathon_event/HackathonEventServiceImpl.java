@@ -15,6 +15,7 @@ import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.criterion.Criterion;
 import com.example.swp.features.criterion.CriterionRepository;
+import com.example.swp.features.prize.PrizeRepository;
 import com.github.slugify.Slugify;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +47,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final com.example.swp.features.team.TeamRepository teamRepository;
     private final com.example.swp.features.team_member.TeamMemberRepository teamMemberRepository;
     private final com.example.swp.features.track.TrackRepository trackRepository;
+    private final PrizeRepository prizeRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     // ==================== CREATE ====================
@@ -469,6 +471,96 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public HackathonEventResponse cloneEvent(Long id) {
+        HackathonEvent original = hackathonEventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found with id: " + id));
+
+        // Generate a unique slug
+        String baseName = "Copy of " + original.getName();
+        String candidateSlug = slugify.slugify(baseName);
+        int counter = 1;
+        while (hackathonEventRepository.findBySlugAndIsDeletedFalse(candidateSlug).isPresent()) {
+            candidateSlug = slugify.slugify(baseName + "-" + counter);
+            counter++;
+        }
+
+        // Clone event itself
+        HackathonEvent cloned = new HackathonEvent();
+        cloned.setName(baseName + (counter > 1 ? " (" + (counter - 1) + ")" : ""));
+        cloned.setSlug(candidateSlug);
+        cloned.setDescription(original.getDescription());
+        cloned.setStatus(HackathonStatus.DRAFT);
+        cloned.setRegistrationStart(original.getRegistrationStart());
+        cloned.setRegistrationEnd(original.getRegistrationEnd());
+        cloned.setStartTime(original.getStartTime());
+        cloned.setEndTime(original.getEndTime());
+        cloned.setMinTeamSize(original.getMinTeamSize());
+        cloned.setMaxTeamSize(original.getMaxTeamSize());
+        cloned.setRules(original.getRules());
+        cloned.setImageUrl(original.getImageUrl());
+        cloned.setOrganizer(original.getOrganizer());
+
+        HackathonEvent savedEvent = hackathonEventRepository.save(cloned);
+
+        // Map original tracks to cloned tracks
+        java.util.Map<Long, com.example.swp.features.track.Track> trackMap = new java.util.HashMap<>();
+        List<com.example.swp.features.track.Track> originalTracks = trackRepository.findByHackathonEventId(original.getId());
+        for (com.example.swp.features.track.Track t : originalTracks) {
+            com.example.swp.features.track.Track ct = new com.example.swp.features.track.Track();
+            ct.setName(t.getName());
+            ct.setDescription(t.getDescription());
+            ct.setHackathonEvent(savedEvent);
+            com.example.swp.features.track.Track savedTrack = trackRepository.save(ct);
+            trackMap.put(t.getId(), savedTrack);
+        }
+
+        // Clone Rounds
+        List<com.example.swp.features.round.Round> originalRounds = roundRepository.findByHackathonEventId(original.getId());
+        for (com.example.swp.features.round.Round r : originalRounds) {
+            com.example.swp.features.round.Round cr = new com.example.swp.features.round.Round();
+            cr.setName(r.getName());
+            cr.setDescription(r.getDescription());
+            cr.setStartTime(r.getStartTime());
+            cr.setEndTime(r.getEndTime());
+            cr.setRoundOrder(r.getRoundOrder());
+            cr.setAdvancementSlots(r.getAdvancementSlots());
+            cr.setHackathonEvent(savedEvent);
+            roundRepository.save(cr);
+        }
+
+        // Clone Criteria
+        List<com.example.swp.features.criterion.Criterion> originalCriteria = criterionRepository.findByHackathonEventId(original.getId());
+        for (com.example.swp.features.criterion.Criterion c : originalCriteria) {
+            com.example.swp.features.criterion.Criterion cc = new com.example.swp.features.criterion.Criterion();
+            cc.setName(c.getName());
+            cc.setDescription(c.getDescription());
+            cc.setWeight(c.getWeight());
+            cc.setMaxScore(c.getMaxScore());
+            cc.setHackathonEvent(savedEvent);
+            criterionRepository.save(cc);
+        }
+
+        // Clone Prizes
+        List<com.example.swp.features.prize.Prize> originalPrizes = prizeRepository.findByHackathonEventId(original.getId());
+        for (com.example.swp.features.prize.Prize p : originalPrizes) {
+            com.example.swp.features.prize.Prize cp = new com.example.swp.features.prize.Prize();
+            cp.setName(p.getName());
+            cp.setDescription(p.getDescription());
+            cp.setRank(p.getRank());
+            cp.setHackathonEvent(savedEvent);
+            if (p.getTrack() != null && trackMap.containsKey(p.getTrack().getId())) {
+                cp.setTrack(trackMap.get(p.getTrack().getId()));
+            }
+            prizeRepository.save(cp);
+        }
+
+        auditLogService.logAction("CLONE_EVENT", "HACKATHON_EVENT", savedEvent.getId(), savedEvent.getName(), "Cloned from event ID: " + original.getId());
+
+        return mapToResponse(savedEvent);
     }
 
     private String buildTransitionHint(HackathonStatus from, HackathonStatus to) {

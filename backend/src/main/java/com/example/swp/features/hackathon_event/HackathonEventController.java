@@ -81,4 +81,11 @@ public class HackathonEventController {
         HackathonEventResponse response = hackathonEventService.updateHackathonEventStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success(response, "Hackathon event status updated successfully."));
     }
+
+    @PostMapping("/{id}/clone")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<HackathonEventResponse>> cloneEvent(@PathVariable Long id) {
+        HackathonEventResponse response = hackathonEventService.cloneEvent(id);
+        return new ResponseEntity<>(ApiResponse.success(response, "Hackathon event cloned successfully."), HttpStatus.CREATED);
+    }
 }

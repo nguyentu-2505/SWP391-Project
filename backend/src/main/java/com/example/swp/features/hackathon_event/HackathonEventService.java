@@ -18,4 +18,5 @@ public interface HackathonEventService {
     void deleteHackathonEvent(Long id);
     HackathonEventResponse updateHackathonEventStatus(Long id, HackathonStatus newStatus);
     HackathonEventResponse getHackathonEventById(Long id);
+    HackathonEventResponse cloneEvent(Long id);
 }
