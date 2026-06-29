@@ -93,6 +93,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                                 <SidebarItem to="/my-team" icon={<Users size={18} />} label="My Team" onClick={closeSidebar} />
                                 <SidebarItem to="/events" icon={<Trophy size={18} />} label="Hackathons" onClick={closeSidebar} />
                                 <SidebarItem to="/invitations" icon={<Bell size={18} />} label="Invitations" onClick={closeSidebar} />
+                                <SidebarItem to="/my-mentorship-requests" icon={<HelpCircle size={18} />} label="Mentorship Sessions" onClick={closeSidebar} />
                                 <SidebarItem to="/mentors" icon={<MapPin size={18} />} label="Mentors" onClick={closeSidebar} />
                             </>
                         )}

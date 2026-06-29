@@ -12,3 +12,4 @@ Version number of your application declared in MANIFEST.MF formatted: ${applicat
 Spring Boot version: ${spring-boot.version}
 Spring Boot version formatted: ${spring-boot.formatted-version}
 The title of your application, as declared in MANIFEST.MF: ${application.title}
+npm run dev
