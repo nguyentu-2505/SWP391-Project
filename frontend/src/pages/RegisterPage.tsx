@@ -1,28 +1,44 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Code, ArrowRight, Eye, EyeOff, User, Mail, IdCard, Lock, ArrowLeft } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, User, Mail, IdCard, Lock, ArrowLeft, School, GraduationCap } from 'lucide-react';
 import api from '../services/api';
 import AuthLayout from '../components/AuthLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+
+type SchoolType = 'fpt' | 'other';
 
 const RegisterPage: React.FC = () => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fptStudentId, setFptStudentId] = useState('');
+    const [schoolName, setSchoolName] = useState('');
+    const [schoolType, setSchoolType] = useState<SchoolType>('fpt');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    const handleSchoolChange = (type: SchoolType) => {
+        setSchoolType(type);
+        setFptStudentId('');
+        setSchoolName('');
+        setError('');
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
+        const payload: any = { username, email, password, fptStudentId };
+        if (schoolType === 'other') {
+            payload.schoolName = schoolName;
+        }
+
         try {
-            await api.post('/auth/register', { username, email, password, fptStudentId });
+            await api.post('/auth/register', payload);
             navigate(`/verify-otp?email=${email}`);
         } catch (err: any) {
             setError(err.response?.data?.error?.message || 'Registration failed. Please try again.');
@@ -86,18 +102,79 @@ const RegisterPage: React.FC = () => {
                     leftIcon={<Mail size={18} />}
                 />
 
-                {/* FPT Student ID Field */}
-                <Input 
-                    label="FPT Student ID"
-                    id="fptStudentId"
-                    name="fptStudentId"
-                    placeholder="SE170001"
-                    required
-                    type="text"
-                    value={fptStudentId}
-                    onChange={(e) => setFptStudentId(e.target.value)}
-                    leftIcon={<IdCard size={18} />}
-                />
+                {/* School Type Selector */}
+                <div>
+                    <label className="block text-sm font-medium text-on-surface mb-2">School Type</label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            type="button"
+                            onClick={() => handleSchoolChange('fpt')}
+                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                schoolType === 'fpt'
+                                    ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                                    : 'border-outline-variant bg-surface text-on-surface-variant hover:border-on-surface-variant hover:bg-surface-container'
+                            }`}
+                        >
+                            <GraduationCap size={18} />
+                            FPT University
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleSchoolChange('other')}
+                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                schoolType === 'other'
+                                    ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                                    : 'border-outline-variant bg-surface text-on-surface-variant hover:border-on-surface-variant hover:bg-surface-container'
+                            }`}
+                        >
+                            <School size={18} />
+                            Other University
+                        </button>
+                    </div>
+                </div>
+
+                {/* Conditional Fields based on School Type */}
+                {schoolType === 'fpt' ? (
+                    /* FPT Student ID Field */
+                    <Input 
+                        label="FPT Student ID"
+                        id="fptStudentId"
+                        name="fptStudentId"
+                        placeholder="SE170001"
+                        required
+                        type="text"
+                        value={fptStudentId}
+                        onChange={(e) => setFptStudentId(e.target.value)}
+                        leftIcon={<IdCard size={18} />}
+                    />
+                ) : (
+                    <>
+                        {/* School Name Field */}
+                        <Input 
+                            label="School Name"
+                            id="schoolName"
+                            name="schoolName"
+                            placeholder="e.g. Ho Chi Minh University of Technology"
+                            required
+                            type="text"
+                            value={schoolName}
+                            onChange={(e) => setSchoolName(e.target.value)}
+                            leftIcon={<School size={18} />}
+                        />
+                        {/* External Student ID Field */}
+                        <Input 
+                            label="Student ID"
+                            id="fptStudentId"
+                            name="fptStudentId"
+                            placeholder="e.g. 2112345"
+                            required
+                            type="text"
+                            value={fptStudentId}
+                            onChange={(e) => setFptStudentId(e.target.value)}
+                            leftIcon={<IdCard size={18} />}
+                        />
+                    </>
+                )}
 
                 {/* Password Field */}
                 <Input 

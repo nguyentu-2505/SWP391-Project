@@ -14,8 +14,9 @@ public class RegisterRequest {
     @jakarta.validation.constraints.Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    @NotBlank
     private String fptStudentId;
+
+    private String schoolName;
     
     @NotBlank
     private String username;
@@ -24,4 +25,5 @@ public class RegisterRequest {
     public String getEmail() { return email; }
     public String getPassword() { return password; }
     public String getFptStudentId() { return fptStudentId; }
+    public String getSchoolName() { return schoolName; }
 }
