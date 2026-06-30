@@ -47,6 +47,8 @@ import RoundsTab from './pages/organizer/tabs/RoundsTab';
 import CriteriaTab from './pages/organizer/tabs/CriteriaTab';
 import TracksTab from './pages/organizer/tabs/TracksTab';
 import PrizesTab from './pages/organizer/tabs/PrizesTab';
+import AnalyticsTab from './pages/organizer/tabs/AnalyticsTab';
+import ActivityLogTab from './pages/organizer/tabs/ActivityLogTab';
 // Generic Pages
 import TeamsPage from './pages/TeamsPage';
 import RoundsPage from './pages/RoundsPage';
@@ -133,6 +135,8 @@ function App() {
                   <Route path="criteria" element={<CriteriaTab />} />
                   <Route path="tracks" element={<TracksTab />} />
                   <Route path="prizes" element={<PrizesTab />} />
+                  <Route path="analytics" element={<AnalyticsTab />} />
+                  <Route path="activity-log" element={<ActivityLogTab />} />
                   {/* Add other tabs here */}
                 </Route>
               </Route>

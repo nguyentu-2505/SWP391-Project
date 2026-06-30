@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
-import { Calendar, Clock, Info, Trophy, ChevronLeft, CalendarRange } from 'lucide-react';
+import { Calendar, Clock, Info, Trophy, ChevronLeft, CalendarRange, Tag, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
 import StatusBadge from '../components/StatusBadge';
 import Skeleton from '../components/Skeleton';
@@ -27,14 +27,34 @@ const EventDetailPage: React.FC = () => {
     const [error, setError] = useState('');
     const [isRegistered, setIsRegistered] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
+    const [tracks, setTracks] = useState<any[]>([]);
+    const [rounds, setRounds] = useState<any[]>([]);
+    const [criteria, setCriteria] = useState<any[]>([]);
+    const [prizes, setPrizes] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchEvent = async () => {
             if (!slug) return;
             try {
                 const response = await api.get(`/hackathon-events/${slug}`);
-                setEvent(response.data.data);
-                checkRegistrationStatus(response.data.data.id);
+                const eventData = response.data.data;
+                setEvent(eventData);
+                checkRegistrationStatus(eventData.id);
+                
+                try {
+                    const [tracksRes, roundsRes, criteriaRes, prizesRes] = await Promise.all([
+                        api.get(`/tracks/hackathon/${eventData.id}`),
+                        api.get(`/rounds/hackathon/${eventData.id}`),
+                        api.get(`/criteria/event/${eventData.id}`),
+                        api.get(`/prizes/event/${eventData.id}`)
+                    ]);
+                    setTracks(tracksRes.data.data || []);
+                    setRounds(roundsRes.data.data || []);
+                    setCriteria(criteriaRes.data.data || []);
+                    setPrizes(prizesRes.data || []);
+                } catch (fetchErr) {
+                    console.error("Failed to fetch detailed event information:", fetchErr);
+                }
             } catch (err) {
                 setError('Failed to fetch event details.');
             } finally {
@@ -123,7 +143,7 @@ const EventDetailPage: React.FC = () => {
                                 </p>
                             </div>
 
-                            <div className="space-y-4">
+                             <div className="space-y-4">
                                 <h2 className="text-lg font-bold text-on-surface flex items-center gap-2 border-b border-slate-100 pb-2">
                                     <Trophy size={20} className="text-primary-container" />
                                     Rules & Regulations
@@ -133,6 +153,94 @@ const EventDetailPage: React.FC = () => {
                                     dangerouslySetInnerHTML={{ __html: event.rules || '<p>No specific rules defined for this event.</p>' }} 
                                 />
                             </div>
+
+                            {tracks.length > 0 && (
+                                <div className="space-y-4 pt-4 border-t border-slate-100">
+                                    <h2 className="text-lg font-bold text-on-surface flex items-center gap-2 border-b border-slate-100 pb-2">
+                                        <Tag size={20} className="text-primary-container" />
+                                        Competition Tracks
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {tracks.map(t => (
+                                            <div key={t.id} className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-shadow">
+                                                <h3 className="font-bold text-blue-700 text-sm">{t.name}</h3>
+                                                <p className="text-xs text-on-surface-variant mt-1.5">{t.description || 'No description provided.'}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {rounds.length > 0 && (
+                                <div className="space-y-4 pt-4 border-t border-slate-100">
+                                    <h2 className="text-lg font-bold text-on-surface flex items-center gap-2 border-b border-slate-100 pb-2">
+                                        <Clock size={20} className="text-primary-container" />
+                                        Rounds & Timeline
+                                    </h2>
+                                    <div className="relative border-l border-blue-200 ml-3 pl-6 space-y-6">
+                                        {rounds.map((r, index) => (
+                                            <div key={r.id} className="relative">
+                                                <div className="absolute -left-[31px] top-0.5 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                                                    {index + 1}
+                                                </div>
+                                                <h3 className="font-bold text-sm text-gray-900">{r.name}</h3>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Timeline: {new Date(r.startTime).toLocaleString()} - {new Date(r.endTime).toLocaleString()}
+                                                </p>
+                                                <p className="text-xs text-blue-700 font-semibold mt-1">
+                                                    Advancement Slots: {r.advancementSlots ? `${r.advancementSlots} teams` : 'Unlimited'}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {criteria.length > 0 && (
+                                <div className="space-y-4 pt-4 border-t border-slate-100">
+                                    <h2 className="text-lg font-bold text-on-surface flex items-center gap-2 border-b border-slate-100 pb-2">
+                                        <Target size={20} className="text-primary-container" />
+                                        Evaluation Criteria
+                                    </h2>
+                                    <div className="space-y-3">
+                                        {criteria.map(c => (
+                                            <div key={c.id} className="flex justify-between items-center p-3 rounded-lg bg-slate-50 border border-slate-100">
+                                                <div>
+                                                    <h3 className="font-semibold text-sm text-gray-900">{c.name}</h3>
+                                                    <p className="text-xs text-gray-500 mt-0.5">{c.description || 'No description.'}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
+                                                        Weight: {c.weight}%
+                                                    </span>
+                                                    <p className="text-[10px] text-gray-400 mt-1">Max Score: {c.maxScore}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {prizes.length > 0 && (
+                                <div className="space-y-4 pt-4 border-t border-slate-100">
+                                    <h2 className="text-lg font-bold text-on-surface flex items-center gap-2 border-b border-slate-100 pb-2">
+                                        <Trophy size={20} className="text-primary-container" />
+                                        Prizes
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {prizes.map(p => (
+                                            <div key={p.id} className="p-4 rounded-xl border border-yellow-200 bg-amber-50/30 shadow-sm flex items-start gap-3">
+                                                <Trophy className="text-yellow-600 shrink-0 mt-0.5" size={20} />
+                                                <div>
+                                                    <h3 className="font-bold text-sm text-gray-900">{p.name}</h3>
+                                                    <p className="text-xs font-bold text-yellow-700 mt-0.5">Reward: {p.reward || 'Special Prize'}</p>
+                                                    <p className="text-xs text-gray-500 mt-1">{p.description || 'Awarded to top performers.'}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Timeline & Actions sidebar */}

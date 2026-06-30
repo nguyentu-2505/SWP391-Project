@@ -48,6 +48,13 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<AuditLogResponse> getAuditLogsByEvent(Long eventId) {
+        return auditLogRepository.findByEventIdOrderByCreatedAtDesc(eventId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
     
     public void logAction(String action, String entityType, Long entityId, String oldValue, String newValue) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();

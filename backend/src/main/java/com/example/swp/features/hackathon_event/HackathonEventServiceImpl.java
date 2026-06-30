@@ -16,6 +16,8 @@ import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.criterion.Criterion;
 import com.example.swp.features.criterion.CriterionRepository;
 import com.example.swp.features.prize.PrizeRepository;
+import com.example.swp.features.submission.SubmissionRepository;
+import com.example.swp.features.hackathon_event.dto.response.HackathonEventAnalyticsResponse;
 import com.github.slugify.Slugify;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final com.example.swp.features.team_member.TeamMemberRepository teamMemberRepository;
     private final com.example.swp.features.track.TrackRepository trackRepository;
     private final PrizeRepository prizeRepository;
+    private final SubmissionRepository submissionRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     // ==================== CREATE ====================
@@ -588,5 +591,32 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
         return String.format("Luồng hợp lệ: DRAFT → PUBLISHED → IN_PROGRESS → COMPLETED. Từ %s chỉ có thể chuyển sang: %s.",
                 from, from.getAllowedTransitions());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public HackathonEventAnalyticsResponse getEventAnalytics(Long eventId) {
+        hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
+
+        List<com.example.swp.features.team.Team> teams = teamRepository.findByEventId(eventId);
+        long totalTeams = teams.size();
+        long totalParticipants = teams.stream()
+                .filter(t -> t.getTeamMembers() != null)
+                .mapToInt(t -> t.getTeamMembers().size())
+                .sum();
+
+        long totalSubmissions = submissionRepository.findByEventId(eventId).size();
+
+        java.util.Map<String, Long> teamsPerTrack = teams.stream()
+                .filter(t -> t.getTrack() != null)
+                .collect(Collectors.groupingBy(t -> t.getTrack().getName(), Collectors.counting()));
+
+        return HackathonEventAnalyticsResponse.builder()
+                .totalTeams(totalTeams)
+                .totalParticipants(totalParticipants)
+                .totalSubmissions(totalSubmissions)
+                .teamsPerTrack(teamsPerTrack)
+                .build();
     }
 }
