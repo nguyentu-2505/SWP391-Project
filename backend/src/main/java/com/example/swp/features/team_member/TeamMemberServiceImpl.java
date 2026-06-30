@@ -128,14 +128,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
                 .orElseThrow(() -> new ResourceNotFoundException("User is not a member of this team"));
 
         if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
-            long currentSize = teamMemberRepository.countByTeamId(team.getId());
-            Integer minSize = team.getEvent().getMinTeamSize();
-            if (minSize != null && (currentSize - 1) < minSize) {
-                if (!isCurrentUserAdmin) {
-                    throw new com.example.swp.exception.BadRequestException("Cannot kick member: Team is finalized and would fall below the minimum team size.");
-                } else {
-                    auditLogService.logAction("FORCE_KICK_MEMBER", "TEAM", team.getId(), null, "Admin " + currentUser.getUsername() + " forced member removal on FINALIZED team");
-                }
+            if (!isCurrentUserAdmin) {
+                throw new com.example.swp.exception.BadRequestException("Cannot kick member from a finalized team.");
+            } else {
+                auditLogService.logAction("FORCE_KICK_MEMBER", "TEAM", team.getId(), null, "Admin " + currentUser.getUsername() + " forced member removal on FINALIZED team");
             }
         }
 
@@ -160,11 +156,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
 
         Team team = member.getTeam();
         if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
-            long currentSize = teamMemberRepository.countByTeamId(team.getId());
-            Integer minSize = team.getEvent().getMinTeamSize();
-            if (minSize != null && (currentSize - 1) < minSize) {
-                throw new com.example.swp.exception.BadRequestException("Cannot leave team: Team is finalized and would fall below the minimum team size.");
-            }
+            throw new com.example.swp.exception.BadRequestException("Cannot leave a finalized team.");
         }
 
         teamMemberRepository.delete(member);
@@ -184,6 +176,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
 
         if (!currentLeader.isLeader()) {
             throw new com.example.swp.exception.BadRequestException("Only the current leader can transfer leadership");
+        }
+
+        if (currentLeader.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
+            throw new com.example.swp.exception.BadRequestException("Cannot transfer leadership in a finalized team.");
         }
 
         TeamMember newLeader = teamMemberRepository.findByTeamIdAndUserId(request.getTeamId(), request.getNewLeaderUserId())

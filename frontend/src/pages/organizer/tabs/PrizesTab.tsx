@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
 import { Trophy, Plus, Loader2, Gift, CheckCircle, Edit2, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Modal from '../../../components/Modal';
 
 interface Prize {
     id: number;
@@ -402,61 +401,7 @@ const PrizesTab: React.FC = () => {
                 </div>
             )}
 
-            {isEditModalOpen && editingPrize && (
-                <Modal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingPrize(null); }}>
-                    <form onSubmit={handleUpdatePrize} className="p-6 max-w-lg space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                            <Trophy size={20} className="text-blue-600" />
-                            Edit Prize
-                        </h3>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Prize Name *</label>
-                            <input
-                                type="text"
-                                value={editingPrize.name}
-                                onChange={e => setEditingPrize({ ...editingPrize, name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Rank</label>
-                            <input
-                                type="number"
-                                min="1"
-                                value={editingPrize.rank}
-                                onChange={e => setEditingPrize({ ...editingPrize, rank: Number(e.target.value) })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                            <textarea
-                                value={editingPrize.description}
-                                onChange={e => setEditingPrize({ ...editingPrize, description: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
-                                rows={3}
-                            />
-                        </div>
-                        <div className="flex justify-end gap-3 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => { setIsEditModalOpen(false); setEditingPrize(null); }}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer"
-                            >
-                                Save Changes
-                            </button>
-                        </div>
-                    </form>
-                </Modal>
-            )}
+
         </div>
     );
 };

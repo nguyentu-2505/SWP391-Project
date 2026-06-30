@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TeamService } from '../services/TeamService';
 import type { Team } from '../services/TeamService';
-import { Users, Loader2, Plus, Edit2, Trash2, Ban, X, Download } from 'lucide-react';
+import { Users, Loader2, Trash2, Ban, X, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ExportService } from '../services/ExportService';
 import Authorizable from '../components/Authorizable';
@@ -23,7 +23,7 @@ const TeamsPage: React.FC = () => {
     const fetchTeams = async () => {
         setLoading(true);
         try {
-            const allTeams = await TeamService.getTeamsByTrack(1);
+            const allTeams = await TeamService.getAllTeams();
             setTeams(allTeams);
         } catch (err: any) {
             console.error('Failed to fetch teams:', err);
@@ -83,15 +83,7 @@ const TeamsPage: React.FC = () => {
                             Export CSV
                         </button>
                     </Authorizable>
-                    <Authorizable allowedRoles={[Role.PARTICIPANT]}>
-                        <button
-                            onClick={() => toast('Create functionality coming soon!', { icon: '🚧' })}
-                            className="bg-primary-container hover:bg-[#d9611b] text-white font-semibold py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors cursor-pointer text-sm"
-                        >
-                            <Plus size={16} />
-                            Create Team
-                        </button>
-                    </Authorizable>
+
                 </div>
             </div>
 
@@ -145,13 +137,7 @@ const TeamsPage: React.FC = () => {
                                                     fallback={<span className="text-slate-400 text-xs italic">View Only</span>}
                                                 >
                                                     <div className="flex space-x-3 items-center">
-                                                        <button
-                                                            onClick={() => toast('Edit functionality coming soon!', { icon: '🚧' })}
-                                                            className="text-primary-container hover:text-primary transition-colors cursor-pointer"
-                                                            title="Edit"
-                                                        >
-                                                            <Edit2 size={16} />
-                                                        </button>
+
                                                         
                                                         {status !== 'DISQUALIFIED' && (
                                                             <button

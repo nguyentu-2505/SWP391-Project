@@ -207,6 +207,10 @@ public class TeamServiceImpl implements TeamService {
             throw new com.example.swp.exception.BadRequestException("Only Team Leader or Admin can edit team details");
         }
 
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED && !isCurrentUserAdmin) {
+            throw new com.example.swp.exception.BadRequestException("Cannot modify team details after team finalization.");
+        }
+
         if (request.getName() != null) team.setName(request.getName());
         if (request.getProjectName() != null) team.setProjectName(request.getProjectName());
         if (request.getProjectDescription() != null) team.setProjectDescription(request.getProjectDescription());
@@ -276,6 +280,10 @@ public class TeamServiceImpl implements TeamService {
         boolean isCurrentUserLeader = teamMemberRepository.existsByTeamIdAndUserIdAndIsLeaderTrue(teamId, currentUser.getId());
         if (!isCurrentUserLeader) {
             throw new com.example.swp.exception.BadRequestException("Only the Team Leader can finalize the team.");
+        }
+
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
+            throw new com.example.swp.exception.BadRequestException("Team is already finalized.");
         }
 
         long currentSize = teamMemberRepository.countByTeamId(team.getId());

@@ -44,8 +44,8 @@ const EventDetailPage: React.FC = () => {
 
         const checkRegistrationStatus = async (eventId: number) => {
             try {
-                const response = await api.get(`/event-registrations/event/${eventId}`);
-                setIsRegistered(response.data.data.isRegistered);
+                const response = await api.get(`/event-registrations/my-registration/event/${eventId}`);
+                setIsRegistered(response.data.data);
             } catch (err) {
                 // Ignore error, maybe the user is not logged in
             }

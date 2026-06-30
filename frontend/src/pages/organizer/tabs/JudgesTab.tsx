@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
 import toast from 'react-hot-toast';
 import { JudgeAssignmentService } from '../../../services/JudgeAssignmentService';
+import { Trash2 } from 'lucide-react';
 
 interface Round {
     id: number;
@@ -29,19 +30,22 @@ const JudgesTab: React.FC = () => {
     const [selectedTrack, setSelectedTrack] = useState<number | null>(null);
     const [selectedJudge, setSelectedJudge] = useState<number | ''>('');
     const [loading, setLoading] = useState(true);
+    const [assignments, setAssignments] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchData = async () => {
             if (!eventId) return;
             try {
-                const [roundRes, judgeRes, trackRes] = await Promise.all([
+                const [roundRes, judgeRes, trackRes, assignmentRes] = await Promise.all([
                     api.get(`/rounds/hackathon/${eventId}`),
                     api.get(`/users/role/JUDGE`),
-                    api.get(`/tracks/hackathon/${eventId}`)
+                    api.get(`/tracks/hackathon/${eventId}`),
+                    api.get(`/judge-assignments/event/${eventId}`)
                 ]);
                 setRounds(roundRes.data.data);
                 setJudges(judgeRes.data.data);
                 setTracks(trackRes.data.data);
+                setAssignments(assignmentRes.data.data);
             } catch (err) {
                 toast.error("Failed to load data for judge assignment.");
             } finally {
@@ -50,6 +54,18 @@ const JudgesTab: React.FC = () => {
         };
         fetchData();
     }, [eventId]);
+
+    const handleUnassign = async (assignmentId: number) => {
+        if (!confirm('Are you sure you want to unassign this judge?')) return;
+        try {
+            await api.delete(`/judge-assignments/${assignmentId}`);
+            toast.success("Judge unassigned successfully!");
+            const res = await api.get(`/judge-assignments/event/${eventId}`);
+            setAssignments(res.data.data);
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || "Failed to unassign judge.");
+        }
+    };
 
     const handleAssignJudge = async () => {
         if (!selectedRound || !selectedJudge) {
@@ -63,7 +79,8 @@ const JudgesTab: React.FC = () => {
                 trackId: selectedTrack || undefined
             });
             toast.success("Judge assigned successfully!");
-            // Optionally, refresh data here
+            const res = await api.get(`/judge-assignments/event/${eventId}`);
+            setAssignments(res.data.data);
         } catch (err: any) {
             toast.error(err.response?.data?.error?.message || "Failed to assign judge.");
         }
