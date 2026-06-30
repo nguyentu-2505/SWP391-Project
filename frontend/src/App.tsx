@@ -26,6 +26,7 @@ import MyTeamPage from './pages/participant/MyTeamPage';
 import CreateTeamPage from './pages/participant/CreateTeamPage';
 import InvitationsPage from './pages/participant/InvitationsPage';
 import SubmitProjectPage from './pages/participant/SubmitProjectPage';
+import MyMentorshipRequestsPage from './pages/participant/MyMentorshipRequestsPage';
 // Judge Pages
 import JudgeDashboardPage from './pages/judge/JudgeDashboardPage';
 import AssignmentSubmissionsPage from './pages/judge/AssignmentSubmissionsPage';
@@ -104,6 +105,7 @@ function App() {
                 <Route path="/events/:eventId/create-team" element={<CreateTeamPage />} />
                 <Route path="/invitations" element={<InvitationsPage />} />
                 <Route path="/events/:eventId/submissions/new" element={<SubmitProjectPage />} />
+                <Route path="/my-mentorship-requests" element={<MyMentorshipRequestsPage />} />
               </Route>
 
               {/* Judge Routes */}

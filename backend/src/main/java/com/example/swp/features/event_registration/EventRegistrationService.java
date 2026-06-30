@@ -90,7 +90,10 @@ public class EventRegistrationService {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        return eventRegistrationRepository.existsByEventIdAndUserId(eventId, currentUser.getId());
+        HackathonEvent event = hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
+
+        return eventRegistrationRepository.findByEventAndUser(event, currentUser).isPresent();
     }
 
     private EventRegistrationResponse mapToResponse(EventRegistration registration) {

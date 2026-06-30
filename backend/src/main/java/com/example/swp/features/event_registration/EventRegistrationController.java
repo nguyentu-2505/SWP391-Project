@@ -40,4 +40,5 @@ public class EventRegistrationController {
         boolean isRegistered = eventRegistrationService.isUserRegisteredForEvent(eventId);
         return ResponseEntity.ok(ApiResponse.success(isRegistered));
     }
+
 }
