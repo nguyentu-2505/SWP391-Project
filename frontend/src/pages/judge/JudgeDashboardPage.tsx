@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { JudgeAssignmentService, JudgeAssignment } from '../../services/JudgeAssignmentService';
 import api from '../../services/api';
-import { BookOpen, Clock, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { ExportService } from '../../services/ExportService';
 
 const JudgeDashboardPage: React.FC = () => {
     const [assignments, setAssignments] = useState<JudgeAssignment[]>([]);
@@ -76,16 +77,25 @@ const JudgeDashboardPage: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="py-3 px-4">
-                                            <button
-                                                onClick={() => toggleRound(ass.roundId)}
-                                                className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1"
-                                            >
-                                                {expandedRoundId === ass.roundId ? (
-                                                    <><ChevronUp size={16} /> Hide Submissions</>
-                                                ) : (
-                                                    <><ChevronDown size={16} /> View Submissions</>
-                                                )}
-                                            </button>
+                                            <div className="flex gap-3 items-center">
+                                                <button
+                                                    onClick={() => toggleRound(ass.roundId)}
+                                                    className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1"
+                                                >
+                                                    {expandedRoundId === ass.roundId ? (
+                                                        <><ChevronUp size={16} /> Hide Submissions</>
+                                                    ) : (
+                                                        <><ChevronDown size={16} /> View Submissions</>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    onClick={() => ExportService.exportRoundScoring(ass.roundId)}
+                                                    className="text-green-600 hover:text-green-800 font-semibold flex items-center gap-1"
+                                                    title="Export Scoring CSV"
+                                                >
+                                                    <Download size={16} /> Export
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                     {expandedRoundId === ass.roundId && (

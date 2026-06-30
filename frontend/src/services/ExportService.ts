@@ -1,4 +1,5 @@
 import api from './api';
+import toast from 'react-hot-toast';
 
 const downloadFile = (data: any, filename: string) => {
     const blob = data instanceof Blob ? data : new Blob([data]);
@@ -22,26 +23,37 @@ const exportParticipantsCsv = async () => {
 };
 
 const exportRoundScoring = async (roundId: number) => {
-    const response = await api.get(`/export/rounds/${roundId}/scoring`, { responseType: 'blob' });
-    // Assuming the backend returns an excel or csv
-    const contentDisposition = response.headers['content-disposition'];
-    let filename = `round_${roundId}_scoring.xlsx`;
-    if (contentDisposition) {
-        const match = contentDisposition.match(/filename="?([^"]+)"?/);
-        if (match && match[1]) filename = match[1];
+    try {
+        const response = await api.get(`/export/rounds/${roundId}/scoring`, { responseType: 'blob' });
+        const contentDisposition = response.headers['content-disposition'];
+        let filename = `round_${roundId}_scoring.csv`;
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?([^"]+)"?/);
+            if (match && match[1]) filename = match[1];
+        }
+        downloadFile(response.data, filename);
+        toast.success("Scoring exported successfully");
+    } catch (error) {
+        console.error("Export failed:", error);
+        toast.error("Failed to export scoring. You may not have permission.");
     }
-    downloadFile(response.data, filename);
 };
 
 const exportRoundRanking = async (roundId: number) => {
-    const response = await api.get(`/export/rounds/${roundId}/ranking`, { responseType: 'blob' });
-    const contentDisposition = response.headers['content-disposition'];
-    let filename = `round_${roundId}_ranking.xlsx`;
-    if (contentDisposition) {
-        const match = contentDisposition.match(/filename="?([^"]+)"?/);
-        if (match && match[1]) filename = match[1];
+    try {
+        const response = await api.get(`/export/rounds/${roundId}/ranking`, { responseType: 'blob' });
+        const contentDisposition = response.headers['content-disposition'];
+        let filename = `round_${roundId}_ranking.csv`;
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?([^"]+)"?/);
+            if (match && match[1]) filename = match[1];
+        }
+        downloadFile(response.data, filename);
+        toast.success("Ranking exported successfully");
+    } catch (error) {
+        console.error("Export failed:", error);
+        toast.error("Failed to export ranking.");
     }
-    downloadFile(response.data, filename);
 };
 
 export const ExportService = {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { UserService, User, PageResponse } from '../services/UserService';
-import { Users, Loader2, CheckCircle, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Users, Loader2, CheckCircle, Search, ChevronLeft, ChevronRight, Plus, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EmptyState from '../components/EmptyState';
 import Skeleton from '../components/Skeleton';
@@ -8,6 +8,7 @@ import Modal from '../components/Modal';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { Role } from '../services/authUtils';
+import { ExportService } from '../services/ExportService';
 
 const UsersPage: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -105,6 +106,14 @@ const UsersPage: React.FC = () => {
                             className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full md:w-64"
                         />
                     </div>
+                    <Button 
+                        onClick={() => ExportService.exportParticipantsCsv()}
+                        variant="secondary"
+                        leftIcon={<Download size={16} />}
+                        className="whitespace-nowrap bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                    >
+                        Export CSV
+                    </Button>
                     <Button 
                         onClick={() => setIsCreateModalOpen(true)}
                         leftIcon={<Plus size={16} />}
