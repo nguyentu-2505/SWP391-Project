@@ -106,9 +106,24 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Error: Email is already in use!");
         }
 
-        if (request.getFptStudentId() != null && !request.getFptStudentId().trim().isEmpty()) {
+        // Determine school type and validate student ID
+        boolean isFpt = request.getSchoolName() == null || request.getSchoolName().trim().isEmpty();
+
+        if (isFpt) {
+            // FPT student: fptStudentId is required and must be unique
+            if (request.getFptStudentId() == null || request.getFptStudentId().trim().isEmpty()) {
+                throw new BadRequestException("FPT Student ID is required for FPT students.");
+            }
             if (userRepository.existsByFptStudentId(request.getFptStudentId())) {
-                throw new BadRequestException("This student ID is already registered.");
+                throw new BadRequestException("This FPT Student ID is already registered.");
+            }
+        } else {
+            // External student: both studentId and schoolName are required
+            if (request.getFptStudentId() == null || request.getFptStudentId().trim().isEmpty()) {
+                throw new BadRequestException("Student ID is required for external students.");
+            }
+            if (userRepository.existsByFptStudentIdAndSchoolName(request.getFptStudentId(), request.getSchoolName().trim())) {
+                throw new BadRequestException("This Student ID is already registered at " + request.getSchoolName().trim() + ".");
             }
         }
 
@@ -117,6 +132,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFptStudentId(request.getFptStudentId());
+        user.setSchoolName(isFpt ? "FPT University" : request.getSchoolName().trim());
         user.setRole(Role.PARTICIPANT);
         user.setApproved(false);
         user.setVerified(false); // Require OTP verification
