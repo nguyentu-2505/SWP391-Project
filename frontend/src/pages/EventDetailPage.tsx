@@ -27,6 +27,7 @@ const EventDetailPage: React.FC = () => {
     const [error, setError] = useState('');
     const [isRegistered, setIsRegistered] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
+    const [rounds, setRounds] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchEvent = async () => {
@@ -35,10 +36,20 @@ const EventDetailPage: React.FC = () => {
                 const response = await api.get(`/hackathon-events/${slug}`);
                 setEvent(response.data.data);
                 checkRegistrationStatus(response.data.data.id);
+                fetchRounds(response.data.data.id);
             } catch (err) {
                 setError('Failed to fetch event details.');
             } finally {
                 setLoading(false);
+            }
+        };
+
+        const fetchRounds = async (eventId: number) => {
+            try {
+                const response = await api.get(`/rounds/hackathon/${eventId}`);
+                setRounds(response.data.data || []);
+            } catch (err) {
+                console.error("Failed to fetch rounds", err);
             }
         };
 
@@ -175,6 +186,27 @@ const EventDetailPage: React.FC = () => {
                                         >
                                             {isRegistered ? 'Successfully Registered' : (isRegistering ? 'Registering...' : 'Register Now')}
                                         </button>
+                                    </div>
+                                )}
+
+                                {rounds.length > 0 && (
+                                    <div className="pt-4 border-t border-slate-100 mt-4">
+                                        <h4 className="text-sm font-bold uppercase tracking-wider text-on-surface flex items-center gap-2 mb-3">
+                                            <Trophy size={16} className="text-primary-container" />
+                                            Leaderboards
+                                        </h4>
+                                        <div className="space-y-2">
+                                            {rounds.map(round => (
+                                                <Link 
+                                                    key={round.id}
+                                                    to={`/leaderboard/round/${round.id}`}
+                                                    className="w-full flex items-center justify-center py-2 text-sm font-bold text-primary-container bg-primary-container/10 hover:bg-primary-container/20 rounded-lg transition-colors border border-primary-container/20"
+                                                >
+                                                    <Trophy size={14} className="mr-2" />
+                                                    {round.name} Leaderboard
+                                                </Link>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>

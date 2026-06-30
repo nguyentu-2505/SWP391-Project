@@ -3,12 +3,14 @@ import {
     Users, FileText, Calendar, Trophy, CheckCircle, 
     UserPlus, Megaphone, ArrowRight, CalendarRange, Upload
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getUserRole, Role } from '../services/authUtils';
 import { DashboardService, DashboardStats } from '../services/DashboardService';
 import Skeleton from '../components/Skeleton';
 import Button from '../components/ui/Button';
 
 const DashboardPage: React.FC = () => {
+    const navigate = useNavigate();
     const role = getUserRole();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
@@ -50,15 +52,19 @@ const DashboardPage: React.FC = () => {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                    <Button 
-                        variant="secondary" 
-                        leftIcon={<CalendarRange size={16} />}
-                    >
-                        Schedule Session
-                    </Button>
+                    {role === Role.PARTICIPANT && (
+                        <Button 
+                            variant="secondary" 
+                            leftIcon={<CalendarRange size={16} />}
+                            onClick={() => navigate('/mentors')}
+                        >
+                            Schedule Session
+                        </Button>
+                    )}
                     <Button 
                         variant="secondary" 
                         leftIcon={<Trophy size={16} />}
+                        onClick={() => navigate('/events')}
                     >
                         View Leaderboard
                     </Button>

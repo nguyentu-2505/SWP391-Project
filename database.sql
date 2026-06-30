@@ -360,11 +360,11 @@ VALUES
     -- id=7: Mentor 2
     ('mentor2',    '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'mentor2@fpt.edu.vn',    'MENTOR',      NULL,        'FPT University',  1, 1, N'Vũ Thị Mentor',      '0901000007', N'React, TypeScript', N'Mentor chuyên frontend', 'https://github.com/mentor2'),
     -- id=8: Participant 1 (team leader)
-    ('student1',   '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student1@fpt.edu.vn',   'PARTICIPANT', 'SE170001', 'FPT University',  0, 1, N'Nguyễn Minh Sinh',    '0901000008', N'Java, React, SQL', N'Sinh viên SE năm 3', 'https://github.com/student1'),
+    ('student1',   '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student1@fpt.edu.vn',   'PARTICIPANT', 'SE170001', 'FPT University',  1, 1, N'Nguyễn Minh Sinh',    '0901000008', N'Java, React, SQL', N'Sinh viên SE năm 3', 'https://github.com/student1'),
     -- id=9: Participant 2
-    ('student2',   '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student2@fpt.edu.vn',   'PARTICIPANT', 'SE170002', 'FPT University',  0, 1, N'Trần Hồng Hà',       '0901000009', N'Python, Flask, Docker', N'Sinh viên SE năm 4', 'https://github.com/student2'),
+    ('student2',   '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student2@fpt.edu.vn',   'PARTICIPANT', 'SE170002', 'FPT University',  1, 1, N'Trần Hồng Hà',       '0901000009', N'Python, Flask, Docker', N'Sinh viên SE năm 4', 'https://github.com/student2'),
     -- id=10: Participant 3
-    ('student3',   '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student3@fpt.edu.vn',   'PARTICIPANT', 'SE170003', 'FPT University',  0, 1, N'Lê Quốc Dũng',       '0901000010', N'C#, .NET, Azure', N'Sinh viên SE năm 3', 'https://github.com/student3');
+    ('student3',   '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student3@fpt.edu.vn',   'PARTICIPANT', 'SE170003', 'FPT University',  1, 1, N'Lê Quốc Dũng',       '0901000010', N'C#, .NET, Azure', N'Sinh viên SE năm 3', 'https://github.com/student3');
 
 -- -----------------------------------------------
 -- 5.2 hackathon_event (2 events)
