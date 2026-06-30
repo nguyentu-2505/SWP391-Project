@@ -26,6 +26,11 @@ public class RoundServiceImpl implements RoundService {
         validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, null, request.getAdvancementSlots());
 
         List<Round> existing = roundRepository.findByHackathonEventId(hackathonEvent.getId());
+        boolean nameExists = existing.stream()
+                .anyMatch(r -> r.getName().equalsIgnoreCase(request.getName().trim()));
+        if (nameExists) {
+            throw new com.example.swp.exception.BadRequestException("Vòng thi với tên này đã tồn tại trong cuộc thi.");
+        }
         int nextOrder = existing.size() + 1;
 
         Round newRound = Round.builder()
@@ -89,6 +94,12 @@ public class RoundServiceImpl implements RoundService {
         }
 
         validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, id, request.getAdvancementSlots());
+
+        boolean nameExists = roundRepository.findByHackathonEventId(hackathonEvent.getId()).stream()
+                .anyMatch(r -> !r.getId().equals(id) && r.getName().equalsIgnoreCase(request.getName().trim()));
+        if (nameExists) {
+            throw new com.example.swp.exception.BadRequestException("Vòng thi với tên này đã tồn tại trong cuộc thi.");
+        }
 
         round.setName(request.getName());
         round.setDescription(request.getDescription());

@@ -37,6 +37,12 @@ public class TrackServiceImpl implements TrackService {
         HackathonEvent hackathonEvent = hackathonEventRepository.findById(request.getHackathonEventId())
                 .orElseThrow(() -> new RuntimeException("Hackathon event not found")); // Replace with custom exception
 
+        boolean nameExists = trackRepository.findByHackathonEventId(hackathonEvent.getId()).stream()
+                .anyMatch(t -> t.getName().equalsIgnoreCase(request.getName().trim()));
+        if (nameExists) {
+            throw new com.example.swp.exception.BadRequestException("Bảng đấu với tên này đã tồn tại trong cuộc thi.");
+        }
+
         Track newTrack = Track.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -203,6 +209,12 @@ public class TrackServiceImpl implements TrackService {
         // Check if event status is DRAFT
         if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT) {
             throw new IllegalStateException("Không thể chỉnh sửa bảng đấu: Chỉ sự kiện ở trạng thái DRAFT mới được phép chỉnh sửa bảng đấu.");
+        }
+
+        boolean nameExists = trackRepository.findByHackathonEventId(event.getId()).stream()
+                .anyMatch(t -> !t.getId().equals(id) && t.getName().equalsIgnoreCase(request.getName().trim()));
+        if (nameExists) {
+            throw new com.example.swp.exception.BadRequestException("Bảng đấu với tên này đã tồn tại trong cuộc thi.");
         }
 
         track.setName(request.getName());
