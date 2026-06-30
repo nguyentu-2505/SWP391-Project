@@ -43,7 +43,8 @@ public class EventRegistrationService {
         }
 
         if (!currentUser.isProfileComplete()) {
-            throw new com.example.swp.exception.BadRequestException("Please complete your profile before registering for this event.");
+            throw new com.example.swp.exception.BadRequestException(
+                    "Please complete your profile before registering for this event.");
         }
 
         HackathonEvent event = hackathonEventRepository.findById(eventId)
@@ -51,7 +52,8 @@ public class EventRegistrationService {
 
         // Event phải ở trạng thái PUBLISHED mới cho phép đăng ký
         if (event.getStatus() != HackathonStatus.PUBLISHED) {
-            throw new IllegalStateException("Registration for this event is not open. Current status: " + event.getStatus());
+            throw new IllegalStateException(
+                    "Registration for this event is not open. Current status: " + event.getStatus());
         }
 
         // Check registration window
