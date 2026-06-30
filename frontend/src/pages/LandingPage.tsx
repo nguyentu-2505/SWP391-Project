@@ -1,15 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     Trophy, Rocket, ArrowRight, Brain, Gavel, 
     ChevronDown, Eye, Maximize, Calendar, 
-    Mail, Phone, MapPin, ExternalLink 
+    Mail, Phone, MapPin, ExternalLink,
+    CheckCircle2, Clock, Award, ShieldAlert, BookOpen
 } from 'lucide-react';
 import { isAuthenticated } from '../services/authUtils';
+import Modal from '../components/Modal';
+import toast from 'react-hot-toast';
 
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const loggedIn = isAuthenticated();
+
+    const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
+    const [isJudgeModalOpen, setIsJudgeModalOpen] = useState(false);
+    const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
+
+    // Mentor mock form state
+    const [mentorForm, setMentorForm] = useState({ name: '', email: '', specialty: 'Web Development', availability: '2 hours/day' });
+    const [mentorApplied, setMentorApplied] = useState(false);
+
+    const handleMentorSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!mentorForm.name || !mentorForm.email) {
+            toast.error('Please fill in name and email.');
+            return;
+        }
+        setMentorApplied(true);
+        toast.success('Application submitted successfully!');
+    };
 
     const handleGetStarted = () => {
         if (loggedIn) {
@@ -122,9 +143,12 @@ const LandingPage: React.FC = () => {
                         <div className="absolute bottom-0 left-0 p-6 w-full space-y-2">
                             <h4 className="font-headline-md text-headline-md text-brand-navy">Participants</h4>
                             <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">Battle for the top spot, win scholarships, and build your dream portfolio.</p>
-                            <a className="inline-flex items-center text-primary-container font-label-lg text-label-lg group-hover:translate-x-1 transition-all gap-1" href="#register">
+                            <button 
+                                onClick={() => setIsParticipantModalOpen(true)}
+                                className="inline-flex items-center text-primary-container font-label-lg text-label-lg group-hover:translate-x-1 transition-all gap-1 cursor-pointer"
+                            >
                                 View Roadmap <ArrowRight size={14} />
-                            </a>
+                            </button>
                         </div>
                     </div>
                     {/* Judges */}
@@ -138,9 +162,12 @@ const LandingPage: React.FC = () => {
                         <div className="absolute bottom-0 left-0 p-6 w-full space-y-2">
                             <h4 className="font-headline-md text-headline-md text-brand-navy">Judges</h4>
                             <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">Evaluate world-changing ideas and provide expert feedback to top talent.</p>
-                            <a className="inline-flex items-center text-primary-container font-label-lg text-label-lg group-hover:translate-x-1 transition-all gap-1" href="#about">
+                            <button 
+                                onClick={() => setIsJudgeModalOpen(true)}
+                                className="inline-flex items-center text-primary-container font-label-lg text-label-lg group-hover:translate-x-1 transition-all gap-1 cursor-pointer"
+                            >
                                 Criteria <ArrowRight size={14} />
-                            </a>
+                            </button>
                         </div>
                     </div>
                     {/* Mentors */}
@@ -154,9 +181,12 @@ const LandingPage: React.FC = () => {
                         <div className="absolute bottom-0 left-0 p-6 w-full space-y-2">
                             <h4 className="font-headline-md text-headline-md text-brand-navy">Mentors</h4>
                             <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">Guide students through technical hurdles and share industry wisdom.</p>
-                            <a className="inline-flex items-center text-primary-container font-label-lg text-label-lg group-hover:translate-x-1 transition-all gap-1" href="#about">
+                            <button 
+                                onClick={() => setIsMentorModalOpen(true)}
+                                className="inline-flex items-center text-primary-container font-label-lg text-label-lg group-hover:translate-x-1 transition-all gap-1 cursor-pointer"
+                            >
                                 Join Panel <ArrowRight size={14} />
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -320,6 +350,257 @@ const LandingPage: React.FC = () => {
                     <a className="font-body-sm text-body-sm text-on-surface-variant hover:text-brand-orange transition-colors" href="#">University Site</a>
                 </div>
             </footer>
+
+            {/* 1. Participant Journey Modal */}
+            {isParticipantModalOpen && (
+                <Modal isOpen={isParticipantModalOpen} onClose={() => setIsParticipantModalOpen(false)}>
+                    <div className="p-6 max-w-2xl space-y-6 max-h-[85vh] overflow-y-auto">
+                        <div className="flex items-center gap-2 pb-4 border-b border-gray-100">
+                            <Rocket size={24} className="text-blue-600" />
+                            <h3 className="text-xl font-bold text-gray-900">Your Hackathon Journey</h3>
+                        </div>
+
+                        {/* Roadmap Section */}
+                        <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-blue-700 uppercase tracking-wider">Competition Roadmap</h4>
+                            <div className="relative border-l border-blue-200 ml-3.5 pl-6 space-y-4">
+                                <div className="relative">
+                                    <span className="absolute -left-[31px] top-0.5 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">1</span>
+                                    <h5 className="font-semibold text-sm text-gray-800">Register & Join</h5>
+                                    <p className="text-xs text-gray-500 mt-0.5">Create your account, explore the active event details, and click register.</p>
+                                </div>
+                                <div className="relative">
+                                    <span className="absolute -left-[31px] top-0.5 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">2</span>
+                                    <h5 className="font-semibold text-sm text-gray-800">Form a Team</h5>
+                                    <p className="text-xs text-gray-500 mt-0.5">Build a team with your friends or join existing open teams. Team sizes must comply with minimum rules.</p>
+                                </div>
+                                <div className="relative">
+                                    <span className="absolute -left-[31px] top-0.5 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">3</span>
+                                    <h5 className="font-semibold text-sm text-gray-800">Coding & Submission</h5>
+                                    <p className="text-xs text-gray-500 mt-0.5">Collaborate to build your product, then submit your work before each round's deadline.</p>
+                                </div>
+                                <div className="relative">
+                                    <span className="absolute -left-[31px] top-0.5 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">4</span>
+                                    <h5 className="font-semibold text-sm text-gray-800">Pitch & Win</h5>
+                                    <p className="text-xs text-gray-500 mt-0.5">Present your solution to our elite panel of judges, receive feedback, and secure top prizes.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Rules & Guidelines */}
+                        <div className="space-y-2.5 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                                <BookOpen size={16} className="text-blue-600" />
+                                Rules & Guidelines
+                            </h4>
+                            <ul className="list-disc pl-5 text-xs text-gray-600 space-y-1">
+                                <li>All source code must be written during the hacking period. Pre-existing templates are permitted.</li>
+                                <li>Plagiarism, copy-pasting, or using unlicensed materials is strictly prohibited and leads to disqualification.</li>
+                                <li>Team members must satisfy the minimum size defined by the event organizer.</li>
+                            </ul>
+                        </div>
+
+                        {/* Prizes Section */}
+                        <div className="space-y-2.5">
+                            <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                                <Trophy size={16} className="text-yellow-600" />
+                                Prize Pool & Privileges
+                            </h4>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="border border-yellow-100 bg-yellow-50/50 p-3 rounded-lg text-center">
+                                    <span className="block font-bold text-lg text-yellow-700">1st Place</span>
+                                    <span className="text-[10px] text-gray-500">Scholarship & swags</span>
+                                </div>
+                                <div className="border border-gray-100 bg-gray-50/50 p-3 rounded-lg text-center">
+                                    <span className="block font-bold text-lg text-gray-600">2nd Place</span>
+                                    <span className="text-[10px] text-gray-500">Mentorship access</span>
+                                </div>
+                                <div className="border border-amber-100 bg-amber-50/50 p-3 rounded-lg text-center">
+                                    <span className="block font-bold text-lg text-amber-700">3rd Place</span>
+                                    <span className="text-[10px] text-gray-500">Dream portfolio</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-2">
+                            <button
+                                onClick={() => { setIsParticipantModalOpen(false); navigate(loggedIn ? '/dashboard' : '/register'); }}
+                                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors text-center cursor-pointer"
+                            >
+                                {loggedIn ? "Go to Dashboard" : "Register Now"}
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* 2. Judge Criteria Modal */}
+            {isJudgeModalOpen && (
+                <Modal isOpen={isJudgeModalOpen} onClose={() => setIsJudgeModalOpen(false)}>
+                    <div className="p-6 max-w-2xl space-y-6 max-h-[85vh] overflow-y-auto">
+                        <div className="flex items-center gap-2 pb-4 border-b border-gray-100">
+                            <Gavel size={24} className="text-blue-600" />
+                            <h3 className="text-xl font-bold text-gray-900">Judging Rules & Evaluation Rubric</h3>
+                        </div>
+
+                        {/* Rubrics Grid */}
+                        <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-blue-700 uppercase tracking-wider">Evaluation Rubric</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="p-4 border border-gray-100 rounded-xl space-y-1.5">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold text-sm text-gray-800">Innovation</span>
+                                        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">25%</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 leading-relaxed">Originality of the concept, creative problem-solving, and novelty of the proposed solution.</p>
+                                </div>
+                                <div className="p-4 border border-gray-100 rounded-xl space-y-1.5">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold text-sm text-gray-800">Technical Complexity</span>
+                                        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">25%</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 leading-relaxed">Technical implementation depth, completeness of working demo, code architecture, and database layout.</p>
+                                </div>
+                                <div className="p-4 border border-gray-100 rounded-xl space-y-1.5">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold text-sm text-gray-800">UX/UI & Design</span>
+                                        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">20%</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 leading-relaxed">Aesthetic appeal of the interface, ease of navigation, user experience consistency, and responsiveness.</p>
+                                </div>
+                                <div className="p-4 border border-gray-100 rounded-xl space-y-1.5">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold text-sm text-gray-800">Business Value</span>
+                                        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">30%</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 leading-relaxed">Practicability of the project, commercial potential, presentation quality, and response to questions.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Grading and Advancement */}
+                        <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                                <Award size={16} className="text-blue-600" />
+                                Grading & Advancement Process
+                            </h4>
+                            <ul className="list-disc pl-5 text-xs text-gray-600 space-y-1">
+                                <li>Judges grade each assigned team on a 1-10 scale for each criterion.</li>
+                                <li>The system computes the weighted average based on the predefined criteria weights.</li>
+                                <li>The top N teams of each Track Category automatically advance to the next round.</li>
+                            </ul>
+                        </div>
+
+                        <div className="pt-2">
+                            <button
+                                onClick={() => { setIsJudgeModalOpen(false); navigate('/login'); }}
+                                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors text-center cursor-pointer"
+                            >
+                                Login to Judge Portal
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
+            {/* 3. Mentor Panel Modal */}
+            {isMentorModalOpen && (
+                <Modal isOpen={isMentorModalOpen} onClose={() => { setIsMentorModalOpen(false); setMentorApplied(false); }}>
+                    <div className="p-6 max-w-2xl space-y-6 max-h-[85vh] overflow-y-auto">
+                        <div className="flex items-center gap-2 pb-4 border-b border-gray-100">
+                            <Brain size={24} className="text-blue-600" />
+                            <h3 className="text-xl font-bold text-gray-900">Mentor Panel & Guidelines</h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {/* Responsibilities */}
+                            <div className="space-y-3">
+                                <h4 className="text-sm font-semibold text-blue-700 uppercase tracking-wider">Responsibilities</h4>
+                                <ul className="list-disc pl-5 text-xs text-gray-600 space-y-1.5 leading-relaxed">
+                                    <li>Provide technical guidance and answer questions for student teams.</li>
+                                    <li>Mentor teams in your assigned Track Category (e.g. Web Dev, AI).</li>
+                                    <li>Assist during pitching preparation to polish their slides and demos.</li>
+                                    <li><strong>Special Rule:</strong> A teacher can act as a mentor for one track and a judge for another!</li>
+                                </ul>
+
+                                <h4 className="text-sm font-semibold text-blue-700 uppercase tracking-wider pt-2">Benefits</h4>
+                                <ul className="list-disc pl-5 text-xs text-gray-600 space-y-1.5 leading-relaxed">
+                                    <li>Certificate of Appreciation from the University.</li>
+                                    <li>Networking with industry giants and sponsors.</li>
+                                    <li>Help shape the next generation of top talent.</li>
+                                </ul>
+                            </div>
+
+                            {/* Application Form */}
+                            <div className="p-5 border border-gray-100 bg-gray-50/50 rounded-xl space-y-4">
+                                <h4 className="text-sm font-semibold text-gray-800">Apply as a Mentor</h4>
+                                {mentorApplied ? (
+                                    <div className="text-center py-8 space-y-2">
+                                        <CheckCircle2 size={40} className="text-green-500 mx-auto" />
+                                        <h5 className="font-semibold text-sm text-green-700">Thank you!</h5>
+                                        <p className="text-xs text-gray-500">Your application has been submitted successfully. We will review it shortly.</p>
+                                    </div>
+                                ) : (
+                                    <form onSubmit={handleMentorSubmit} className="space-y-3.5">
+                                        <div>
+                                            <label className="block text-[11px] font-semibold text-gray-600 mb-1">Full Name</label>
+                                            <input
+                                                type="text" required
+                                                value={mentorForm.name}
+                                                onChange={e => setMentorForm({ ...mentorForm, name: e.target.value })}
+                                                placeholder="e.g. John Doe"
+                                                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-semibold text-gray-600 mb-1">Email Address</label>
+                                            <input
+                                                type="email" required
+                                                value={mentorForm.email}
+                                                onChange={e => setMentorForm({ ...mentorForm, email: e.target.value })}
+                                                placeholder="e.g. johndoe@company.com"
+                                                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-semibold text-gray-600 mb-1">Specialty</label>
+                                            <select
+                                                value={mentorForm.specialty}
+                                                onChange={e => setMentorForm({ ...mentorForm, specialty: e.target.value })}
+                                                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                            >
+                                                <option value="Web Development">Web Development</option>
+                                                <option value="Mobile Development">Mobile Development</option>
+                                                <option value="Artificial Intelligence">Artificial Intelligence</option>
+                                                <option value="Blockchain & Web3">Blockchain & Web3</option>
+                                                <option value="Design & UX/UI">Design & UX/UI</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-semibold text-gray-600 mb-1">Availability</label>
+                                            <select
+                                                value={mentorForm.availability}
+                                                onChange={e => setMentorForm({ ...mentorForm, availability: e.target.value })}
+                                                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                            >
+                                                <option value="1 hour/day">1 hour/day</option>
+                                                <option value="2 hours/day">2 hours/day</option>
+                                                <option value="Flexible / Weekends">Flexible / Weekends</option>
+                                            </select>
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs transition-colors cursor-pointer shadow-sm"
+                                        >
+                                            Submit Application
+                                        </button>
+                                    </form>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 };

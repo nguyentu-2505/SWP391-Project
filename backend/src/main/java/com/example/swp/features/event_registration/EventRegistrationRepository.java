@@ -12,4 +12,5 @@ import java.util.Optional;
 public interface EventRegistrationRepository extends JpaRepository<EventRegistration, Long> {
     Optional<EventRegistration> findByEventAndUser(HackathonEvent event, User user);
     List<EventRegistration> findByEventId(Long eventId);
+    boolean existsByEventIdAndUserId(Long eventId, Long userId);
 }

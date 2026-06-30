@@ -158,8 +158,12 @@ const JudgesTab: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{a.judgeName}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.roundName}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.trackName}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                                a.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border border-green-200' :
+                                                a.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border border-red-200' :
+                                                'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                            }`}>
                                                 {a.status || 'ASSIGNED'}
                                             </span>
                                         </td>

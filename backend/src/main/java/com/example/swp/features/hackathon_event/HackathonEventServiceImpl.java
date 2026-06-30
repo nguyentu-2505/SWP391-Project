@@ -15,6 +15,7 @@ import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.criterion.Criterion;
 import com.example.swp.features.criterion.CriterionRepository;
+import com.example.swp.features.prize.PrizeRepository;
 import com.github.slugify.Slugify;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,8 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final CriterionRepository criterionRepository;
     private final com.example.swp.features.team.TeamRepository teamRepository;
     private final com.example.swp.features.team_member.TeamMemberRepository teamMemberRepository;
+    private final com.example.swp.features.track.TrackRepository trackRepository;
+    private final PrizeRepository prizeRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     // ==================== CREATE ====================
@@ -53,6 +56,10 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     @Transactional
     public HackathonEventResponse createHackathonEvent(CreateHackathonEventRequest request) {
         User organizer = getCurrentUser();
+        if (request.getOrganizerId() != null) {
+            organizer = userRepository.findById(request.getOrganizerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Organizer not found with id: " + request.getOrganizerId()));
+        }
 
         // Validate: endTime phải sau startTime
         validateTimeRange(request.getStartTime(), request.getEndTime(), "Event end time must be after start time.");
@@ -129,7 +136,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     @Override
     @Transactional(readOnly = true)
     public Page<HackathonEventResponse> getAllEventsForAdmin(Pageable pageable) {
-        return hackathonEventRepository.findAll(pageable)
+        return hackathonEventRepository.findByIsDeletedFalse(pageable)
                 .map(this::mapToResponse);
     }
 
@@ -148,6 +155,13 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     public HackathonEventResponse getHackathonEventBySlug(String slug) {
         HackathonEvent event = hackathonEventRepository.findBySlugAndIsDeletedFalse(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found with slug: " + slug));
+        return mapToResponse(event);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public HackathonEventResponse getHackathonEventById(Long id) {
+        HackathonEvent event = findEventById(id);
         return mapToResponse(event);
     }
 
@@ -197,6 +211,11 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         if (request.getImageUrl() != null) {
             event.setImageUrl(request.getImageUrl());
         }
+        if (request.getOrganizerId() != null) {
+            User newOrganizer = userRepository.findById(request.getOrganizerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Organizer not found with id: " + request.getOrganizerId()));
+            event.setOrganizer(newOrganizer);
+        }
 
         // Validate sau khi merge: endTime > startTime
         validateTimeRange(event.getStartTime(), event.getEndTime(), "Event end time must be after start time.");
@@ -241,8 +260,19 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         if (!currentStatus.canTransitionTo(newStatus)) {
             String hint = buildTransitionHint(currentStatus, newStatus);
             throw new IllegalStateException(String.format(
-                    "Không thể chuyển trạng thái từ %s sang %s. %s",
+                    "Cannot transition status from %s to %s. %s",
                     currentStatus, newStatus, hint));
+        }
+
+        // Validate single active event constraint
+        if (newStatus == HackathonStatus.PUBLISHED || newStatus == HackathonStatus.IN_PROGRESS) {
+            boolean hasActiveEvent = hackathonEventRepository.existsByStatusInAndIsDeletedFalseAndIdNot(
+                    List.of(HackathonStatus.PUBLISHED, HackathonStatus.IN_PROGRESS), id);
+            if (hasActiveEvent) {
+                throw new IllegalStateException(
+                        "Cannot activate this event: Another event is currently active (PUBLISHED or IN_PROGRESS). " +
+                        "Only one event can take place at any given time.");
+            }
         }
 
         // Validate registration times before publishing
@@ -252,6 +282,28 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             }
             if (event.getRegistrationEnd().isBefore(event.getRegistrationStart())) {
                 throw new IllegalStateException("Cannot publish event: Registration End time must be after Start time.");
+            }
+
+            // Check if tracks exist
+            boolean hasTracks = !trackRepository.findByHackathonEventId(event.getId()).isEmpty();
+            if (!hasTracks) {
+                throw new IllegalStateException("Cannot publish event: Event must have at least one Track.");
+            }
+
+            // Check if rounds exist
+            boolean hasRounds = !roundRepository.findByHackathonEventId(event.getId()).isEmpty();
+            if (!hasRounds) {
+                throw new IllegalStateException("Cannot publish event: Event must have at least one Round.");
+            }
+
+            // Check if criteria exist and sum of weights is exactly 100%
+            List<com.example.swp.features.criterion.Criterion> criteria = criterionRepository.findByHackathonEventId(event.getId());
+            if (criteria.isEmpty()) {
+                throw new IllegalStateException("Cannot publish event: Event must have at least one scoring criterion.");
+            }
+            int totalWeight = criteria.stream().mapToInt(com.example.swp.features.criterion.Criterion::getWeight).sum();
+            if (totalWeight != 100) {
+                throw new IllegalStateException("Cannot publish event: Total criteria weight must be exactly 100% (currently " + totalWeight + "%).");
             }
         }
 
@@ -330,18 +382,18 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         HackathonEvent event = findEventById(id);
         requireOrganizerOrAdmin(event);
 
-        // Chỉ cho phép xóa sự kiện ở trạng thái DRAFT hoặc CANCELLED
+        // Only allow deleting events in DRAFT or CANCELLED status
         if (event.getStatus() == HackathonStatus.PUBLISHED) {
             throw new IllegalStateException(
-                    "Không thể xóa sự kiện đang ở trạng thái PUBLISHED. Vui lòng hủy (CANCEL) sự kiện trước rồi mới xóa.");
+                    "Cannot delete event in PUBLISHED status. Please cancel the event first.");
         }
         if (event.getStatus() == HackathonStatus.IN_PROGRESS) {
             throw new IllegalStateException(
-                    "Không thể xóa sự kiện đang diễn ra (IN_PROGRESS). Vui lòng hủy (CANCEL) sự kiện trước rồi mới xóa.");
+                    "Cannot delete event in IN_PROGRESS status. Please cancel the event first.");
         }
         if (event.getStatus() == HackathonStatus.COMPLETED) {
             throw new IllegalStateException(
-                    "Không thể xóa sự kiện đã kết thúc (COMPLETED).");
+                    "Cannot delete event in COMPLETED status.");
         }
 
         event.setDeleted(true);
@@ -419,6 +471,96 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public HackathonEventResponse cloneEvent(Long id) {
+        HackathonEvent original = hackathonEventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found with id: " + id));
+
+        // Generate a unique slug
+        String baseName = "Copy of " + original.getName();
+        String candidateSlug = slugify.slugify(baseName);
+        int counter = 1;
+        while (hackathonEventRepository.findBySlugAndIsDeletedFalse(candidateSlug).isPresent()) {
+            candidateSlug = slugify.slugify(baseName + "-" + counter);
+            counter++;
+        }
+
+        // Clone event itself
+        HackathonEvent cloned = new HackathonEvent();
+        cloned.setName(baseName + (counter > 1 ? " (" + (counter - 1) + ")" : ""));
+        cloned.setSlug(candidateSlug);
+        cloned.setDescription(original.getDescription());
+        cloned.setStatus(HackathonStatus.DRAFT);
+        cloned.setRegistrationStart(original.getRegistrationStart());
+        cloned.setRegistrationEnd(original.getRegistrationEnd());
+        cloned.setStartTime(original.getStartTime());
+        cloned.setEndTime(original.getEndTime());
+        cloned.setMinTeamSize(original.getMinTeamSize());
+        cloned.setMaxTeamSize(original.getMaxTeamSize());
+        cloned.setRules(original.getRules());
+        cloned.setImageUrl(original.getImageUrl());
+        cloned.setOrganizer(original.getOrganizer());
+
+        HackathonEvent savedEvent = hackathonEventRepository.save(cloned);
+
+        // Map original tracks to cloned tracks
+        java.util.Map<Long, com.example.swp.features.track.Track> trackMap = new java.util.HashMap<>();
+        List<com.example.swp.features.track.Track> originalTracks = trackRepository.findByHackathonEventId(original.getId());
+        for (com.example.swp.features.track.Track t : originalTracks) {
+            com.example.swp.features.track.Track ct = new com.example.swp.features.track.Track();
+            ct.setName(t.getName());
+            ct.setDescription(t.getDescription());
+            ct.setHackathonEvent(savedEvent);
+            com.example.swp.features.track.Track savedTrack = trackRepository.save(ct);
+            trackMap.put(t.getId(), savedTrack);
+        }
+
+        // Clone Rounds
+        List<com.example.swp.features.round.Round> originalRounds = roundRepository.findByHackathonEventId(original.getId());
+        for (com.example.swp.features.round.Round r : originalRounds) {
+            com.example.swp.features.round.Round cr = new com.example.swp.features.round.Round();
+            cr.setName(r.getName());
+            cr.setDescription(r.getDescription());
+            cr.setStartTime(r.getStartTime());
+            cr.setEndTime(r.getEndTime());
+            cr.setRoundOrder(r.getRoundOrder());
+            cr.setAdvancementSlots(r.getAdvancementSlots());
+            cr.setHackathonEvent(savedEvent);
+            roundRepository.save(cr);
+        }
+
+        // Clone Criteria
+        List<com.example.swp.features.criterion.Criterion> originalCriteria = criterionRepository.findByHackathonEventId(original.getId());
+        for (com.example.swp.features.criterion.Criterion c : originalCriteria) {
+            com.example.swp.features.criterion.Criterion cc = new com.example.swp.features.criterion.Criterion();
+            cc.setName(c.getName());
+            cc.setDescription(c.getDescription());
+            cc.setWeight(c.getWeight());
+            cc.setMaxScore(c.getMaxScore());
+            cc.setHackathonEvent(savedEvent);
+            criterionRepository.save(cc);
+        }
+
+        // Clone Prizes
+        List<com.example.swp.features.prize.Prize> originalPrizes = prizeRepository.findByHackathonEventId(original.getId());
+        for (com.example.swp.features.prize.Prize p : originalPrizes) {
+            com.example.swp.features.prize.Prize cp = new com.example.swp.features.prize.Prize();
+            cp.setName(p.getName());
+            cp.setDescription(p.getDescription());
+            cp.setRank(p.getRank());
+            cp.setHackathonEvent(savedEvent);
+            if (p.getTrack() != null && trackMap.containsKey(p.getTrack().getId())) {
+                cp.setTrack(trackMap.get(p.getTrack().getId()));
+            }
+            prizeRepository.save(cp);
+        }
+
+        auditLogService.logAction("CLONE_EVENT", "HACKATHON_EVENT", savedEvent.getId(), savedEvent.getName(), "Cloned from event ID: " + original.getId());
+
+        return mapToResponse(savedEvent);
     }
 
     private String buildTransitionHint(HackathonStatus from, HackathonStatus to) {

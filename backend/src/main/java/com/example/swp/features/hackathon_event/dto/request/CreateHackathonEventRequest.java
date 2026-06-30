@@ -32,4 +32,5 @@ public class CreateHackathonEventRequest {
 
     private String rules;
     private String imageUrl;
+    private Long organizerId;
 }

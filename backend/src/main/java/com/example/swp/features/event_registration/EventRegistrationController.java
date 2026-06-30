@@ -18,6 +18,7 @@ public class EventRegistrationController {
     private final EventRegistrationService eventRegistrationService;
 
     @PostMapping
+
     @PreAuthorize("hasRole('PARTICIPANT')")
     public ResponseEntity<ApiResponse<EventRegistrationResponse>> registerForEvent(@RequestParam Long eventId) {
         EventRegistrationResponse response = eventRegistrationService.registerForEvent(eventId);
@@ -32,4 +33,10 @@ public class EventRegistrationController {
         List<EventRegistrationResponse> responses = eventRegistrationService.getRegistrationsForEvent(eventId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
-}
+
+    @GetMapping("/my-registration/event/{eventId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Boolean>> checkMyRegistration(@PathVariable Long eventId) {
+        boolean isRegistered = eventRegistrationService.isUserRegisteredForEvent(eventId);
+        return ResponseEntity.ok(ApiResponse.success(isRegistered));
+    }

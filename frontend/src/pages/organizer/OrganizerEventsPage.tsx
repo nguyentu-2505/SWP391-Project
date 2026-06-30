@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
-import { PlusCircle, Eye, Calendar, Loader2, Edit2, Trash2 } from 'lucide-react';
+import { PlusCircle, Eye, Calendar, Loader2, Edit2, Trash2, Copy } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import toast from 'react-hot-toast';
 import Modal from '../../components/Modal';
@@ -20,10 +20,18 @@ const OrganizerEventsPage: React.FC = () => {
     const [events, setEvents] = useState<HackathonEvent[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 2, maxTeamSize: 5 });
     const [selectedEvent, setSelectedEvent] = useState<HackathonEvent | null>(null);
+    const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
+    const [checklistEventId, setChecklistEventId] = useState<number | null>(null);
+    const [checklistStatus, setChecklistStatus] = useState<{
+        loading: boolean;
+        error: string;
+        basicInfo: boolean;
+        tracksCount: number;
+        roundsCount: number;
+        criteriaWeight: number;
+    } | null>(null);
 
     const fetchMyEvents = async () => {
         try {
@@ -42,24 +50,6 @@ const OrganizerEventsPage: React.FC = () => {
         };
         load();
     }, []);
-
-    const handleCreateEvent = async () => {
-        if (!newEvent.name || !newEvent.startTime || !newEvent.endTime) {
-            toast.error('Please fill in all required fields.');
-            return;
-        }
-        const loadingToast = toast.loading('Creating event...');
-        try {
-            await HackathonEventService.createHackathonEvent(newEvent);
-            await fetchMyEvents();
-            setIsCreateModalOpen(false);
-            setNewEvent({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 2, maxTeamSize: 5 });
-            toast.success('Event created successfully', { id: loadingToast });
-        } catch (err: any) {
-            const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || err.message;
-            toast.error('Failed to create event: ' + errorMessage, { id: loadingToast });
-        }
-    };
 
     const handleUpdateEvent = async () => {
         if (!selectedEvent) return;
@@ -100,6 +90,129 @@ const OrganizerEventsPage: React.FC = () => {
         }
     };
 
+    const openPublishChecklist = async (eventId: number) => {
+        setChecklistEventId(eventId);
+        setIsChecklistModalOpen(true);
+        setChecklistStatus({
+            loading: true,
+            error: '',
+            basicInfo: false,
+            tracksCount: 0,
+            roundsCount: 0,
+            criteriaWeight: 0
+        });
+
+        try {
+            const event = events.find(e => e.id === eventId);
+            const basicInfoValid = !!(event && event.startTime && event.endTime && event.registrationStart && event.registrationEnd);
+
+            const [tracksRes, roundsRes, criteriaRes] = await Promise.all([
+                api.get(`/tracks/hackathon/${eventId}`),
+                api.get(`/rounds/hackathon/${eventId}`),
+                api.get(`/criteria/event/${eventId}`)
+            ]);
+
+            const tracks = tracksRes.data.data ?? tracksRes.data;
+            const rounds = roundsRes.data.data ?? roundsRes.data;
+            const criteria = criteriaRes.data.data ?? criteriaRes.data;
+
+            const tracksCount = Array.isArray(tracks) ? tracks.length : 0;
+            const roundsCount = Array.isArray(rounds) ? rounds.length : 0;
+            const criteriaList = Array.isArray(criteria) ? criteria : [];
+            const criteriaWeight = criteriaList.reduce((sum: number, c: any) => sum + (c.weight || 0), 0);
+
+            setChecklistStatus({
+                loading: false,
+                error: '',
+                basicInfo: basicInfoValid,
+                tracksCount,
+                roundsCount,
+                criteriaWeight
+            });
+        } catch (err: any) {
+            console.error('Failed to run checklist:', err);
+            setChecklistStatus(prev => prev ? {
+                ...prev,
+                loading: false,
+                error: err.response?.data?.error?.message || err.message || 'Failed to fetch checklist data'
+            } : null);
+        }
+    };
+
+    const renderStatusActionButtons = (eventId: number, currentStatus: string) => {
+        switch (currentStatus) {
+            case 'DRAFT':
+                return (
+                    <div className="flex gap-1.5 mt-2 flex-wrap">
+                        <button
+                            onClick={() => openPublishChecklist(eventId)}
+                            className="px-2 py-1 bg-green-600 text-white text-[10px] font-bold rounded-lg hover:bg-green-700 transition-colors cursor-pointer shadow-sm"
+                        >
+                            Publish
+                        </button>
+                        <button
+                            onClick={() => handleStatusChange(eventId, 'CANCELLED')}
+                            className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                );
+            case 'PUBLISHED':
+                return (
+                    <div className="flex gap-1.5 mt-2 flex-wrap">
+                        <button
+                            onClick={() => handleStatusChange(eventId, 'IN_PROGRESS')}
+                            className="px-2 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer shadow-sm"
+                        >
+                            Start Event
+                        </button>
+                        <button
+                            onClick={() => handleStatusChange(eventId, 'CANCELLED')}
+                            className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                );
+            case 'IN_PROGRESS':
+                return (
+                    <div className="flex gap-1.5 mt-2 flex-wrap">
+                        <button
+                            onClick={() => handleStatusChange(eventId, 'COMPLETED')}
+                            className="px-2 py-1 bg-teal-600 text-white text-[10px] font-bold rounded-lg hover:bg-teal-700 transition-colors cursor-pointer shadow-sm"
+                        >
+                            Complete
+                        </button>
+                        <button
+                            onClick={() => handleStatusChange(eventId, 'CANCELLED')}
+                            className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    const handleCloneEvent = async (id: number) => {
+        if (!window.confirm("Are you sure you want to clone this event? This will copy all tracks, rounds, criteria, and prizes as a new DRAFT event.")) {
+            return;
+        }
+        const loadingToast = toast.loading('Cloning event...');
+        try {
+            await api.post(`/hackathon-events/${id}/clone`);
+            toast.success('Event cloned successfully!', { id: loadingToast });
+            fetchEvents(); // Refresh list
+        } catch (error: any) {
+            console.error('Failed to clone event:', error);
+            const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+            toast.error('Failed to clone event: ' + errorMessage, { id: loadingToast });
+        }
+    };
+
     const openEditModal = (event: HackathonEvent) => {
         setSelectedEvent({
             ...event,
@@ -128,20 +241,13 @@ const OrganizerEventsPage: React.FC = () => {
                     <h1 className="text-2xl font-bold text-gray-900">Your Hackathon Events</h1>
                     <p className="text-gray-500 text-sm mt-1">Manage and monitor events you organize.</p>
                 </div>
-                <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
-                >
-                    <PlusCircle size={18} />
-                    Create New Event
-                </button>
             </div>
 
             {events.length === 0 ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
                     <Calendar className="mx-auto h-12 w-12 text-gray-300 mb-3" />
                     <h3 className="text-sm font-semibold text-gray-900">No events yet</h3>
-                    <p className="text-sm text-gray-500 mt-1">Create your first hackathon event to get started.</p>
+                    <p className="text-sm text-gray-500 mt-1">No events have been assigned to you yet. Please contact the administrator.</p>
                 </div>
             ) : (
                 <div className="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
@@ -164,17 +270,7 @@ const OrganizerEventsPage: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <StatusBadge status={event.status} />
-                                            <select 
-                                                value={event.status} 
-                                                onChange={(e) => handleStatusChange(event.id, e.target.value)}
-                                                className="mt-2 block w-full pl-3 pr-10 py-1 text-xs border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-gray-50"
-                                            >
-                                                <option value="DRAFT">DRAFT</option>
-                                                <option value="PUBLISHED">PUBLISHED</option>
-                                                <option value="IN_PROGRESS">IN_PROGRESS</option>
-                                                <option value="COMPLETED">COMPLETED</option>
-                                                <option value="CANCELLED">CANCELLED</option>
-                                            </select>
+                                            {renderStatusActionButtons(event.id, event.status)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {new Date(event.startTime).toLocaleDateString()} — {new Date(event.endTime).toLocaleDateString()}
@@ -186,6 +282,14 @@ const OrganizerEventsPage: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
                                             <div className="flex space-x-3 items-center justify-end">
+                                                <button
+                                                    onClick={() => handleCloneEvent(event.id)}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                                                    title="Clone Event"
+                                                >
+                                                    <Copy size={14} />
+                                                    Clone
+                                                </button>
                                                 <button
                                                     onClick={() => openEditModal(event)}
                                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -212,108 +316,7 @@ const OrganizerEventsPage: React.FC = () => {
                 </div>
             )}
 
-            <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
-                <div className="p-6 max-h-[90vh] overflow-y-auto">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                        <Calendar size={20} className="text-blue-600" />
-                        Create New Hackathon Event
-                    </h3>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Event Name *</label>
-                            <input
-                                type="text"
-                                value={newEvent.name}
-                                onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                                placeholder="Enter event name"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                            <textarea
-                                value={newEvent.description}
-                                onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                                rows={2}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                                placeholder="Enter event description"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
-                                <input
-                                    type="datetime-local"
-                                    value={newEvent.registrationStart || ''}
-                                    onChange={(e) => setNewEvent({ ...newEvent, registrationStart: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
-                                <input
-                                    type="datetime-local"
-                                    value={newEvent.registrationEnd || ''}
-                                    onChange={(e) => setNewEvent({ ...newEvent, registrationEnd: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time *</label>
-                                <input
-                                    type="datetime-local"
-                                    value={newEvent.startTime}
-                                    onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">End Time *</label>
-                                <input
-                                    type="datetime-local"
-                                    value={newEvent.endTime}
-                                    onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Min Team Size</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={newEvent.minTeamSize}
-                                    onChange={(e) => setNewEvent({ ...newEvent, minTeamSize: Number(e.target.value) })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Max Team Size</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={newEvent.maxTeamSize}
-                                    onChange={(e) => setNewEvent({ ...newEvent, maxTeamSize: Number(e.target.value) })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="mt-6 flex justify-end gap-3">
-                        <button
-                            onClick={() => setIsCreateModalOpen(false)}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleCreateEvent}
-                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer"
-                        >
-                            Create Event
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+
 
             {selectedEvent && (
                 <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
@@ -414,6 +417,114 @@ const OrganizerEventsPage: React.FC = () => {
                                 Save Changes
                             </button>
                         </div>
+                    </div>
+                </Modal>
+            )}
+
+            {isChecklistModalOpen && checklistStatus && (
+                <Modal isOpen={isChecklistModalOpen} onClose={() => setIsChecklistModalOpen(false)}>
+                    <div className="p-6 max-w-md mx-auto">
+                        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            🚀 Publish Checklist
+                        </h2>
+                        {checklistStatus.loading ? (
+                            <div className="flex flex-col items-center justify-center py-8">
+                                <Loader2 className="animate-spin text-blue-500 mb-2" size={32} />
+                                <span className="text-sm text-gray-500 font-medium">Checking event configuration...</span>
+                            </div>
+                        ) : checklistStatus.error ? (
+                            <div className="p-4 bg-red-50 text-red-700 rounded-lg text-sm mb-4 font-medium">
+                                {checklistStatus.error}
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-sm text-gray-600 mb-3">
+                                    Before publishing this hackathon, please make sure the following requirements are met:
+                                </p>
+                                
+                                <div className="space-y-3">
+                                    {/* 1. Basic Info */}
+                                    <div className="flex items-start justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-xs">
+                                        <div className="flex items-start gap-2.5">
+                                            <span className="mt-0.5 text-lg">
+                                                {checklistStatus.basicInfo ? '✅' : '❌'}
+                                            </span>
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-900">Basic Information</p>
+                                                <p className="text-xs text-gray-500">Dates & registration timeline configured</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 2. Tracks */}
+                                    <div className="flex items-start justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-xs">
+                                        <div className="flex items-start gap-2.5">
+                                            <span className="mt-0.5 text-lg">
+                                                {checklistStatus.tracksCount > 0 ? '✅' : '❌'}
+                                            </span>
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-900">Tracks / Categories</p>
+                                                <p className="text-xs text-gray-500">Current: {checklistStatus.tracksCount} tracks (At least 1 required)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 3. Rounds */}
+                                    <div className="flex items-start justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-xs">
+                                        <div className="flex items-start gap-2.5">
+                                            <span className="mt-0.5 text-lg">
+                                                {checklistStatus.roundsCount > 0 ? '✅' : '❌'}
+                                            </span>
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-900">Rounds of Competition</p>
+                                                <p className="text-xs text-gray-500">Current: {checklistStatus.roundsCount} rounds (At least 1 required)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 4. Criteria */}
+                                    <div className="flex items-start justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-xs">
+                                        <div className="flex items-start gap-2.5">
+                                            <span className="mt-0.5 text-lg">
+                                                {checklistStatus.criteriaWeight === 100 ? '✅' : '❌'}
+                                            </span>
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-900">Scoring Criteria Weight</p>
+                                                <p className="text-xs text-gray-500">Current total weight: {checklistStatus.criteriaWeight}% (Must be exactly 100%)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 flex gap-3 justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsChecklistModalOpen(false)}
+                                        className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 font-semibold transition-colors cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            !checklistStatus.basicInfo ||
+                                            checklistStatus.tracksCount === 0 ||
+                                            checklistStatus.roundsCount === 0 ||
+                                            checklistStatus.criteriaWeight !== 100
+                                        }
+                                        onClick={async () => {
+                                            if (checklistEventId) {
+                                                setIsChecklistModalOpen(false);
+                                                await handleStatusChange(checklistEventId, 'PUBLISHED');
+                                            }
+                                        }}
+                                        className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors shadow-sm cursor-pointer"
+                                    >
+                                        Confirm Publish
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </Modal>
             )}

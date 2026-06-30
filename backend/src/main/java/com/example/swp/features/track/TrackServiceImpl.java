@@ -153,6 +153,65 @@ public class TrackServiceImpl implements TrackService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public void deleteTrack(Long id) {
+        Track track = trackRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Track not found: " + id));
+
+        HackathonEvent event = track.getHackathonEvent();
+        
+        // Security check
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean isOwner = event.getOrganizer() != null && event.getOrganizer().getId().equals(currentUser.getId());
+        boolean isAdmin = "ADMIN".equals(currentUser.getRole().name());
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("Only the organizer or admin can delete this track.");
+        }
+
+        // Check if event status is DRAFT
+        if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT) {
+            throw new IllegalStateException("Không thể xóa bảng đấu: Chỉ sự kiện ở trạng thái DRAFT mới được phép xóa bảng đấu.");
+        }
+
+        trackMentorRepository.deleteByTrackId(id);
+        trackRepository.delete(track);
+
+        auditLogService.logAction("DELETE_TRACK", "Track", id, "Track name: " + track.getName(), null);
+    }
+
+    @Override
+    @Transactional
+    public TrackResponse updateTrack(Long id, com.example.swp.features.track.dto.request.CreateTrackRequest request) {
+        Track track = trackRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Track not found: " + id));
+
+        HackathonEvent event = track.getHackathonEvent();
+
+        // Security check
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean isOwner = event.getOrganizer() != null && event.getOrganizer().getId().equals(currentUser.getId());
+        boolean isAdmin = "ADMIN".equals(currentUser.getRole().name());
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("Only the organizer or admin can update this track.");
+        }
+
+        // Check if event status is DRAFT
+        if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT) {
+            throw new IllegalStateException("Không thể chỉnh sửa bảng đấu: Chỉ sự kiện ở trạng thái DRAFT mới được phép chỉnh sửa bảng đấu.");
+        }
+
+        track.setName(request.getName());
+        track.setDescription(request.getDescription());
+
+        Track updatedTrack = trackRepository.save(track);
+        return mapToResponse(updatedTrack);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private User getCurrentUser() {

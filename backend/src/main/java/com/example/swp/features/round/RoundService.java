@@ -8,4 +8,6 @@ import java.util.List;
 public interface RoundService {
     RoundResponse createRound(CreateRoundRequest request);
     List<RoundResponse> getRoundsByHackathonEvent(Long hackathonEventId);
+    void deleteRound(Long id);
+    RoundResponse updateRound(Long id, com.example.swp.features.round.dto.request.CreateRoundRequest request);
 }
