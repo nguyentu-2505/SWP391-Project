@@ -135,6 +135,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             }
         }
 
+        // Explicitly remove from parent collection to prevent Hibernate cascade re-saving and trigger orphanRemoval
+        if (team.getTeamMembers() != null) {
+            team.getTeamMembers().remove(memberToKick);
+        }
         teamMemberRepository.delete(memberToKick);
     }
 
