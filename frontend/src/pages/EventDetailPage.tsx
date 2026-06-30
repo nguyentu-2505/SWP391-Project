@@ -61,8 +61,9 @@ const EventDetailPage: React.FC = () => {
             await api.post('/event-registrations', null, { params: { eventId: event.id } });
             setIsRegistered(true);
             toast.success('Successfully registered for the event!');
-        } catch (err) {
-            toast.error('Failed to register for the event.');
+        } catch (err: any) {
+            const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to register for the event.';
+            toast.error(errorMessage);
         } finally {
             setIsRegistering(false);
         }
