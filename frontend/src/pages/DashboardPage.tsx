@@ -68,13 +68,7 @@ const DashboardPage: React.FC = () => {
                     >
                         View Leaderboard
                     </Button>
-                    {role === Role.PARTICIPANT && (
-                        <Button 
-                            variant="primary" 
-                        >
-                            Create Team
-                        </Button>
-                    )}
+
                 </div>
             </div>
 
