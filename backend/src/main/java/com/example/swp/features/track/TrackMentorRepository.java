@@ -28,6 +28,8 @@ public interface TrackMentorRepository extends JpaRepository<TrackMentor, Long> 
      */
     java.util.Optional<TrackMentor> findByTrackIdAndMentorId(Long trackId, Long mentorId);
 
+    void deleteByTrackId(Long trackId);
+
     /**
      * Returns all track IDs where the given user is assigned as mentor
      * within the given event. Used to show available judge slots.

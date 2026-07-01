@@ -109,7 +109,7 @@ public class MentorshipRequestService {
     }
     
     @Transactional
-    public MentorshipRequestResponse resolveRequest(Long requestId) {
+    public MentorshipRequestResponse resolveRequest(Long requestId, com.example.swp.features.mentorship_request.dto.request.ResolveMentorshipRequest payload) {
         User currentUser = getCurrentUser();
         MentorshipRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mentorship request not found"));
@@ -123,28 +123,39 @@ public class MentorshipRequestService {
 
         request.setStatus(MentorshipRequestStatus.RESOLVED);
         request.setResolvedAt(LocalDateTime.now());
+        request.setAnswer(payload.getAnswer());
         
         MentorshipRequest updatedRequest = requestRepository.save(request);
+
+        User teamLeader = findTeamLeader(request.getTeam());
+        if (teamLeader != null && isMentorOfRequest) {
+            notificationService.createNotification(
+                teamLeader,
+                "Mentorship Request Resolved",
+                "Mentor " + currentUser.getUsername() + " has sent an answer: " + payload.getAnswer(),
+                "MENTORSHIP_RESOLVED",
+                "MentorshipRequest",
+                updatedRequest.getId()
+            );
+        }
+
         return mapToResponse(updatedRequest);
     }
 
     @Transactional
-    public MentorshipRequestResponse rejectRequest(Long requestId) {
+    public MentorshipRequestResponse rejectRequest(Long requestId, com.example.swp.features.mentorship_request.dto.request.RejectMentorshipRequest payload) {
         User mentor = getCurrentUser();
 
         MentorshipRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mentorship request not found"));
 
-        if (!request.getMentor().getId().equals(mentor.getId())) {
-            throw new AccessDeniedException("You are not the mentor assigned to this request.");
+        if (request.getStatus() != MentorshipRequestStatus.OPEN) {
+            throw new IllegalStateException("Only open requests can be declined.");
         }
 
-        if (request.getStatus() != MentorshipRequestStatus.IN_PROGRESS) {
-            throw new IllegalStateException("Only in-progress requests can be rejected.");
-        }
-
-        request.setStatus(MentorshipRequestStatus.OPEN);
-        request.setMentor(null);
+        request.setStatus(MentorshipRequestStatus.REJECTED);
+        request.setMentor(mentor); // Record who rejected it
+        request.setRejectReason(payload.getReason());
         
         MentorshipRequest updatedRequest = requestRepository.save(request);
 
@@ -152,8 +163,8 @@ public class MentorshipRequestService {
         if (teamLeader != null) {
             notificationService.createNotification(
                 teamLeader,
-                "Mentorship Rejected",
-                "Mentor " + mentor.getUsername() + " has backed out of your request. It is now open again.",
+                "Mentorship Request Declined",
+                "Mentor " + mentor.getUsername() + " has declined your request. Reason: " + payload.getReason(),
                 "MENTORSHIP_REJECTED",
                 "MentorshipRequest",
                 updatedRequest.getId()
@@ -231,6 +242,8 @@ public class MentorshipRequestService {
                 .status(request.getStatus())
                 .createdAt(request.getCreatedAt())
                 .resolvedAt(request.getResolvedAt())
+                .answer(request.getAnswer())
+                .rejectReason(request.getRejectReason())
                 .build();
     }
 }

@@ -4,28 +4,21 @@ import {
     UserPlus, Megaphone, ArrowRight, CalendarRange, Upload
 } from 'lucide-react';
 import { getUserRole, Role } from '../services/authUtils';
-import api from '../services/api';
+import { DashboardService, DashboardStats } from '../services/DashboardService';
 import Skeleton from '../components/Skeleton';
 import Button from '../components/ui/Button';
 
-interface Stats {
-    activeTeams: number;
-    submissionsReceived: number;
-    pendingReviews: number;
-    daysRemaining: number;
-}
-
 const DashboardPage: React.FC = () => {
     const role = getUserRole();
-    const [stats, setStats] = useState<Stats | null>(null);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                // The new backend endpoint we just created
-                const response = await api.get('/dashboard/stats');
-                setStats(response.data.data);
+                // Fetch stats from DashboardService
+                const statsData = await DashboardService.getStats();
+                setStats(statsData);
             } catch (error) {
                 console.error("Failed to fetch dashboard stats", error);
                 // Simple fallback in case of backend failure during development

@@ -21,6 +21,8 @@ public class MentorshipRequestResponse {
     private MentorshipRequestStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime resolvedAt;
+    private String answer;
+    private String rejectReason;
 
     public static MentorshipRequestResponseBuilder builder() { return new MentorshipRequestResponseBuilder(); }
     public static class MentorshipRequestResponseBuilder {
@@ -34,6 +36,8 @@ public class MentorshipRequestResponse {
         private MentorshipRequestStatus status;
         private LocalDateTime createdAt;
         private LocalDateTime resolvedAt;
+        private String answer;
+        private String rejectReason;
 
         public MentorshipRequestResponseBuilder id(Long id) { this.id = id; return this; }
         public MentorshipRequestResponseBuilder teamId(Long teamId) { this.teamId = teamId; return this; }
@@ -45,6 +49,8 @@ public class MentorshipRequestResponse {
         public MentorshipRequestResponseBuilder status(MentorshipRequestStatus status) { this.status = status; return this; }
         public MentorshipRequestResponseBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
         public MentorshipRequestResponseBuilder resolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; return this; }
+        public MentorshipRequestResponseBuilder answer(String answer) { this.answer = answer; return this; }
+        public MentorshipRequestResponseBuilder rejectReason(String rejectReason) { this.rejectReason = rejectReason; return this; }
 
         public MentorshipRequestResponse build() {
             MentorshipRequestResponse m = new MentorshipRequestResponse();
@@ -52,6 +58,7 @@ public class MentorshipRequestResponse {
             m.mentorId = this.mentorId; m.mentorName = this.mentorName;
             m.title = this.title; m.description = this.description; m.status = this.status;
             m.createdAt = this.createdAt; m.resolvedAt = this.resolvedAt;
+            m.answer = this.answer; m.rejectReason = this.rejectReason;
             return m;
         }
     }

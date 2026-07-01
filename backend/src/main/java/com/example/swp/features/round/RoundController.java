@@ -30,4 +30,20 @@ public class RoundController {
         List<RoundResponse> responses = roundService.getRoundsByHackathonEvent(hackathonEventId);
         return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<Void>> deleteRound(@PathVariable Long id) {
+        roundService.deleteRound(id);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(null, "Round deleted successfully."));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<RoundResponse>> updateRound(
+            @PathVariable Long id,
+            @jakarta.validation.Valid @RequestBody com.example.swp.features.round.dto.request.CreateRoundRequest request) {
+        RoundResponse response = roundService.updateRound(id, request);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response, "Round updated successfully."));
+    }
 }

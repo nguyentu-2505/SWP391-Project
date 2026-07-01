@@ -27,4 +27,5 @@ public class UpdateHackathonEventRequest {
 
     private String rules;
     private String imageUrl;
+    private Long organizerId;
 }

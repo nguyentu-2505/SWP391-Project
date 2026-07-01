@@ -12,8 +12,10 @@ export interface Team {
 
 export interface CreateTeamRequest {
     name: string;
-    description: string;
+    projectName?: string;
+    projectDescription?: string;
     trackId: number;
+    eventId: number;
 }
 
 const createTeam = async (team: CreateTeamRequest): Promise<Team> => {
@@ -31,8 +33,14 @@ const getTeamsByTrack = async (trackId: number): Promise<Team[]> => {
     return response.data.data;
 };
 
+const getAllTeams = async (): Promise<Team[]> => {
+    const response = await api.get(`${API_URL}?size=1000`);
+    return response.data.data.content || response.data.data;
+};
+
 export const TeamService = {
     createTeam,
     getTeamById,
     getTeamsByTrack,
+    getAllTeams,
 };

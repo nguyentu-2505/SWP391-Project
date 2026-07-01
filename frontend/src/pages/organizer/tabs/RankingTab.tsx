@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
-import { ListOrdered, Trophy, Loader2 } from 'lucide-react';
+import { ListOrdered, Trophy, Loader2, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ExportService } from '../../../services/ExportService';
 
 interface Round {
     id: number;
@@ -64,6 +65,27 @@ const RankingTab: React.FC = () => {
         };
         fetchRankings();
     }, [selectedRoundId]);
+
+    const handleExport = async () => {
+        if (!selectedRoundId) return;
+        const loadingToast = toast.loading('Exporting ranking to CSV...');
+        try {
+            const response = await api.get(`/export/ranking/round/${selectedRoundId}`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `ranking-round-${selectedRoundId}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode?.removeChild(link);
+            toast.success('Export successful!', { id: loadingToast });
+        } catch (err) {
+            console.error('Failed to export:', err);
+            toast.error('Failed to export ranking.', { id: loadingToast });
+        }
+    };
 
     // Compute unique tracks
     const uniqueTracks = useMemo(() => {
@@ -143,9 +165,27 @@ const RankingTab: React.FC = () => {
 
     return (
         <div>
-            <div className="flex items-center gap-2 mb-4">
-                <ListOrdered size={20} className="text-gray-600" />
-                <h2 className="text-xl font-semibold text-gray-800">Rankings</h2>
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <ListOrdered size={20} className="text-gray-600" />
+                    <h2 className="text-xl font-semibold text-gray-800">Rankings</h2>
+                </div>
+                {selectedRoundId !== '' && (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => ExportService.exportRoundScoring(Number(selectedRoundId))}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+                        >
+                            <Download size={14} /> Export Scoring
+                        </button>
+                        <button
+                            onClick={() => ExportService.exportRoundRanking(Number(selectedRoundId))}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                        >
+                            <Download size={14} /> Export Ranking
+                        </button>
+                    </div>
+                )}
             </div>
 
             {rounds.length === 0 ? (
@@ -181,6 +221,18 @@ const RankingTab: React.FC = () => {
                                         <option key={t.id} value={t.id}>{t.name}</option>
                                     ))}
                                 </select>
+                            </div>
+                        )}
+
+                        {rankings.length > 0 && (
+                            <div className="flex items-end">
+                                <button
+                                    onClick={handleExport}
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+                                >
+                                    <Download size={16} />
+                                    Export CSV
+                                </button>
                             </div>
                         )}
                     </div>

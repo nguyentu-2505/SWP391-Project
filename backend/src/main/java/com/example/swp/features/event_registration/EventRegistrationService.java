@@ -43,7 +43,8 @@ public class EventRegistrationService {
         }
 
         if (!currentUser.isProfileComplete()) {
-            throw new com.example.swp.exception.BadRequestException("Please complete your profile before registering for this event.");
+            throw new com.example.swp.exception.BadRequestException(
+                    "Please complete your profile before registering for this event.");
         }
 
         HackathonEvent event = hackathonEventRepository.findById(eventId)
@@ -51,7 +52,8 @@ public class EventRegistrationService {
 
         // Event phải ở trạng thái PUBLISHED mới cho phép đăng ký
         if (event.getStatus() != HackathonStatus.PUBLISHED) {
-            throw new IllegalStateException("Registration for this event is not open. Current status: " + event.getStatus());
+            throw new IllegalStateException(
+                    "Registration for this event is not open. Current status: " + event.getStatus());
         }
 
         // Check registration window
@@ -81,6 +83,17 @@ public class EventRegistrationService {
     public List<EventRegistrationResponse> getRegistrationsForEvent(Long eventId) {
         List<EventRegistration> registrations = eventRegistrationRepository.findByEventId(eventId);
         return registrations.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isUserRegisteredForEvent(Long eventId) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        HackathonEvent event = hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
+
+        return eventRegistrationRepository.findByEventAndUser(event, currentUser).isPresent();
     }
 
     private EventRegistrationResponse mapToResponse(EventRegistration registration) {

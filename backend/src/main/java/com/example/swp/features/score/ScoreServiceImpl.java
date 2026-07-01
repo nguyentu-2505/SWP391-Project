@@ -91,7 +91,54 @@ public class ScoreServiceImpl implements ScoreService {
             savedScores.add(scoreRepository.save(score));
         }
 
+        try {
+            updateJudgeAssignmentStatus(judge, roundId);
+        } catch (Exception e) {
+            log.error("Failed to update judge assignment status: {}", e.getMessage());
+        }
+
         return savedScores.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    private void updateJudgeAssignmentStatus(User judge, Long roundId) {
+        List<com.example.swp.features.judge_assignment.JudgeAssignment> assignments =
+                judgeAssignmentRepository.findByJudgeIdAndRoundId(judge.getId(), roundId);
+        for (com.example.swp.features.judge_assignment.JudgeAssignment assignment : assignments) {
+            if (assignment.getStatus() == com.example.swp.features.judge_assignment.JudgeAssignmentStatus.COMPLETED) {
+                continue;
+            }
+            List<Submission> submissions = submissionRepository.findByRoundId(roundId);
+            if (assignment.getTrack() != null) {
+                submissions = submissions.stream()
+                        .filter(s -> s.getTeam().getTrack() != null && s.getTeam().getTrack().getId().equals(assignment.getTrack().getId()))
+                        .collect(Collectors.toList());
+            }
+            if (submissions.isEmpty()) continue;
+
+            Long eventId = assignment.getRound().getHackathonEvent().getId();
+            List<Criterion> criteria = criterionRepository.findByHackathonEventId(eventId);
+            if (criteria.isEmpty()) continue;
+
+            boolean allScored = true;
+            for (Submission sub : submissions) {
+                if (sub.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+                    continue;
+                }
+                for (Criterion crit : criteria) {
+                    boolean hasScore = scoreRepository.findBySubmissionIdAndJudgeIdAndCriterionId(sub.getId(), judge.getId(), crit.getId()).isPresent();
+                    if (!hasScore) {
+                        allScored = false;
+                        break;
+                    }
+                }
+                if (!allScored) break;
+            }
+
+            if (allScored) {
+                assignment.setStatus(com.example.swp.features.judge_assignment.JudgeAssignmentStatus.COMPLETED);
+                judgeAssignmentRepository.save(assignment);
+            }
+        }
     }
 
     @Override

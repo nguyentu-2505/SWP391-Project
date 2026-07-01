@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
-import { Trophy, Plus, Loader2, Gift, CheckCircle } from 'lucide-react';
+import { Trophy, Plus, Loader2, Gift, CheckCircle, Edit2, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Prize {
@@ -11,10 +11,16 @@ interface Prize {
     rank: number;
     winningTeamId?: number;
     winningTeamName?: string;
+    trackId?: number;
     trackName?: string;
 }
 
 interface Team {
+    id: number;
+    name: string;
+}
+
+interface Track {
     id: number;
     name: string;
 }
@@ -30,26 +36,44 @@ const PrizesTab: React.FC = () => {
     const { eventId } = useParams<{ eventId: string }>();
     const [prizes, setPrizes] = useState<Prize[]>([]);
     const [teams, setTeams] = useState<Team[]>([]);
+    const [tracks, setTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Form states
     const [showForm, setShowForm] = useState(false);
+    const [isEditing, setIsEditing] = useState<number | null>(null);
     const [form, setForm] = useState<PrizeForm>({ name: '', description: '', rank: 1, trackId: '' });
     const [saving, setSaving] = useState(false);
+
+    // Assign states
     const [assigningPrizeId, setAssigningPrizeId] = useState<number | null>(null);
     const [assignTeamId, setAssignTeamId] = useState<number | ''>('');
 
+    const [autoAssigning, setAutoAssigning] = useState(false);
+
+    // Filter states
+    const [selectedTrackId, setSelectedTrackId] = useState<number | ''>('');
+
+
     const fetchData = async () => {
         if (!eventId) return;
+        setLoading(true);
         try {
-            const [prizeRes, teamRes] = await Promise.all([
-                api.get(`/prizes/event/${eventId}`),
+            const [prizeRes, teamRes, trackRes] = await Promise.all([
+                selectedTrackId ? api.get(`/prizes/event/${eventId}/track/${selectedTrackId}`) : api.get(`/prizes/event/${eventId}`),
                 api.get(`/teams/event/${eventId}`),
+                api.get(`/tracks/hackathon/${eventId}`)
             ]);
-            // Handle both raw array and wrapped response
+
             const prizeData = prizeRes.data.data ?? prizeRes.data;
             const teamData = teamRes.data.data ?? teamRes.data;
+            const trackData = trackRes.data.data ?? trackRes.data;
+
             setPrizes(Array.isArray(prizeData) ? prizeData : []);
             setTeams(Array.isArray(teamData) ? teamData : []);
-        } catch (err) {
+
+            setTracks(Array.isArray(trackData) ? trackData : []);
+        } catch (err: any) {
             console.error('Failed to load prize data', err);
             toast.error('Failed to load prize data.');
         } finally {
@@ -57,29 +81,65 @@ const PrizesTab: React.FC = () => {
         }
     };
 
-    useEffect(() => { fetchData(); }, [eventId]);
+    useEffect(() => { fetchData(); }, [eventId, selectedTrackId]);
 
-    const handleCreate = async (e: React.FormEvent) => {
+    const handleCreateOrUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.name.trim()) { toast.error('Prize name is required.'); return; }
 
         setSaving(true);
         try {
-            await api.post('/prizes', {
+            const payload = {
                 name: form.name,
                 description: form.description,
                 rank: form.rank,
-                hackathonEventId: Number(eventId),
-                ...(form.trackId ? { trackId: form.trackId } : {}),
-            });
-            toast.success('Prize created!');
+                trackId: form.trackId ? Number(form.trackId) : null,
+                hackathonEventId: Number(eventId)
+            };
+
+            if (isEditing) {
+                if (!payload.trackId || !payload.rank) {
+                    toast.error('Track and Rank are required for prizes.');
+                    setSaving(false);
+                    return;
+                }
+                await api.put(`/prizes/${isEditing}`, payload);
+                toast.success('Prize updated successfully!');
+            } else {
+                await api.post('/prizes', { ...payload, hackathonEventId: Number(eventId) });
+                toast.success('Prize created successfully!');
+            }
+
             setForm({ name: '', description: '', rank: 1, trackId: '' });
             setShowForm(false);
+            setIsEditing(null);
             fetchData();
         } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || 'Failed to create prize.');
+            toast.error(err.response?.data?.error?.message || `Failed to ${isEditing ? 'update' : 'create'} prize.`);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleEditClick = (prize: Prize) => {
+        setForm({
+            name: prize.name,
+            description: prize.description || '',
+            rank: prize.rank || 1,
+            trackId: prize.trackId || ''
+        });
+        setIsEditing(prize.id);
+        setShowForm(true);
+    };
+
+    const handleDelete = async (prizeId: number) => {
+        if (!confirm('Are you sure you want to delete this prize?')) return;
+        try {
+            await api.delete(`/prizes/${prizeId}`);
+            toast.success('Prize deleted successfully!');
+            fetchData();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || 'Failed to delete prize.');
         }
     };
 
@@ -96,8 +156,6 @@ const PrizesTab: React.FC = () => {
         }
     };
 
-    const [autoAssigning, setAutoAssigning] = useState(false);
-
     const handleAutoAssign = async () => {
         if (!confirm('Auto-assign will evaluate all completed submissions and award prizes based on score rank. Continue?')) return;
         setAutoAssigning(true);
@@ -112,17 +170,26 @@ const PrizesTab: React.FC = () => {
         }
     };
 
-    if (loading) return (
-        <div className="flex justify-center py-10"><Loader2 className="animate-spin text-blue-500" size={28} /></div>
-    );
-
     return (
         <div>
-            <div className="flex items-center gap-2 mb-4">
-                <Trophy size={20} className="text-yellow-500" />
-                <h2 className="text-xl font-semibold text-gray-800">Prizes & Winners</h2>
-                
-                <div className="ml-auto flex gap-2">
+            <div className="flex flex-wrap items-center gap-4 mb-6">
+                <div className="flex items-center gap-2">
+                    <Trophy size={20} className="text-yellow-500" />
+                    <h2 className="text-xl font-semibold text-gray-800">Prizes & Winners</h2>
+                </div>
+
+                <div className="flex items-center gap-2 ml-auto">
+                    <select
+                        value={selectedTrackId}
+                        onChange={e => setSelectedTrackId(e.target.value ? Number(e.target.value) : '')}
+                        className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                    >
+                        <option value="">All Tracks</option>
+                        {tracks.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                    </select>
+
                     {prizes.length > 0 && (
                         <button
                             onClick={handleAutoAssign}
@@ -134,132 +201,207 @@ const PrizesTab: React.FC = () => {
                         </button>
                     )}
                     <button
-                        onClick={() => setShowForm(s => !s)}
+                        onClick={() => {
+                            setForm({ name: '', description: '', rank: 1, trackId: '' });
+                            setIsEditing(null);
+                            setShowForm(s => !s);
+                        }}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        <Plus size={14} />
-                        Add Prize
+                        {showForm && !isEditing ? <X size={14} /> : <Plus size={14} />}
+                        {showForm && !isEditing ? 'Close Form' : 'Add Prize'}
                     </button>
                 </div>
             </div>
 
             {showForm && (
-                <form onSubmit={handleCreate} className="mb-6 border border-yellow-200 bg-yellow-50 rounded-lg p-4 space-y-3">
-                    <h3 className="text-sm font-semibold text-yellow-800">New Prize</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <form onSubmit={handleCreateOrUpdate} className="mb-6 border border-yellow-200 bg-yellow-50 rounded-lg p-4 space-y-4">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-sm font-bold text-yellow-800 flex items-center gap-2">
+                            {isEditing ? <Edit2 size={16} /> : <Plus size={16} />}
+                            {isEditing ? 'Edit Prize' : 'Create New Prize'}
+                        </h3>
+                        {isEditing && (
+                            <button type="button" onClick={() => { setShowForm(false); setIsEditing(null); }} className="text-gray-400 hover:text-gray-600">
+                                <X size={18} />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Prize Name *</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Prize Name <span className="text-red-500">*</span></label>
                             <input
                                 value={form.name}
                                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                                 placeholder="e.g. 1st Place Grand Prize"
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Rank</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Track <span className="text-red-500">*</span></label>
+                            <select
+                                value={form.trackId}
+                                onChange={e => setForm(f => ({ ...f, trackId: e.target.value ? Number(e.target.value) : '' }))}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+                                required
+                            >
+                                <option value="" disabled>-- Select Track --</option>
+                                {tracks.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Rank <span className="text-red-500">*</span></label>
                             <input
                                 type="number" min="1"
-                                value={form.rank}
+                                value={form.rank || ''}
                                 onChange={e => setForm(f => ({ ...f, rank: Number(e.target.value) }))}
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
                             />
                         </div>
-                        <div className="md:col-span-2">
+                        <div className="md:col-span-3">
                             <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
                             <input
                                 value={form.description}
                                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                                 placeholder="e.g. $5,000 cash prize + mentorship package"
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
                             />
                         </div>
                     </div>
-                    <div className="flex gap-2 justify-end">
-                        <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-                        <button type="submit" disabled={saving} className="px-3 py-1.5 text-xs text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 disabled:opacity-50">
-                            {saving ? 'Saving...' : 'Create Prize'}
+                    <div className="flex gap-2 justify-end pt-2">
+                        <button type="button" onClick={() => { setShowForm(false); setIsEditing(null); }} className="px-4 py-2 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 shadow-sm transition-colors">Cancel</button>
+                        <button type="submit" disabled={saving} className="px-4 py-2 text-xs font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 shadow-sm disabled:opacity-50 transition-colors flex items-center gap-1.5">
+                            {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+                            {isEditing ? 'Save Changes' : 'Create Prize'}
                         </button>
                     </div>
                 </form>
             )}
 
-            {prizes.length === 0 ? (
-                <div className="text-center py-10 text-gray-400">
-                    <Gift className="mx-auto mb-2" size={36} />
-                    <p className="text-sm">No prizes configured yet.</p>
+            {loading ? (
+                <div className="flex justify-center py-12">
+                    <Loader2 className="animate-spin text-yellow-500" size={32} />
+                </div>
+            ) : prizes.length === 0 ? (
+                <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                    <Gift className="mx-auto mb-3 text-gray-400" size={48} />
+                    <h3 className="text-gray-900 font-semibold mb-1">No Prizes Found</h3>
+                    <p className="text-sm text-gray-500">Get started by creating a new prize for this event.</p>
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {prizes.map(prize => (
-                        <div key={prize.id} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                                <div className="flex-shrink-0">
-                                    <Trophy size={20} className={
-                                        prize.rank === 1 ? 'text-yellow-400' :
-                                        prize.rank === 2 ? 'text-gray-400' :
-                                        prize.rank === 3 ? 'text-amber-600' : 'text-gray-300'
-                                    } />
+                        <div key={prize.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full relative group">
+
+                            {(!prize.trackId || !prize.rank) && (
+                                <div className="absolute top-0 left-0 right-0 bg-red-100 text-red-700 text-xs text-center py-1 font-bold rounded-t-xl">
+                                    Warning: Missing Track or Rank! Please update or delete this prize.
                                 </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-semibold text-gray-900 text-sm">{prize.name}</p>
-                                        <span className="text-xs text-gray-400">Rank #{prize.rank}</span>
-                                    </div>
-                                    {prize.description && (
-                                        <p className="text-xs text-gray-500 mt-0.5">{prize.description}</p>
-                                    )}
-                                    {prize.winningTeamId ? (
-                                        <div className="flex items-center gap-1 mt-2">
-                                            <CheckCircle size={14} className="text-green-500" />
-                                            <span className="text-xs font-medium text-green-700">
-                                                Awarded to: {prize.winningTeamName || `Team #${prize.winningTeamId}`}
+                            )}
+
+                            <div className="absolute top-4 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                <button
+                                    onClick={() => handleEditClick(prize)}
+                                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                    title="Edit prize"
+                                >
+                                    <Edit2 size={16} />
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(prize.id)}
+                                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                    title="Delete prize"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+
+                            <div className={`flex items-start gap-4 mb-4 ${(!prize.trackId || !prize.rank) ? 'mt-4' : ''}`}>
+                                <div className={`p-3 rounded-full flex-shrink-0 ${prize.rank === 1 ? 'bg-yellow-100 text-yellow-600' :
+                                    prize.rank === 2 ? 'bg-gray-100 text-gray-500' :
+                                        prize.rank === 3 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
+                                    }`}>
+                                    <Trophy size={24} />
+                                </div>
+                                <div className="pr-12">
+                                    <h3 className="font-bold text-gray-900 line-clamp-2">{prize.name}</h3>
+                                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                            Rank #{prize.rank}
+                                        </span>
+                                        {prize.trackName && (
+                                            <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                                {prize.trackName}
                                             </span>
-                                        </div>
-                                    ) : (
-                                        <div className="mt-2">
-                                            {assigningPrizeId === prize.id ? (
-                                                <div className="flex items-center gap-2">
-                                                    <select
-                                                        value={assignTeamId}
-                                                        onChange={e => setAssignTeamId(Number(e.target.value))}
-                                                        className="text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-400"
-                                                    >
-                                                        <option value="">-- Select team --</option>
-                                                        {teams.map(t => (
-                                                            <option key={t.id} value={t.id}>{t.name}</option>
-                                                        ))}
-                                                    </select>
-                                                    <button
-                                                        onClick={() => handleAssign(prize.id)}
-                                                        className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                                                    >
-                                                        Confirm
-                                                    </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {prize.description && (
+                                <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-grow">{prize.description}</p>
+                            )}
+
+                            <div className="pt-4 border-t border-gray-100 mt-auto">
+                                {prize.winningTeamId ? (
+                                    <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg border border-green-100">
+                                        <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
+                                        <span className="text-sm font-semibold text-green-800 line-clamp-1">
+                                            Awarded: {prize.winningTeamName || `Team #${prize.winningTeamId}`}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        {assigningPrizeId === prize.id ? (
+                                            <div className="flex flex-col gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                                <label className="text-xs font-medium text-gray-700">Select Winner</label>
+                                                <select
+                                                    value={assignTeamId}
+                                                    onChange={e => setAssignTeamId(Number(e.target.value))}
+                                                    className="w-full text-sm px-2.5 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-yellow-500"
+                                                >
+                                                    <option value="">-- Select team --</option>
+                                                    {teams.map(t => (
+                                                        <option key={t.id} value={t.id}>{t.name}</option>
+                                                    ))}
+                                                </select>
+                                                <div className="flex justify-end gap-2 mt-1">
                                                     <button
                                                         onClick={() => { setAssigningPrizeId(null); setAssignTeamId(''); }}
-                                                        className="text-xs px-2 py-1 text-gray-500 hover:text-gray-700"
+                                                        className="text-xs px-3 py-1.5 text-gray-600 hover:bg-gray-200 rounded-md transition-colors"
                                                     >
                                                         Cancel
                                                     </button>
+                                                    <button
+                                                        onClick={() => handleAssign(prize.id)}
+                                                        className="text-xs px-3 py-1.5 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors shadow-sm"
+                                                    >
+                                                        Confirm
+                                                    </button>
                                                 </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => setAssigningPrizeId(prize.id)}
-                                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                                >
-                                                    + Assign to team
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => setAssigningPrizeId(prize.id)}
+                                                className="w-full py-2 flex items-center justify-center gap-1.5 text-sm font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-100"
+                                            >
+                                                <Gift size={16} />
+                                                Assign manually
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
                 </div>
             )}
+
+
         </div>
     );
 };
