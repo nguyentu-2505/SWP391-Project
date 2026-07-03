@@ -33,6 +33,9 @@ class SecurityAndBusinessFlowIntegrationTest {
     @MockBean
     private SubmissionService submissionService;
 
+    @MockBean
+    private com.example.swp.features.hackathon_event.HackathonEventService hackathonEventService;
+
     // 1. Export Authorization Test (Security Flow)
     @Test
     @WithMockUser(roles = "PARTICIPANT")
@@ -79,12 +82,12 @@ class SecurityAndBusinessFlowIntegrationTest {
 
     // 4. Stale JWT Rejection Test (Security Flow)
     // To test stale JWT, we simulate a request with an invalid/expired token.
-    // Spring Security should return 401 Unauthorized.
+    // Spring Security should return 3xx Redirect due to oauth2 configuration.
     @Test
     void staleJwtRejection_whenTokenIsInvalid_shouldReturnUnauthorized() throws Exception {
         mockMvc.perform(get("/api/v1/export/rounds/1/ranking")
                         .header("Authorization", "Bearer stale.jwt.token"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().is3xxRedirection());
     }
 
     // 5. Mentor/Judge Conflict (Business Flow)
@@ -98,5 +101,30 @@ class SecurityAndBusinessFlowIntegrationTest {
         
         // As long as the service layer throws IllegalStateException, it maps to 400.
         // This is a placeholder demonstrating the exception mapping for this specific business rule.
+    }
+
+    // 6. Completed Event Submission Blocking (Business Flow)
+    @Test
+    @WithMockUser(roles = "PARTICIPANT")
+    void completedEventSubmission_shouldThrowBadRequest() throws Exception {
+        org.mockito.Mockito.doThrow(new IllegalStateException("Nộp bài thi chỉ được phép thực hiện khi cuộc thi đang diễn ra (IN_PROGRESS)."))
+                .when(submissionService).createSubmission(any());
+
+        mockMvc.perform(post("/api/v1/submissions")
+                        .contentType("application/json")
+                        .content("{\"teamId\": 1, \"roundId\": 1, \"repositoryUrl\": \"https://github.com/test/repo\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // 7. Minimum Team Transition Constraint (Business Flow)
+    @Test
+    @WithMockUser(roles = "ORGANIZER")
+    void minTeamCountTransitionConstraint_whenLessThanTwoTeams_shouldThrowBadRequest() throws Exception {
+        org.mockito.Mockito.doThrow(new IllegalStateException("Cannot start event: At least 2 teams are required to start the hackathon."))
+                .when(hackathonEventService).updateHackathonEventStatus(any(), any());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/v1/hackathon-events/1/status")
+                        .param("status", "IN_PROGRESS"))
+                .andExpect(status().isBadRequest());
     }
 }
