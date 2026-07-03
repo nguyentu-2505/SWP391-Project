@@ -13,6 +13,9 @@ interface Prize {
     winningTeamName?: string;
     trackId?: number;
     trackName?: string;
+    cash?: number;
+    hasCup?: boolean;
+    hasCertificate?: boolean;
 }
 
 interface Team {
@@ -30,6 +33,9 @@ interface PrizeForm {
     description: string;
     rank: number;
     trackId: number | '';
+    cash: number | '';
+    hasCup: boolean;
+    hasCertificate: boolean;
 }
 
 const PrizesTab: React.FC = () => {
@@ -42,7 +48,7 @@ const PrizesTab: React.FC = () => {
     // Form states
     const [showForm, setShowForm] = useState(false);
     const [isEditing, setIsEditing] = useState<number | null>(null);
-    const [form, setForm] = useState<PrizeForm>({ name: '', description: '', rank: 1, trackId: '' });
+    const [form, setForm] = useState<PrizeForm>({ name: '', description: '', rank: 1, trackId: '', cash: '', hasCup: false, hasCertificate: false });
     const [saving, setSaving] = useState(false);
 
     // Assign states
@@ -94,7 +100,10 @@ const PrizesTab: React.FC = () => {
                 description: form.description,
                 rank: form.rank,
                 trackId: form.trackId ? Number(form.trackId) : null,
-                hackathonEventId: Number(eventId)
+                hackathonEventId: Number(eventId),
+                cash: form.cash !== '' ? Number(form.cash) : null,
+                hasCup: form.hasCup,
+                hasCertificate: form.hasCertificate
             };
 
             if (isEditing) {
@@ -110,7 +119,7 @@ const PrizesTab: React.FC = () => {
                 toast.success('Prize created successfully!');
             }
 
-            setForm({ name: '', description: '', rank: 1, trackId: '' });
+            setForm({ name: '', description: '', rank: 1, trackId: '', cash: '', hasCup: false, hasCertificate: false });
             setShowForm(false);
             setIsEditing(null);
             fetchData();
@@ -126,7 +135,10 @@ const PrizesTab: React.FC = () => {
             name: prize.name,
             description: prize.description || '',
             rank: prize.rank || 1,
-            trackId: prize.trackId || ''
+            trackId: prize.trackId || '',
+            cash: prize.cash !== undefined && prize.cash !== null ? prize.cash : '',
+            hasCup: !!prize.hasCup,
+            hasCertificate: !!prize.hasCertificate
         });
         setIsEditing(prize.id);
         setShowForm(true);
@@ -267,9 +279,39 @@ const PrizesTab: React.FC = () => {
                             <input
                                 value={form.description}
                                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                                placeholder="e.g. $5,000 cash prize + mentorship package"
+                                placeholder="e.g. 1st Place Grand Prize + mentorship package"
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
                             />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Cash Value (Tiền mặt)</label>
+                            <input
+                                type="number" min="0" step="0.01"
+                                value={form.cash}
+                                onChange={e => setForm(f => ({ ...f, cash: e.target.value !== '' ? Number(e.target.value) : '' }))}
+                                placeholder="e.g. 5000000"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+                            />
+                        </div>
+                        <div className="flex items-center gap-6 md:col-span-2 pt-5">
+                            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={form.hasCup}
+                                    onChange={e => setForm(f => ({ ...f, hasCup: e.target.checked }))}
+                                    className="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-400"
+                                />
+                                Has Cup (Có Cúp)
+                            </label>
+                            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={form.hasCertificate}
+                                    onChange={e => setForm(f => ({ ...f, hasCertificate: e.target.checked }))}
+                                    className="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-400"
+                                />
+                                Has Certificate (Có Giấy khen)
+                            </label>
                         </div>
                     </div>
                     <div className="flex gap-2 justify-end pt-2">
@@ -343,8 +385,27 @@ const PrizesTab: React.FC = () => {
                             </div>
 
                             {prize.description && (
-                                <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-grow">{prize.description}</p>
+                                <p className="text-sm text-gray-600 mb-3 line-clamp-3 flex-grow">{prize.description}</p>
                             )}
+
+                            {/* Reward badges */}
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                {prize.cash !== undefined && prize.cash !== null && (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm">
+                                        💵 {prize.cash.toLocaleString()} VNĐ
+                                    </span>
+                                )}
+                                {prize.hasCup && (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-yellow-50 text-yellow-700 border border-yellow-100 shadow-sm">
+                                        🏆 Cúp lưu niệm
+                                    </span>
+                                )}
+                                {prize.hasCertificate && (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100 shadow-sm">
+                                        📜 Giấy chứng nhận
+                                    </span>
+                                )}
+                            </div>
 
                             <div className="pt-4 border-t border-gray-100 mt-auto">
                                 {prize.winningTeamId ? (

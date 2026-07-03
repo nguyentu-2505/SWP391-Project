@@ -51,6 +51,9 @@ public class PrizeServiceImpl implements PrizeService {
                 .hackathonEvent(event)
                 .track(track)
                 .rank(request.getRank())
+                .cash(request.getCash())
+                .hasCup(request.getHasCup())
+                .hasCertificate(request.getHasCertificate())
                 .build();
 
         Prize savedPrize = prizeRepository.save(newPrize);
@@ -210,6 +213,9 @@ public class PrizeServiceImpl implements PrizeService {
         prize.setRank(request.getRank());
         prize.setHackathonEvent(event);
         prize.setTrack(track);
+        prize.setCash(request.getCash());
+        prize.setHasCup(request.getHasCup());
+        prize.setHasCertificate(request.getHasCertificate());
         
         Prize updatedPrize = prizeRepository.save(prize);
         auditLogService.logAction("UPDATE_PRIZE", "PRIZE", prizeId, null, "Updated prize " + updatedPrize.getName());
@@ -252,9 +258,13 @@ public class PrizeServiceImpl implements PrizeService {
                 .description(prize.getDescription())
                 .hackathonEventId(prize.getHackathonEvent().getId())
                 .trackId(prize.getTrack() != null ? prize.getTrack().getId() : null)
+                .trackName(prize.getTrack() != null ? prize.getTrack().getName() : null)
                 .winningTeamId(prize.getWinningTeam() != null ? prize.getWinningTeam().getId() : null)
                 .winningTeamName(prize.getWinningTeam() != null ? prize.getWinningTeam().getName() : null)
                 .rank(prize.getRank())
+                .cash(prize.getCash())
+                .hasCup(prize.getHasCup())
+                .hasCertificate(prize.getHasCertificate())
                 .build();
     }
 }

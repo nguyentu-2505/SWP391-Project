@@ -54,6 +54,10 @@ public class SubmissionServiceImpl implements SubmissionService {
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
         
+        if (team.getEvent().getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Nộp bài thi chỉ được phép thực hiện khi cuộc thi đang diễn ra (IN_PROGRESS).");
+        }
+        
         if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
             throw new IllegalStateException("Your team has been disqualified and cannot make submissions.");
         }

@@ -37,6 +37,7 @@ public class ScoreServiceImpl implements ScoreService {
     private final JudgeAssignmentRepository judgeAssignmentRepository;
     private final TeamRoundAdvancementRepository advancementRepository;
     private final AuditLogService auditLogService;
+    private final com.example.swp.features.round.RoundRepository roundRepository;
 
     @Override
     @Transactional
@@ -44,6 +45,12 @@ public class ScoreServiceImpl implements ScoreService {
         User judge = getCurrentUser();
         Submission submission = submissionRepository.findById(request.getSubmissionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Submission not found"));
+
+        com.example.swp.features.hackathon_event.HackathonStatus eventStatus = submission.getRound().getHackathonEvent().getStatus();
+        if (eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED || 
+            eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Không thể chấm điểm hoặc sửa điểm khi cuộc thi đã kết thúc hoặc bị hủy.");
+        }
 
         if (submission.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
             throw new IllegalStateException("Cannot score submissions from disqualified teams.");
@@ -144,6 +151,14 @@ public class ScoreServiceImpl implements ScoreService {
     @Override
     @Transactional
     public void finalizeScores(Long roundId) {
+        com.example.swp.features.round.Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
+        com.example.swp.features.hackathon_event.HackathonStatus eventStatus = round.getHackathonEvent().getStatus();
+        if (eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED || 
+            eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Không thể chốt điểm khi cuộc thi đã kết thúc hoặc bị hủy.");
+        }
+
         auditLogService.logAction("FINALIZE_SCORES", "Round", roundId, null, "All scores for round " + roundId + " finalized.");
         scoreRepository.finalizeScoresByRound(roundId);
         log.info("Scores finalized successfully for round: {}", roundId);
@@ -178,6 +193,12 @@ public class ScoreServiceImpl implements ScoreService {
 
         Score score = scoreRepository.findById(scoreId)
                 .orElseThrow(() -> new ResourceNotFoundException("Score not found"));
+
+        com.example.swp.features.hackathon_event.HackathonStatus eventStatus = score.getSubmission().getRound().getHackathonEvent().getStatus();
+        if (eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED || 
+            eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Không thể chấm điểm hoặc sửa điểm khi cuộc thi đã kết thúc hoặc bị hủy.");
+        }
 
         if (!score.getJudge().getId().equals(judge.getId())) {
             boolean isAdmin = judge.getRole() == com.example.swp.features.user.Role.ADMIN || judge.getRole() == com.example.swp.features.user.Role.ORGANIZER;

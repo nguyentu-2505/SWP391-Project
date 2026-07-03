@@ -15,10 +15,16 @@ public class CreatePrizeRequest {
     private Long trackId; // Optional
     @jakarta.validation.constraints.Min(value = 1, message = "Rank must be at least 1")
     private Integer rank; // Optional
+    private java.math.BigDecimal cash;
+    private Boolean hasCup;
+    private Boolean hasCertificate;
 
     public String getName() { return name; }
     public String getDescription() { return description; }
     public Long getHackathonEventId() { return hackathonEventId; }
     public Long getTrackId() { return trackId; }
     public Integer getRank() { return rank; }
+    public java.math.BigDecimal getCash() { return cash; }
+    public Boolean getHasCup() { return hasCup; }
+    public Boolean getHasCertificate() { return hasCertificate; }
 }

@@ -232,9 +232,37 @@ const EventDetailPage: React.FC = () => {
                                             <div key={p.id} className="p-4 rounded-xl border border-yellow-200 bg-amber-50/30 shadow-sm flex items-start gap-3">
                                                 <Trophy className="text-yellow-600 shrink-0 mt-0.5" size={20} />
                                                 <div>
-                                                    <h3 className="font-bold text-sm text-gray-900">{p.name}</h3>
-                                                    <p className="text-xs font-bold text-yellow-700 mt-0.5">Reward: {p.reward || 'Special Prize'}</p>
-                                                    <p className="text-xs text-gray-500 mt-1">{p.description || 'Awarded to top performers.'}</p>
+                                                    <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2 flex-wrap">
+                                                        {p.name}
+                                                        {p.trackName && (
+                                                            <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                                                {p.trackName}
+                                                            </span>
+                                                        )}
+                                                    </h3>
+                                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                                        {p.cash !== undefined && p.cash !== null && (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                                                💵 {p.cash.toLocaleString()} VNĐ
+                                                            </span>
+                                                        )}
+                                                        {p.hasCup && (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-yellow-50 text-yellow-700 border border-yellow-100">
+                                                                🏆 Cúp
+                                                            </span>
+                                                        )}
+                                                        {p.hasCertificate && (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                                                                📜 Giấy khen
+                                                            </span>
+                                                        )}
+                                                        {!p.cash && !p.hasCup && !p.hasCertificate && (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-50 text-slate-700 border border-slate-100">
+                                                                Special Prize
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 mt-1.5">{p.description || 'Awarded to top performers.'}</p>
                                                 </div>
                                             </div>
                                         ))}

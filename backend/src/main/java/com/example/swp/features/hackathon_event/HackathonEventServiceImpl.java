@@ -105,21 +105,6 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .build();
 
         HackathonEvent savedEvent = hackathonEventRepository.save(event);
-        // Auto-seed default criteria
-        List<Criterion> defaultCriteria = criterionRepository.findByHackathonEventIsNull();
-        if (!defaultCriteria.isEmpty()) {
-            List<Criterion> clonedCriteria = defaultCriteria.stream()
-                    .map(c -> Criterion.builder()
-                            .name(c.getName())
-                            .description(c.getDescription())
-                            .maxScore(c.getMaxScore())
-                            .weight(c.getWeight())
-                            .hackathonEvent(savedEvent)
-                            .build())
-                    .collect(Collectors.toList());
-            criterionRepository.saveAll(clonedCriteria);
-            log.info("Auto-seeded {} default criteria for new event id={}", clonedCriteria.size(), savedEvent.getId());
-        }
 
         auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent", savedEvent.getId(), null, "Created event: " + savedEvent.getName());
         log.info("Hackathon event created successfully: id={}, name={} by organizer={}", savedEvent.getId(), savedEvent.getName(), organizer.getUsername());
@@ -307,6 +292,13 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             int totalWeight = criteria.stream().mapToInt(com.example.swp.features.criterion.Criterion::getWeight).sum();
             if (totalWeight != 100) {
                 throw new IllegalStateException("Cannot publish event: Total criteria weight must be exactly 100% (currently " + totalWeight + "%).");
+            }
+        }
+
+        if (newStatus == HackathonStatus.IN_PROGRESS) {
+            long teamCount = teamRepository.findByEventId(event.getId()).size();
+            if (teamCount < 2) {
+                throw new IllegalStateException("Cannot start event: At least 2 teams are required to start the hackathon (currently " + teamCount + ").");
             }
         }
 
