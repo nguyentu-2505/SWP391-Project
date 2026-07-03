@@ -53,6 +53,12 @@ public class Prize {
     @Column(name = "has_certificate")
     private Boolean hasCertificate;
 
+    @Column(name = "cup")
+    private String cup;
+
+    @Column(name = "certificate")
+    private String certificate;
+
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getDescription() { return description; }
@@ -68,6 +74,10 @@ public class Prize {
     public void setHasCup(Boolean hasCup) { this.hasCup = hasCup; }
     public Boolean getHasCertificate() { return hasCertificate; }
     public void setHasCertificate(Boolean hasCertificate) { this.hasCertificate = hasCertificate; }
+    public String getCup() { return cup; }
+    public void setCup(String cup) { this.cup = cup; }
+    public String getCertificate() { return certificate; }
+    public void setCertificate(String certificate) { this.certificate = certificate; }
 
     public static PrizeBuilder builder() { return new PrizeBuilder(); }
     public static class PrizeBuilder {
@@ -81,6 +91,8 @@ public class Prize {
         private java.math.BigDecimal cash;
         private Boolean hasCup;
         private Boolean hasCertificate;
+        private String cup;
+        private String certificate;
 
         public PrizeBuilder id(Long id) { this.id = id; return this; }
         public PrizeBuilder name(String name) { this.name = name; return this; }
@@ -92,6 +104,8 @@ public class Prize {
         public PrizeBuilder cash(java.math.BigDecimal cash) { this.cash = cash; return this; }
         public PrizeBuilder hasCup(Boolean hasCup) { this.hasCup = hasCup; return this; }
         public PrizeBuilder hasCertificate(Boolean hasCertificate) { this.hasCertificate = hasCertificate; return this; }
+        public PrizeBuilder cup(String cup) { this.cup = cup; return this; }
+        public PrizeBuilder certificate(String certificate) { this.certificate = certificate; return this; }
 
         public Prize build() {
             Prize p = new Prize();
@@ -99,6 +113,7 @@ public class Prize {
             p.hackathonEvent = this.hackathonEvent; p.track = this.track;
             p.winningTeam = this.winningTeam; p.rank = this.rank;
             p.cash = this.cash; p.hasCup = this.hasCup; p.hasCertificate = this.hasCertificate;
+            p.cup = this.cup; p.certificate = this.certificate;
             return p;
         }
     }

@@ -54,6 +54,8 @@ public class PrizeServiceImpl implements PrizeService {
                 .cash(request.getCash())
                 .hasCup(request.getHasCup())
                 .hasCertificate(request.getHasCertificate())
+                .cup(request.getCup())
+                .certificate(request.getCertificate())
                 .build();
 
         Prize savedPrize = prizeRepository.save(newPrize);
@@ -216,6 +218,8 @@ public class PrizeServiceImpl implements PrizeService {
         prize.setCash(request.getCash());
         prize.setHasCup(request.getHasCup());
         prize.setHasCertificate(request.getHasCertificate());
+        prize.setCup(request.getCup());
+        prize.setCertificate(request.getCertificate());
         
         Prize updatedPrize = prizeRepository.save(prize);
         auditLogService.logAction("UPDATE_PRIZE", "PRIZE", prizeId, null, "Updated prize " + updatedPrize.getName());
@@ -265,6 +269,8 @@ public class PrizeServiceImpl implements PrizeService {
                 .cash(prize.getCash())
                 .hasCup(prize.getHasCup())
                 .hasCertificate(prize.getHasCertificate())
+                .cup(prize.getCup())
+                .certificate(prize.getCertificate())
                 .build();
     }
 }

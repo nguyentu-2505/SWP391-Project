@@ -240,29 +240,33 @@ const EventDetailPage: React.FC = () => {
                                                             </span>
                                                         )}
                                                     </h3>
-                                                    <div className="flex flex-wrap gap-1.5 mt-1">
-                                                        {p.cash !== undefined && p.cash !== null && (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                                                💵 {p.cash.toLocaleString()} VNĐ
-                                                            </span>
-                                                        )}
-                                                        {p.hasCup && (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-yellow-50 text-yellow-700 border border-yellow-100">
-                                                                🏆 Cup
-                                                            </span>
-                                                        )}
-                                                        {p.hasCertificate && (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                                                                📜 Certificate
-                                                            </span>
-                                                        )}
-                                                        {!p.cash && !p.hasCup && !p.hasCertificate && (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-50 text-slate-700 border border-slate-100">
-                                                                Special Prize
-                                                            </span>
-                                                        )}
-                                                    </div>
                                                     <p className="text-xs text-gray-500 mt-1.5">{p.description || 'Awarded to top performers.'}</p>
+                                                    <div className="mt-2 p-2.5 rounded-lg bg-amber-50/50 border border-amber-200/50 space-y-1">
+                                                        <span className="text-[9px] uppercase font-bold tracking-wider text-amber-800 block opacity-60">Rewards</span>
+                                                        <div className="flex flex-col gap-1">
+                                                            {p.cash !== undefined && p.cash !== null && (
+                                                                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
+                                                                    <span>💵</span>
+                                                                    <span>{p.cash.toLocaleString()} VNĐ</span>
+                                                                </div>
+                                                            )}
+                                                            {p.cup && (
+                                                                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                                                                    <span>🏆</span>
+                                                                    <span>{p.cup}</span>
+                                                                </div>
+                                                            )}
+                                                            {p.certificate && (
+                                                                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-900">
+                                                                    <span>📜</span>
+                                                                    <span>{p.certificate}</span>
+                                                                </div>
+                                                            )}
+                                                            {!p.cash && !p.cup && !p.certificate && (
+                                                                <span className="text-[10px] text-gray-500 italic">Special Prize</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}

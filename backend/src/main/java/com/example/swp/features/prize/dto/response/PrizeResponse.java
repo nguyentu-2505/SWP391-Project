@@ -20,6 +20,8 @@ public class PrizeResponse {
     private java.math.BigDecimal cash;
     private Boolean hasCup;
     private Boolean hasCertificate;
+    private String cup;
+    private String certificate;
 
     public static PrizeResponseBuilder builder() { return new PrizeResponseBuilder(); }
     public static class PrizeResponseBuilder {
@@ -35,6 +37,8 @@ public class PrizeResponse {
         private java.math.BigDecimal cash;
         private Boolean hasCup;
         private Boolean hasCertificate;
+        private String cup;
+        private String certificate;
 
         public PrizeResponseBuilder id(Long id) { this.id = id; return this; }
         public PrizeResponseBuilder name(String name) { this.name = name; return this; }
@@ -48,6 +52,8 @@ public class PrizeResponse {
         public PrizeResponseBuilder cash(java.math.BigDecimal cash) { this.cash = cash; return this; }
         public PrizeResponseBuilder hasCup(Boolean hasCup) { this.hasCup = hasCup; return this; }
         public PrizeResponseBuilder hasCertificate(Boolean hasCertificate) { this.hasCertificate = hasCertificate; return this; }
+        public PrizeResponseBuilder cup(String cup) { this.cup = cup; return this; }
+        public PrizeResponseBuilder certificate(String certificate) { this.certificate = certificate; return this; }
 
         public PrizeResponse build() {
             PrizeResponse p = new PrizeResponse();
@@ -55,6 +61,7 @@ public class PrizeResponse {
             p.hackathonEventId = this.hackathonEventId; p.trackId = this.trackId; p.trackName = this.trackName;
             p.winningTeamId = this.winningTeamId; p.winningTeamName = this.winningTeamName;
             p.rank = this.rank; p.cash = this.cash; p.hasCup = this.hasCup; p.hasCertificate = this.hasCertificate;
+            p.cup = this.cup; p.certificate = this.certificate;
             return p;
         }
     }

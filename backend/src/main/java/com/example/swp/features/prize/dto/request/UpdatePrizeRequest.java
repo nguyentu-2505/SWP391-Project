@@ -15,6 +15,8 @@ public class UpdatePrizeRequest {
     private java.math.BigDecimal cash;
     private Boolean hasCup;
     private Boolean hasCertificate;
+    private String cup;
+    private String certificate;
 
     public String getName() { return name; }
     public String getDescription() { return description; }
@@ -24,4 +26,6 @@ public class UpdatePrizeRequest {
     public java.math.BigDecimal getCash() { return cash; }
     public Boolean getHasCup() { return hasCup; }
     public Boolean getHasCertificate() { return hasCertificate; }
+    public String getCup() { return cup; }
+    public String getCertificate() { return certificate; }
 }
