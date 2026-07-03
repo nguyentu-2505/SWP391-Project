@@ -56,9 +56,21 @@ const exportRoundRanking = async (roundId: number) => {
     }
 };
 
+const exportMyScores = async () => {
+    try {
+        const response = await api.get('/scores/my-scores/export', { responseType: 'blob' });
+        downloadFile(response.data, 'my_scores.csv');
+        toast.success("Scores exported successfully");
+    } catch (error) {
+        console.error("Export failed:", error);
+        toast.error("Failed to export scores.");
+    }
+};
+
 export const ExportService = {
     exportTeamsCsv,
     exportParticipantsCsv,
     exportRoundScoring,
     exportRoundRanking,
+    exportMyScores,
 };

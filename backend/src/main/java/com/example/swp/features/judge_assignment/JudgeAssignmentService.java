@@ -52,31 +52,13 @@ public class JudgeAssignmentService {
                 throw new IllegalArgumentException("Track does not belong to the hackathon event of this round.");
             }
 
-            // Conflict of interest check
-            if (trackMentorRepository.existsByTrackIdAndMentorId(track.getId(), judge.getId())) {
-                throw new IllegalStateException(
-                    "Judge '" + judge.getUsername() + "' is currently assigned as mentor for this track " +
-                    "and cannot judge submissions in the same track (conflict of interest)."
-                );
-            }
+            // Mentor conflict check removed per user request
 
             if (assignmentRepository.existsByJudgeIdAndRoundIdAndTrackId(judge.getId(), round.getId(), track.getId())) {
                 throw new IllegalStateException("Judge is already assigned to this track in this round.");
             }
         } else {
-            // Conflict of interest check for all tracks in round
-            Long eventId = round.getHackathonEvent().getId();
-            List<com.example.swp.features.track.TrackMentor> mentorTracks = trackMentorRepository.findByMentorId(judge.getId());
-            boolean hasMentorConflictInEvent = mentorTracks.stream()
-                    .anyMatch(tm -> tm.getTrack().getHackathonEvent() != null && 
-                                    tm.getTrack().getHackathonEvent().getId().equals(eventId));
-            
-            if (hasMentorConflictInEvent) {
-                throw new IllegalStateException(
-                    "Judge '" + judge.getUsername() + "' is assigned as mentor for one or more tracks in this hackathon. " +
-                    "Cannot assign to judge all tracks in this round. Please assign specific tracks instead."
-                );
-            }
+            // Event-wide mentor conflict check removed per user request
 
             if (assignmentRepository.existsByJudgeIdAndRoundIdAndTrackIdIsNull(judge.getId(), round.getId())) {
                 throw new IllegalStateException("Judge is already assigned to all tracks in this round.");

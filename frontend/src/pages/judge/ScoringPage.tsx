@@ -68,11 +68,23 @@ const ScoringPage: React.FC = () => {
                 
                 setCriteria(critData);
                 
-                const initialScores = critData.map((c: Criterion) => ({
-                    criterionId: c.id,
-                    scoreValue: 0,
-                    comment: ''
-                }));
+                // Fetch existing scores
+                let existingScores: any[] = [];
+                try {
+                    const existingRes = await api.get(`/scores/my-scores/submission/${submissionId}`);
+                    existingScores = existingRes.data.data || [];
+                } catch (e) {
+                    console.error("Failed to load existing scores", e);
+                }
+
+                const initialScores = critData.map((c: Criterion) => {
+                    const existing = existingScores.find((s: any) => s.criterionId === c.id);
+                    return {
+                        criterionId: c.id,
+                        scoreValue: existing ? existing.scoreValue : 0,
+                        comment: existing && existing.comment ? existing.comment : ''
+                    };
+                });
                 setScores(initialScores);
                 
             } catch (err) {
@@ -94,7 +106,7 @@ const ScoringPage: React.FC = () => {
         setScores(prev => prev.map(s => s.criterionId === criterionId ? { ...s, comment } : s));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent, isFinalized: boolean) => {
         e.preventDefault();
         
         // Basic validation
@@ -108,9 +120,10 @@ const ScoringPage: React.FC = () => {
         try {
             await api.post('/scores', {
                 submissionId: Number(submissionId),
-                scores: scores
+                scores: scores,
+                isFinalized: isFinalized
             });
-            toast.success('Scores submitted successfully!');
+            toast.success(isFinalized ? 'Scores submitted successfully!' : 'Draft saved successfully!');
             navigate('/judge/dashboard');
         } catch (err: any) {
             toast.error(err.response?.data?.error?.message || 'Failed to submit scores.');
@@ -195,7 +208,7 @@ const ScoringPage: React.FC = () => {
                     <p className="text-amber-800 font-medium">No evaluation criteria found for this event.</p>
                 </div>
             ) : (
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={(e) => e.preventDefault()}>
                     <div className="space-y-6 mb-8">
                         {criteria.map((c, index) => {
                             const currentScore = scores.find(s => s.criterionId === c.id)?.scoreValue ?? 0;
@@ -279,10 +292,19 @@ const ScoringPage: React.FC = () => {
                         })}
                     </div>
                     
-                    <div className="sticky bottom-6 z-10 bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-200 flex justify-end">
+                    <div className="sticky bottom-6 z-10 bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-200 flex justify-end gap-3">
                         <button 
-                            type="submit" 
+                            type="button" 
                             disabled={submitting} 
+                            onClick={(e) => handleSubmit(e, false)}
+                            className="flex items-center justify-center py-3 px-6 text-gray-700 bg-white border border-gray-300 rounded-xl font-bold shadow-sm hover:bg-gray-50 hover:shadow disabled:opacity-50 transition-all w-full md:w-auto"
+                        >
+                            {submitting ? 'Saving...' : 'Save Draft'}
+                        </button>
+                        <button 
+                            type="button" 
+                            disabled={submitting}
+                            onClick={(e) => handleSubmit(e, true)}
                             className="flex items-center justify-center py-3 px-8 text-white bg-blue-600 rounded-xl font-bold shadow-sm hover:bg-blue-700 hover:shadow disabled:opacity-50 transition-all w-full md:w-auto"
                         >
                             {submitting ? (

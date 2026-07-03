@@ -46,6 +46,22 @@ public class ScoreController {
         List<ScoreResponse> responses = scoreService.getMyScoresForRound(roundId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
+
+    @GetMapping("/my-scores/submission/{submissionId}")
+    @PreAuthorize("hasAnyRole('JUDGE', 'GUEST_JUDGE')")
+    public ResponseEntity<ApiResponse<List<ScoreResponse>>> getMyScoresForSubmission(@PathVariable("submissionId") Long submissionId) {
+        List<ScoreResponse> responses = scoreService.getMyScoresForSubmission(submissionId);
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @GetMapping(value = "/my-scores/export", produces = "text/csv")
+    @PreAuthorize("hasAnyRole('JUDGE', 'GUEST_JUDGE')")
+    public ResponseEntity<byte[]> exportMyScores() {
+        byte[] csvData = scoreService.exportMyScoresCsv();
+        return ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"my_scores.csv\"")
+            .body(csvData);
+    }
     
     @PostMapping("/finalize/round/{roundId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")

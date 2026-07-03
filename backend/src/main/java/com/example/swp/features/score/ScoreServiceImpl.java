@@ -87,6 +87,7 @@ public class ScoreServiceImpl implements ScoreService {
             score.setScoreValue(sc.getScoreValue());
             score.setComment(sc.getComment());
             score.setScoredAt(LocalDateTime.now());
+            score.setFinalized(Boolean.TRUE.equals(request.getIsFinalized()));
             
             savedScores.add(scoreRepository.save(score));
         }
@@ -119,23 +120,30 @@ public class ScoreServiceImpl implements ScoreService {
             List<Criterion> criteria = criterionRepository.findByHackathonEventId(eventId);
             if (criteria.isEmpty()) continue;
 
-            boolean allScored = true;
+            boolean allScoredAndFinalized = true;
+            boolean hasAnyScore = false;
             for (Submission sub : submissions) {
                 if (sub.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
                     continue;
                 }
                 for (Criterion crit : criteria) {
-                    boolean hasScore = scoreRepository.findBySubmissionIdAndJudgeIdAndCriterionId(sub.getId(), judge.getId(), crit.getId()).isPresent();
-                    if (!hasScore) {
-                        allScored = false;
-                        break;
+                    var scoreOpt = scoreRepository.findBySubmissionIdAndJudgeIdAndCriterionId(sub.getId(), judge.getId(), crit.getId());
+                    if (scoreOpt.isEmpty()) {
+                        allScoredAndFinalized = false;
+                    } else {
+                        hasAnyScore = true;
+                        if (!scoreOpt.get().isFinalized()) {
+                            allScoredAndFinalized = false;
+                        }
                     }
                 }
-                if (!allScored) break;
             }
 
-            if (allScored) {
+            if (allScoredAndFinalized) {
                 assignment.setStatus(com.example.swp.features.judge_assignment.JudgeAssignmentStatus.COMPLETED);
+                judgeAssignmentRepository.save(assignment);
+            } else if (hasAnyScore) {
+                assignment.setStatus(com.example.swp.features.judge_assignment.JudgeAssignmentStatus.DRAFT);
                 judgeAssignmentRepository.save(assignment);
             }
         }
@@ -169,6 +177,48 @@ public class ScoreServiceImpl implements ScoreService {
         return scoreRepository.findByRoundIdAndJudgeId(roundId, judge.getId()).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ScoreResponse> getMyScoresForSubmission(Long submissionId) {
+        User judge = getCurrentUser();
+        return scoreRepository.findBySubmissionIdAndJudgeId(submissionId, judge.getId()).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public byte[] exportMyScoresCsv() {
+        User judge = getCurrentUser();
+        List<Score> scores = scoreRepository.findByJudgeId(judge.getId());
+
+        try (java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+            out.write(com.example.swp.common.CsvExportUtils.UTF8_BOM);
+            
+            StringBuilder csv = new StringBuilder();
+            csv.append("Team Name,Round Name,Criterion,Score,Max Score,Comment,Status,Scored At\n");
+
+            for (Score score : scores) {
+                String teamName = score.getSubmission().getTeam().getName();
+                String roundName = score.getSubmission().getRound().getName();
+                String critName = score.getCriterion().getName();
+                String comment = score.getComment() != null ? score.getComment() : "";
+
+                csv.append("\"").append(teamName.replace("\"", "\"\"")).append("\",");
+                csv.append("\"").append(roundName.replace("\"", "\"\"")).append("\",");
+                csv.append("\"").append(critName.replace("\"", "\"\"")).append("\",");
+                csv.append(score.getScoreValue()).append(",");
+                csv.append(score.getCriterion().getMaxScore()).append(",");
+                csv.append("\"").append(comment.replace("\"", "\"\"")).append("\",");
+                csv.append(score.isFinalized() ? "FINAL" : "DRAFT").append(",");
+                csv.append(score.getScoredAt()).append("\n");
+            }
+
+            out.write(csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return out.toByteArray();
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Failed to generate CSV", e);
+        }
     }
 
     @Override
