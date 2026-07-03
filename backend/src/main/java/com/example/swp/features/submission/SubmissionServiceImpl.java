@@ -55,7 +55,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
         
         if (team.getEvent().getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.IN_PROGRESS) {
-            throw new IllegalStateException("Nộp bài thi chỉ được phép thực hiện khi cuộc thi đang diễn ra (IN_PROGRESS).");
+            throw new IllegalStateException("Submitting projects is only allowed when the event is in progress (IN_PROGRESS).");
         }
         
         if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {

@@ -107,7 +107,7 @@ class SecurityAndBusinessFlowIntegrationTest {
     @Test
     @WithMockUser(roles = "PARTICIPANT")
     void completedEventSubmission_shouldThrowBadRequest() throws Exception {
-        org.mockito.Mockito.doThrow(new IllegalStateException("Nộp bài thi chỉ được phép thực hiện khi cuộc thi đang diễn ra (IN_PROGRESS)."))
+        org.mockito.Mockito.doThrow(new IllegalStateException("Submitting projects is only allowed when the event is in progress (IN_PROGRESS)."))
                 .when(submissionService).createSubmission(any());
 
         mockMvc.perform(post("/api/v1/submissions")

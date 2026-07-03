@@ -248,12 +248,12 @@ const EventDetailPage: React.FC = () => {
                                                         )}
                                                         {p.hasCup && (
                                                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-yellow-50 text-yellow-700 border border-yellow-100">
-                                                                🏆 Cúp
+                                                                🏆 Cup
                                                             </span>
                                                         )}
                                                         {p.hasCertificate && (
                                                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                                                                📜 Giấy khen
+                                                                📜 Certificate
                                                             </span>
                                                         )}
                                                         {!p.cash && !p.hasCup && !p.hasCertificate && (

@@ -284,7 +284,7 @@ const PrizesTab: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Cash Value (Tiền mặt)</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Cash Value (VNĐ)</label>
                             <input
                                 type="number" min="0" step="0.01"
                                 value={form.cash}
@@ -301,7 +301,7 @@ const PrizesTab: React.FC = () => {
                                     onChange={e => setForm(f => ({ ...f, hasCup: e.target.checked }))}
                                     className="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-400"
                                 />
-                                Has Cup (Có Cúp)
+                                Has Cup
                             </label>
                             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer select-none">
                                 <input
@@ -310,7 +310,7 @@ const PrizesTab: React.FC = () => {
                                     onChange={e => setForm(f => ({ ...f, hasCertificate: e.target.checked }))}
                                     className="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-400"
                                 />
-                                Has Certificate (Có Giấy khen)
+                                Has Certificate
                             </label>
                         </div>
                     </div>
@@ -397,12 +397,12 @@ const PrizesTab: React.FC = () => {
                                 )}
                                 {prize.hasCup && (
                                     <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-yellow-50 text-yellow-700 border border-yellow-100 shadow-sm">
-                                        🏆 Cúp lưu niệm
+                                        🏆 Memorial Cup
                                     </span>
                                 )}
                                 {prize.hasCertificate && (
                                     <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100 shadow-sm">
-                                        📜 Giấy chứng nhận
+                                        📜 Certificate
                                     </span>
                                 )}
                             </div>

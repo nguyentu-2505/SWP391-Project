@@ -49,7 +49,7 @@ public class ScoreServiceImpl implements ScoreService {
         com.example.swp.features.hackathon_event.HackathonStatus eventStatus = submission.getRound().getHackathonEvent().getStatus();
         if (eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED || 
             eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
-            throw new IllegalStateException("Không thể chấm điểm hoặc sửa điểm khi cuộc thi đã kết thúc hoặc bị hủy.");
+            throw new IllegalStateException("Cannot score or edit scores when the event is completed or cancelled.");
         }
 
         if (submission.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
@@ -156,7 +156,7 @@ public class ScoreServiceImpl implements ScoreService {
         com.example.swp.features.hackathon_event.HackathonStatus eventStatus = round.getHackathonEvent().getStatus();
         if (eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED || 
             eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
-            throw new IllegalStateException("Không thể chốt điểm khi cuộc thi đã kết thúc hoặc bị hủy.");
+            throw new IllegalStateException("Cannot finalize scores when the event is completed or cancelled.");
         }
 
         auditLogService.logAction("FINALIZE_SCORES", "Round", roundId, null, "All scores for round " + roundId + " finalized.");
@@ -197,7 +197,7 @@ public class ScoreServiceImpl implements ScoreService {
         com.example.swp.features.hackathon_event.HackathonStatus eventStatus = score.getSubmission().getRound().getHackathonEvent().getStatus();
         if (eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED || 
             eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
-            throw new IllegalStateException("Không thể chấm điểm hoặc sửa điểm khi cuộc thi đã kết thúc hoặc bị hủy.");
+            throw new IllegalStateException("Cannot score or edit scores when the event is completed or cancelled.");
         }
 
         if (!score.getJudge().getId().equals(judge.getId())) {
