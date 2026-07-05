@@ -217,6 +217,34 @@ public class PrizeServiceImpl implements PrizeService {
 
         validateUniqueRank(request.getHackathonEventId(), request.getTrackId(), request.getRank(), prizeId);
 
+        java.util.Map<String, Object> oldMap = new java.util.HashMap<>();
+        oldMap.put("name", prize.getName());
+        oldMap.put("description", prize.getDescription());
+        oldMap.put("rank", prize.getRank());
+        oldMap.put("cash", prize.getCash());
+        oldMap.put("currency", prize.getCurrency());
+        oldMap.put("cup", prize.getCup());
+        oldMap.put("certificate", prize.getCertificate());
+
+        java.util.Map<String, Object> newMap = new java.util.HashMap<>();
+        newMap.put("name", request.getName());
+        newMap.put("description", request.getDescription());
+        newMap.put("rank", request.getRank());
+        newMap.put("cash", request.getCash());
+        newMap.put("currency", request.getCurrency() != null ? request.getCurrency() : "VND");
+        newMap.put("cup", request.getCup());
+        newMap.put("certificate", request.getCertificate());
+
+        String oldValueJson = null;
+        String newValueJson = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            oldValueJson = mapper.writeValueAsString(oldMap);
+            newValueJson = mapper.writeValueAsString(newMap);
+        } catch (Exception e) {
+            // ignore
+        }
+
         prize.setName(request.getName());
         prize.setDescription(request.getDescription());
         prize.setRank(request.getRank());
@@ -230,7 +258,7 @@ public class PrizeServiceImpl implements PrizeService {
         prize.setCurrency(request.getCurrency() != null ? request.getCurrency() : "VND");
         
         Prize updatedPrize = prizeRepository.save(prize);
-        auditLogService.logAction("UPDATE_PRIZE", "PRIZE", prizeId, null, "Updated prize " + updatedPrize.getName(), updatedPrize.getHackathonEvent().getId());
+        auditLogService.logAction("UPDATE_PRIZE", "PRIZE", prizeId, oldValueJson, newValueJson, updatedPrize.getHackathonEvent().getId());
         return mapToResponse(updatedPrize);
     }
 

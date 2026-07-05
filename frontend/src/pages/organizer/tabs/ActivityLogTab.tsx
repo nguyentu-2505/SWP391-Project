@@ -48,9 +48,32 @@ const ActivityLogTab: React.FC = () => {
     };
 
     useEffect(() => {
-        if (eventId) {
-            fetchLogs(0, false);
-        }
+        if (!eventId) return;
+
+        fetchLogs(0, false);
+
+        const token = localStorage.getItem('accessToken');
+        const eventSource = new EventSource(`http://localhost:8080/api/v1/audit-logs/event/${eventId}/stream?token=${token}`);
+
+        eventSource.addEventListener('LOG_ADDED', (event: MessageEvent) => {
+            try {
+                const newLog = JSON.parse(event.data);
+                setLogs(prev => {
+                    if (prev.some(l => l.id === newLog.id)) return prev;
+                    return [newLog, ...prev];
+                });
+            } catch (e) {
+                console.error("Failed to parse realtime log:", e);
+            }
+        });
+
+        eventSource.onerror = (e) => {
+            console.error("SSE connection error:", e);
+        };
+
+        return () => {
+            eventSource.close();
+        };
     }, [eventId]);
 
     const handleLoadMore = () => {
@@ -75,6 +98,61 @@ const ActivityLogTab: React.FC = () => {
             </div>
         );
     }
+
+    const renderLogDetails = (log: AuditLog) => {
+        if (!log.oldValue || !log.newValue) {
+            return <span className="text-slate-700">{log.details}</span>;
+        }
+
+        try {
+            const oldObj = JSON.parse(log.oldValue);
+            const newObj = JSON.parse(log.newValue);
+
+            // Find modified fields
+            const diffs: { field: string; oldVal: any; newVal: any }[] = [];
+            Object.keys(newObj).forEach(key => {
+                const oldVal = oldObj[key];
+                const newVal = newObj[key];
+                if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+                    diffs.push({
+                        field: key.charAt(0).toUpperCase() + key.slice(1),
+                        oldVal: oldVal === null || oldVal === undefined ? 'None' : String(oldVal),
+                        newVal: newVal === null || newVal === undefined ? 'None' : String(newVal)
+                    });
+                }
+            });
+
+            if (diffs.length === 0) {
+                return <span className="text-slate-500 italic">No visible changes</span>;
+            }
+
+            return (
+                <div className="mt-1 space-y-1 bg-slate-50 border border-slate-200 rounded-lg p-2 max-w-lg shadow-sm">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Configuration Changes</div>
+                    <table className="min-w-full divide-y divide-slate-100 text-[11px]">
+                        <thead>
+                            <tr className="text-slate-400">
+                                <th className="text-left font-medium pb-1 w-1/4">Field</th>
+                                <th className="text-left font-medium pb-1 w-3/8 text-red-600 bg-red-50/50 px-1.5 rounded">Before</th>
+                                <th className="text-left font-medium pb-1 w-3/8 text-green-600 bg-green-50/50 px-1.5 rounded">After</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-mono">
+                            {diffs.map((d, index) => (
+                                <tr key={index} className="hover:bg-slate-100/50">
+                                    <td className="py-1 font-semibold text-slate-600 align-top">{d.field}</td>
+                                    <td className="py-1 text-red-600 bg-red-50/30 px-1.5 rounded break-all align-top line-through">{d.oldVal}</td>
+                                    <td className="py-1 text-green-600 bg-green-50/30 px-1.5 rounded break-all align-top font-semibold">{d.newVal}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        } catch (e) {
+            return <span className="text-slate-700">{log.details}</span>;
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -107,8 +185,8 @@ const ActivityLogTab: React.FC = () => {
                                                 {log.action}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-xs text-slate-700 max-w-md truncate" title={log.details}>
-                                            {log.details}
+                                        <td className="px-6 py-4 text-xs">
+                                            {renderLogDetails(log)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500">
                                             <div className="flex items-center gap-1.5">

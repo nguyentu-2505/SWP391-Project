@@ -40,4 +40,10 @@ public class AuditLogController {
                 eventId, org.springframework.data.domain.PageRequest.of(page, size));
         return ResponseEntity.ok(ApiResponse.success(responsePage));
     }
+
+    @GetMapping(value = "/event/{eventId}/stream", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter streamEventLogs(@PathVariable Long eventId) {
+        return auditLogService.subscribeToEventLogs(eventId);
+    }
 }

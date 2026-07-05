@@ -11,6 +11,7 @@ public interface AuditLogService {
     List<AuditLogResponse> getAuditLogsByUser(Long userId);
     org.springframework.data.domain.Page<AuditLogResponse> getAuditLogsByEvent(Long eventId, org.springframework.data.domain.Pageable pageable);
     void logAction(String action, String entityType, Long entityId, String oldValue, String newValue, Long eventId);
+    org.springframework.web.servlet.mvc.method.annotation.SseEmitter subscribeToEventLogs(Long eventId);
     
     default void logAction(String action, String entityType, Long entityId, String oldValue, String newValue) {
         logAction(action, entityType, entityId, oldValue, newValue, null);

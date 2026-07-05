@@ -101,6 +101,28 @@ public class CriterionServiceImpl implements CriterionService {
             }
         }
 
+        java.util.Map<String, Object> oldMap = new java.util.HashMap<>();
+        oldMap.put("name", criterion.getName());
+        oldMap.put("description", criterion.getDescription());
+        oldMap.put("weight", criterion.getWeight());
+        oldMap.put("maxScore", criterion.getMaxScore());
+
+        java.util.Map<String, Object> newMap = new java.util.HashMap<>();
+        newMap.put("name", request.getName());
+        newMap.put("description", request.getDescription());
+        newMap.put("weight", request.getWeight());
+        newMap.put("maxScore", request.getMaxScore() != null ? request.getMaxScore() : criterion.getMaxScore());
+
+        String oldValueJson = null;
+        String newValueJson = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            oldValueJson = mapper.writeValueAsString(oldMap);
+            newValueJson = mapper.writeValueAsString(newMap);
+        } catch (Exception e) {
+            // ignore
+        }
+
         criterion.setName(request.getName());
         criterion.setDescription(request.getDescription());
         criterion.setWeight(request.getWeight());
@@ -109,7 +131,7 @@ public class CriterionServiceImpl implements CriterionService {
         }
 
         Criterion updatedCriterion = criterionRepository.save(criterion);
-        auditLogService.logAction("UPDATE_CRITERION", "CRITERION", updatedCriterion.getId(), null, "Updated criterion " + updatedCriterion.getName(), criterion.getHackathonEvent() != null ? criterion.getHackathonEvent().getId() : null);
+        auditLogService.logAction("UPDATE_CRITERION", "CRITERION", updatedCriterion.getId(), oldValueJson, newValueJson, criterion.getHackathonEvent() != null ? criterion.getHackathonEvent().getId() : null);
         return mapToResponse(updatedCriterion);
     }
 

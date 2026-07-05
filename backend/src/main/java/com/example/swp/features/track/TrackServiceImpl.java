@@ -225,11 +225,29 @@ public class TrackServiceImpl implements TrackService {
             throw new com.example.swp.exception.BadRequestException("Bảng đấu với tên này đã tồn tại trong cuộc thi.");
         }
 
+        java.util.Map<String, Object> oldMap = new java.util.HashMap<>();
+        oldMap.put("name", track.getName());
+        oldMap.put("description", track.getDescription());
+
+        java.util.Map<String, Object> newMap = new java.util.HashMap<>();
+        newMap.put("name", request.getName());
+        newMap.put("description", request.getDescription());
+
+        String oldValueJson = null;
+        String newValueJson = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            oldValueJson = mapper.writeValueAsString(oldMap);
+            newValueJson = mapper.writeValueAsString(newMap);
+        } catch (Exception e) {
+            // ignore
+        }
+
         track.setName(request.getName());
         track.setDescription(request.getDescription());
 
         Track updatedTrack = trackRepository.save(track);
-        auditLogService.logAction("UPDATE_TRACK", "TRACK", updatedTrack.getId(), null, "Updated track " + updatedTrack.getName(), event.getId());
+        auditLogService.logAction("UPDATE_TRACK", "TRACK", updatedTrack.getId(), oldValueJson, newValueJson, event.getId());
         return mapToResponse(updatedTrack);
     }
 

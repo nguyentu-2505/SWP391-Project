@@ -167,6 +167,18 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                     "Cannot edit event in status: " + event.getStatus() + ". Only DRAFT and PUBLISHED events can be edited.");
         }
 
+        java.util.Map<String, Object> oldMap = new java.util.HashMap<>();
+        oldMap.put("name", event.getName());
+        oldMap.put("description", event.getDescription());
+        oldMap.put("startTime", event.getStartTime() != null ? event.getStartTime().toString() : null);
+        oldMap.put("endTime", event.getEndTime() != null ? event.getEndTime().toString() : null);
+        oldMap.put("registrationStart", event.getRegistrationStart() != null ? event.getRegistrationStart().toString() : null);
+        oldMap.put("registrationEnd", event.getRegistrationEnd() != null ? event.getRegistrationEnd().toString() : null);
+        oldMap.put("minTeamSize", event.getMinTeamSize());
+        oldMap.put("maxTeamSize", event.getMaxTeamSize());
+        oldMap.put("rules", event.getRules());
+        oldMap.put("imageUrl", event.getImageUrl());
+
         // Partial update — chỉ update field non-null
         if (request.getName() != null) {
             event.setName(request.getName());
@@ -226,9 +238,31 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             throw new IllegalArgumentException("Minimum team size cannot be greater than maximum team size.");
         }
 
+        java.util.Map<String, Object> newMap = new java.util.HashMap<>();
+        newMap.put("name", event.getName());
+        newMap.put("description", event.getDescription());
+        newMap.put("startTime", event.getStartTime() != null ? event.getStartTime().toString() : null);
+        newMap.put("endTime", event.getEndTime() != null ? event.getEndTime().toString() : null);
+        newMap.put("registrationStart", event.getRegistrationStart() != null ? event.getRegistrationStart().toString() : null);
+        newMap.put("registrationEnd", event.getRegistrationEnd() != null ? event.getRegistrationEnd().toString() : null);
+        newMap.put("minTeamSize", event.getMinTeamSize());
+        newMap.put("maxTeamSize", event.getMaxTeamSize());
+        newMap.put("rules", event.getRules());
+        newMap.put("imageUrl", event.getImageUrl());
+
+        String oldValueJson = null;
+        String newValueJson = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            oldValueJson = mapper.writeValueAsString(oldMap);
+            newValueJson = mapper.writeValueAsString(newMap);
+        } catch (Exception e) {
+            // ignore
+        }
+
         HackathonEvent updatedEvent = hackathonEventRepository.save(event);
         auditLogService.logAction("UPDATE_HACKATHON_EVENT", "HackathonEvent",
-                updatedEvent.getId(), null, "Updated event: " + updatedEvent.getName(), updatedEvent.getId());
+                updatedEvent.getId(), oldValueJson, newValueJson, updatedEvent.getId());
         log.info("Hackathon event updated: id={}, name='{}'", updatedEvent.getId(), updatedEvent.getName());
 
         return mapToResponse(updatedEvent);

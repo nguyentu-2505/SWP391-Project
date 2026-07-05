@@ -110,6 +110,30 @@ public class RoundServiceImpl implements RoundService {
             throw new com.example.swp.exception.BadRequestException("Vòng thi với tên này đã tồn tại trong cuộc thi.");
         }
 
+        java.util.Map<String, Object> oldMap = new java.util.HashMap<>();
+        oldMap.put("name", round.getName());
+        oldMap.put("description", round.getDescription());
+        oldMap.put("startTime", round.getStartTime() != null ? round.getStartTime().toString() : null);
+        oldMap.put("endTime", round.getEndTime() != null ? round.getEndTime().toString() : null);
+        oldMap.put("advancementSlots", round.getAdvancementSlots());
+
+        java.util.Map<String, Object> newMap = new java.util.HashMap<>();
+        newMap.put("name", request.getName());
+        newMap.put("description", request.getDescription());
+        newMap.put("startTime", request.getStartTime() != null ? request.getStartTime().toString() : null);
+        newMap.put("endTime", request.getEndTime() != null ? request.getEndTime().toString() : null);
+        newMap.put("advancementSlots", request.getAdvancementSlots() != null && request.getAdvancementSlots() > 0 ? request.getAdvancementSlots() : round.getAdvancementSlots());
+
+        String oldValueJson = null;
+        String newValueJson = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            oldValueJson = mapper.writeValueAsString(oldMap);
+            newValueJson = mapper.writeValueAsString(newMap);
+        } catch (Exception e) {
+            // ignore
+        }
+
         round.setName(request.getName());
         round.setDescription(request.getDescription());
         round.setStartTime(request.getStartTime());
@@ -119,7 +143,7 @@ public class RoundServiceImpl implements RoundService {
         }
 
         Round updatedRound = roundRepository.save(round);
-        auditLogService.logAction("UPDATE_ROUND", "ROUND", updatedRound.getId(), null, "Updated round " + updatedRound.getName(), hackathonEvent.getId());
+        auditLogService.logAction("UPDATE_ROUND", "ROUND", updatedRound.getId(), oldValueJson, newValueJson, hackathonEvent.getId());
         return mapToResponse(updatedRound);
     }
 
