@@ -6,6 +6,8 @@ import com.example.swp.features.criterion.dto.request.CreateCriterionRequest;
 import com.example.swp.features.criterion.dto.request.UpdateCriterionRequest;
 import com.example.swp.features.criterion.dto.response.CriterionResponse;
 import com.example.swp.features.score.ScoreRepository;
+import com.example.swp.exception.ResourceNotFoundException;
+import com.example.swp.features.audit_log.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,13 +22,19 @@ public class CriterionServiceImpl implements CriterionService {
     private final CriterionRepository criterionRepository;
     private final HackathonEventRepository hackathonEventRepository;
     private final ScoreRepository scoreRepository;
+    private final AuditLogService auditLogService;
 
     @Override
     public CriterionResponse createCriterion(CreateCriterionRequest request) {
         HackathonEvent hackathonEvent = null;
         if (request.getHackathonEventId() != null) {
             hackathonEvent = hackathonEventRepository.findById(request.getHackathonEventId())
-                    .orElseThrow(() -> new RuntimeException("Hackathon event not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found with id: " + request.getHackathonEventId()));
+
+            if (hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT 
+                    && hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
+                throw new IllegalStateException("Cannot create criterion: Configurations can only be added to events in DRAFT or PUBLISHED status.");
+            }
 
             // Ràng buộc tổng trọng số (weight) không vượt quá 100%
             List<Criterion> existing = criterionRepository.findByHackathonEventId(hackathonEvent.getId());
@@ -45,6 +53,7 @@ public class CriterionServiceImpl implements CriterionService {
                 .build();
 
         Criterion savedCriterion = criterionRepository.save(newCriterion);
+        auditLogService.logAction("CREATE_CRITERION", "CRITERION", savedCriterion.getId(), null, "Created criterion " + savedCriterion.getName(), hackathonEvent != null ? hackathonEvent.getId() : null);
         return mapToResponse(savedCriterion);
     }
 
@@ -100,6 +109,7 @@ public class CriterionServiceImpl implements CriterionService {
         }
 
         Criterion updatedCriterion = criterionRepository.save(criterion);
+        auditLogService.logAction("UPDATE_CRITERION", "CRITERION", updatedCriterion.getId(), null, "Updated criterion " + updatedCriterion.getName(), criterion.getHackathonEvent() != null ? criterion.getHackathonEvent().getId() : null);
         return mapToResponse(updatedCriterion);
     }
 
@@ -121,6 +131,7 @@ public class CriterionServiceImpl implements CriterionService {
         }
 
         criterionRepository.deleteById(id);
+        auditLogService.logAction("DELETE_CRITERION", "CRITERION", id, "Criterion name: " + criterion.getName(), null, eventId);
     }
 
     @Override

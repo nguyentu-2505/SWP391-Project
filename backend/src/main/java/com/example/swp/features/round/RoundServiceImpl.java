@@ -4,6 +4,7 @@ import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.hackathon_event.HackathonEventRepository;
 import com.example.swp.features.round.dto.request.CreateRoundRequest;
 import com.example.swp.features.round.dto.response.RoundResponse;
+import com.example.swp.features.audit_log.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,11 +18,17 @@ public class RoundServiceImpl implements RoundService {
 
     private final RoundRepository roundRepository;
     private final HackathonEventRepository hackathonEventRepository;
+    private final AuditLogService auditLogService;
 
     @Override
     public RoundResponse createRound(CreateRoundRequest request) {
         HackathonEvent hackathonEvent = hackathonEventRepository.findById(request.getHackathonEventId())
                 .orElseThrow(() -> new com.example.swp.exception.ResourceNotFoundException("Hackathon event not found"));
+
+        if (hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT 
+                && hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot create round: Configurations can only be added to events in DRAFT or PUBLISHED status.");
+        }
 
         validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, null, request.getAdvancementSlots());
 
@@ -44,6 +51,7 @@ public class RoundServiceImpl implements RoundService {
                 .build();
 
         Round savedRound = roundRepository.save(newRound);
+        auditLogService.logAction("CREATE_ROUND", "ROUND", savedRound.getId(), null, "Created round " + savedRound.getName(), hackathonEvent.getId());
         return mapToResponse(savedRound);
     }
 
@@ -68,6 +76,7 @@ public class RoundServiceImpl implements RoundService {
         }
 
         roundRepository.delete(round);
+        auditLogService.logAction("DELETE_ROUND", "ROUND", id, "Round name: " + round.getName(), null, event.getId());
 
         // Re-order remaining rounds
         List<Round> remaining = roundRepository.findByHackathonEventId(event.getId()).stream()
@@ -110,6 +119,7 @@ public class RoundServiceImpl implements RoundService {
         }
 
         Round updatedRound = roundRepository.save(round);
+        auditLogService.logAction("UPDATE_ROUND", "ROUND", updatedRound.getId(), null, "Updated round " + updatedRound.getName(), hackathonEvent.getId());
         return mapToResponse(updatedRound);
     }
 

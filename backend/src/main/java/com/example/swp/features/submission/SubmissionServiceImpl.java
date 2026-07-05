@@ -3,6 +3,8 @@ package com.example.swp.features.submission;
 import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.round.Round;
 import com.example.swp.features.round.RoundRepository;
+import com.example.swp.features.round.TeamRoundAdvancementRepository;
+import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.team.Team;
 import com.example.swp.features.team.TeamRepository;
 import com.example.swp.features.team_member.TeamMember;
@@ -41,6 +43,8 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
     private final JudgeAssignmentRepository judgeAssignmentRepository;
+    private final TeamRoundAdvancementRepository teamRoundAdvancementRepository;
+    private final AuditLogService auditLogService;
 
     @Override
     @Transactional
@@ -68,6 +72,13 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         Round round = roundRepository.findById(request.getRoundId())
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
+
+        if (round.getRoundOrder() > 1) {
+            boolean advanced = teamRoundAdvancementRepository.existsByTeamIdAndToRoundId(team.getId(), round.getId());
+            if (!advanced) {
+                throw new IllegalStateException("Your team did not advance to this round and cannot make submissions.");
+            }
+        }
 
         TeamMember teamMember = teamMemberRepository.findByTeamIdAndUserId(team.getId(), currentUser.getId())
                 .orElseThrow(() -> new AccessDeniedException("You are not a member of this team."));
@@ -112,6 +123,14 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
 
         Submission savedSubmission = submissionRepository.save(submission);
+        auditLogService.logAction(
+            "SUBMIT_PROJECT",
+            "SUBMISSION",
+            savedSubmission.getId(),
+            null,
+            "Team " + team.getName() + " submitted project for round " + round.getName() + " (v" + savedSubmission.getVersion() + ")",
+            round.getHackathonEvent().getId()
+        );
         log.info("Submission created/updated successfully: id={}, teamId={}, roundId={}", savedSubmission.getId(), team.getId(), round.getId());
         return mapToResponse(savedSubmission);
     }

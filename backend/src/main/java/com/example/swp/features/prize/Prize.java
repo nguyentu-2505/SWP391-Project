@@ -59,6 +59,9 @@ public class Prize {
     @Column(name = "certificate")
     private String certificate;
 
+    @Column(name = "currency", nullable = false)
+    private String currency;
+
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getDescription() { return description; }
@@ -78,6 +81,8 @@ public class Prize {
     public void setCup(String cup) { this.cup = cup; }
     public String getCertificate() { return certificate; }
     public void setCertificate(String certificate) { this.certificate = certificate; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
 
     public static PrizeBuilder builder() { return new PrizeBuilder(); }
     public static class PrizeBuilder {
@@ -93,6 +98,7 @@ public class Prize {
         private Boolean hasCertificate;
         private String cup;
         private String certificate;
+        private String currency;
 
         public PrizeBuilder id(Long id) { this.id = id; return this; }
         public PrizeBuilder name(String name) { this.name = name; return this; }
@@ -106,6 +112,7 @@ public class Prize {
         public PrizeBuilder hasCertificate(Boolean hasCertificate) { this.hasCertificate = hasCertificate; return this; }
         public PrizeBuilder cup(String cup) { this.cup = cup; return this; }
         public PrizeBuilder certificate(String certificate) { this.certificate = certificate; return this; }
+        public PrizeBuilder currency(String currency) { this.currency = currency; return this; }
 
         public Prize build() {
             Prize p = new Prize();
@@ -114,6 +121,7 @@ public class Prize {
             p.winningTeam = this.winningTeam; p.rank = this.rank;
             p.cash = this.cash; p.hasCup = this.hasCup; p.hasCertificate = this.hasCertificate;
             p.cup = this.cup; p.certificate = this.certificate;
+            p.currency = this.currency != null ? this.currency : "VND";
             return p;
         }
     }

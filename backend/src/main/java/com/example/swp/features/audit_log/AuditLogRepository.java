@@ -11,6 +11,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     List<AuditLog> findAllByOrderByCreatedAtDesc();
 
     @org.springframework.data.jpa.repository.Query("SELECT al FROM AuditLog al WHERE " +
+            "al.eventId = :eventId OR " +
             "(al.entityType = 'HACKATHON_EVENT' AND al.entityId = :eventId) OR " +
             "(al.entityType = 'ROUND' AND al.entityId IN (SELECT r.id FROM Round r WHERE r.hackathonEvent.id = :eventId)) OR " +
             "(al.entityType = 'TRACK' AND al.entityId IN (SELECT t.id FROM Track t WHERE t.hackathonEvent.id = :eventId)) OR " +

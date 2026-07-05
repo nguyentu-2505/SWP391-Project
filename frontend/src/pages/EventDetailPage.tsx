@@ -247,7 +247,11 @@ const EventDetailPage: React.FC = () => {
                                                             {p.cash !== undefined && p.cash !== null && (
                                                                 <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
                                                                     <span>💵</span>
-                                                                    <span>{p.cash.toLocaleString()} VNĐ</span>
+                                                                    <span>
+                                                                        {p.currency === 'USD' ? '$' : ''}
+                                                                        {p.cash.toLocaleString()}
+                                                                        {p.currency === 'USD' ? ' USD' : ' VNĐ'}
+                                                                    </span>
                                                                 </div>
                                                             )}
                                                             {p.cup && (

@@ -20,6 +20,7 @@ public class CreatePrizeRequest {
     private Boolean hasCertificate;
     private String cup;
     private String certificate;
+    private String currency;
 
     public String getName() { return name; }
     public String getDescription() { return description; }
@@ -31,4 +32,5 @@ public class CreatePrizeRequest {
     public Boolean getHasCertificate() { return hasCertificate; }
     public String getCup() { return cup; }
     public String getCertificate() { return certificate; }
+    public String getCurrency() { return currency; }
 }

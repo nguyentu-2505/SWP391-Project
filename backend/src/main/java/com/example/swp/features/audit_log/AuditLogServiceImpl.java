@@ -56,7 +56,8 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .collect(Collectors.toList());
     }
     
-    public void logAction(String action, String entityType, Long entityId, String oldValue, String newValue) {
+    @Override
+    public void logAction(String action, String entityType, Long entityId, String oldValue, String newValue, Long eventId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUsername(username).orElse(null); // Can be null for system actions
 
@@ -67,7 +68,12 @@ public class AuditLogServiceImpl implements AuditLogService {
         AuditLog auditLog = AuditLog.builder()
                 .user(currentUser)
                 .action(action)
+                .entityType(entityType)
+                .entityId(entityId)
+                .oldValue(oldValue)
+                .newValue(newValue)
                 .details(details)
+                .eventId(eventId)
                 .build();
         auditLogRepository.save(auditLog);
     }

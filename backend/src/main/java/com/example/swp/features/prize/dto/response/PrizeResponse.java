@@ -22,6 +22,9 @@ public class PrizeResponse {
     private Boolean hasCertificate;
     private String cup;
     private String certificate;
+    private String currency;
+
+    public String getCurrency() { return currency; }
 
     public static PrizeResponseBuilder builder() { return new PrizeResponseBuilder(); }
     public static class PrizeResponseBuilder {
@@ -39,6 +42,7 @@ public class PrizeResponse {
         private Boolean hasCertificate;
         private String cup;
         private String certificate;
+        private String currency;
 
         public PrizeResponseBuilder id(Long id) { this.id = id; return this; }
         public PrizeResponseBuilder name(String name) { this.name = name; return this; }
@@ -54,6 +58,7 @@ public class PrizeResponse {
         public PrizeResponseBuilder hasCertificate(Boolean hasCertificate) { this.hasCertificate = hasCertificate; return this; }
         public PrizeResponseBuilder cup(String cup) { this.cup = cup; return this; }
         public PrizeResponseBuilder certificate(String certificate) { this.certificate = certificate; return this; }
+        public PrizeResponseBuilder currency(String currency) { this.currency = currency; return this; }
 
         public PrizeResponse build() {
             PrizeResponse p = new PrizeResponse();
@@ -62,6 +67,7 @@ public class PrizeResponse {
             p.winningTeamId = this.winningTeamId; p.winningTeamName = this.winningTeamName;
             p.rank = this.rank; p.cash = this.cash; p.hasCup = this.hasCup; p.hasCertificate = this.hasCertificate;
             p.cup = this.cup; p.certificate = this.certificate;
+            p.currency = this.currency;
             return p;
         }
     }

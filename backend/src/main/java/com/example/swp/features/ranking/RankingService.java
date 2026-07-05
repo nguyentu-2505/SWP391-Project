@@ -77,6 +77,7 @@ public class RankingService {
                             .trackId(track != null ? track.getId() : null)
                             .trackName(track != null ? track.getName() : null)
                             .criterionBreakdown(breakdown)
+                            .submittedAt(submission.getSubmittedAt())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -88,7 +89,16 @@ public class RankingService {
         List<TeamRankingResponse> finalRankings = new java.util.ArrayList<>();
         
         for (List<TeamRankingResponse> trackRankings : groupedByTrack.values()) {
-            trackRankings.sort(Comparator.comparing(TeamRankingResponse::getFinalScore).reversed());
+            trackRankings.sort((r1, r2) -> {
+                int scoreComp = r2.getFinalScore().compareTo(r1.getFinalScore());
+                if (scoreComp != 0) {
+                    return scoreComp;
+                }
+                if (r1.getSubmittedAt() != null && r2.getSubmittedAt() != null) {
+                    return r1.getSubmittedAt().compareTo(r2.getSubmittedAt());
+                }
+                return r1.getTeamId().compareTo(r2.getTeamId());
+            });
             for (int i = 0; i < trackRankings.size(); i++) {
                 trackRankings.get(i).setRank(i + 1);
             }

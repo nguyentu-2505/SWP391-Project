@@ -37,6 +37,11 @@ public class PrizeServiceImpl implements PrizeService {
         HackathonEvent event = hackathonEventRepository.findById(request.getHackathonEventId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
 
+        if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT 
+                && event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot create prize: Configurations can only be added to events in DRAFT or PUBLISHED status.");
+        }
+
         Track track = null;
         if (request.getTrackId() != null) {
             track = trackRepository.findById(request.getTrackId())
@@ -56,10 +61,11 @@ public class PrizeServiceImpl implements PrizeService {
                 .hasCertificate(request.getHasCertificate())
                 .cup(request.getCup())
                 .certificate(request.getCertificate())
+                .currency(request.getCurrency() != null ? request.getCurrency() : "VND")
                 .build();
 
         Prize savedPrize = prizeRepository.save(newPrize);
-        auditLogService.logAction("CREATE_PRIZE", "PRIZE", savedPrize.getId(), null, "Created prize " + savedPrize.getName());
+        auditLogService.logAction("CREATE_PRIZE", "PRIZE", savedPrize.getId(), null, "Created prize " + savedPrize.getName(), savedPrize.getHackathonEvent().getId());
         return mapToResponse(savedPrize);
     }
 
@@ -98,11 +104,12 @@ public class PrizeServiceImpl implements PrizeService {
                 .collect(Collectors.toList());
         if (!duplicates.isEmpty()) {
             prizeRepository.deleteAll(duplicates);
-            auditLogService.logAction("DELETE_DUPLICATE_PRIZES", "PRIZE", prize.getId(), null, "Deleted " + duplicates.size() + " duplicate prizes upon manual assignment");
+            auditLogService.logAction("DELETE_DUPLICATE_PRIZES", "PRIZE", prize.getId(), null, "Deleted " + duplicates.size() + " duplicate prizes upon manual assignment", prize.getHackathonEvent().getId());
         }
 
         prize.setWinningTeam(team);
         Prize updatedPrize = prizeRepository.save(prize);
+        auditLogService.logAction("ASSIGN_PRIZE", "PRIZE", prizeId, null, "Assigned prize " + prize.getName() + " to team " + team.getName(), prize.getHackathonEvent().getId());
         return mapToResponse(updatedPrize);
     }
 
@@ -143,7 +150,7 @@ public class PrizeServiceImpl implements PrizeService {
             if (group.size() > 1) {
                 List<Prize> toDelete = group.subList(1, group.size());
                 prizeRepository.deleteAll(toDelete);
-                auditLogService.logAction("DELETE_DUPLICATE_PRIZES", "PRIZE", group.get(0).getId(), null, "Deleted " + toDelete.size() + " duplicate prizes during auto-assign");
+                auditLogService.logAction("DELETE_DUPLICATE_PRIZES", "PRIZE", group.get(0).getId(), null, "Deleted " + toDelete.size() + " duplicate prizes during auto-assign", hackathonEventId);
             }
         }
 
@@ -220,9 +227,10 @@ public class PrizeServiceImpl implements PrizeService {
         prize.setHasCertificate(request.getHasCertificate());
         prize.setCup(request.getCup());
         prize.setCertificate(request.getCertificate());
+        prize.setCurrency(request.getCurrency() != null ? request.getCurrency() : "VND");
         
         Prize updatedPrize = prizeRepository.save(prize);
-        auditLogService.logAction("UPDATE_PRIZE", "PRIZE", prizeId, null, "Updated prize " + updatedPrize.getName());
+        auditLogService.logAction("UPDATE_PRIZE", "PRIZE", prizeId, null, "Updated prize " + updatedPrize.getName(), updatedPrize.getHackathonEvent().getId());
         return mapToResponse(updatedPrize);
     }
 
@@ -231,7 +239,7 @@ public class PrizeServiceImpl implements PrizeService {
         Prize prize = prizeRepository.findById(prizeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prize not found"));
         prizeRepository.delete(prize);
-        auditLogService.logAction("DELETE_PRIZE", "PRIZE", prizeId, null, "Deleted prize " + prize.getName());
+        auditLogService.logAction("DELETE_PRIZE", "PRIZE", prizeId, null, "Deleted prize " + prize.getName(), prize.getHackathonEvent().getId());
     }
 
     @Override
@@ -271,6 +279,7 @@ public class PrizeServiceImpl implements PrizeService {
                 .hasCertificate(prize.getHasCertificate())
                 .cup(prize.getCup())
                 .certificate(prize.getCertificate())
+                .currency(prize.getCurrency())
                 .build();
     }
 }

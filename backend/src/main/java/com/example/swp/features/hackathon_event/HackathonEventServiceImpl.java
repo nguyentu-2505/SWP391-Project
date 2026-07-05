@@ -106,7 +106,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
 
         HackathonEvent savedEvent = hackathonEventRepository.save(event);
 
-        auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent", savedEvent.getId(), null, "Created event: " + savedEvent.getName());
+        auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent", savedEvent.getId(), null, "Created event: " + savedEvent.getName(), savedEvent.getId());
         log.info("Hackathon event created successfully: id={}, name={} by organizer={}", savedEvent.getId(), savedEvent.getName(), organizer.getUsername());
         return mapToResponse(savedEvent);
     }
@@ -228,7 +228,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
 
         HackathonEvent updatedEvent = hackathonEventRepository.save(event);
         auditLogService.logAction("UPDATE_HACKATHON_EVENT", "HackathonEvent",
-                updatedEvent.getId(), null, "Updated event: " + updatedEvent.getName());
+                updatedEvent.getId(), null, "Updated event: " + updatedEvent.getName(), updatedEvent.getId());
         log.info("Hackathon event updated: id={}, name='{}'", updatedEvent.getId(), updatedEvent.getName());
 
         return mapToResponse(updatedEvent);
@@ -363,7 +363,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
 
         auditLogService.logAction("UPDATE_HACKATHON_EVENT_STATUS", "HackathonEvent",
-                updatedEvent.getId(), "status: " + currentStatus.name(), "status: " + newStatus.name());
+                updatedEvent.getId(), "status: " + currentStatus.name(), "status: " + newStatus.name(), updatedEvent.getId());
         log.info("Hackathon event status changed: id={}, {} → {}", id, currentStatus, newStatus);
 
         return mapToResponse(updatedEvent);
@@ -395,7 +395,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         hackathonEventRepository.save(event);
 
         auditLogService.logAction("DELETE_HACKATHON_EVENT", "HackathonEvent",
-                event.getId(), "isDeleted: false", "isDeleted: true");
+                event.getId(), "isDeleted: false", "isDeleted: true", event.getId());
         log.info("Hackathon event soft-deleted: id={}, name='{}'", event.getId(), event.getName());
     }
 
@@ -553,7 +553,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             prizeRepository.save(cp);
         }
 
-        auditLogService.logAction("CLONE_EVENT", "HACKATHON_EVENT", savedEvent.getId(), savedEvent.getName(), "Cloned from event ID: " + original.getId());
+        auditLogService.logAction("CLONE_EVENT", "HACKATHON_EVENT", savedEvent.getId(), savedEvent.getName(), "Cloned from event ID: " + original.getId(), savedEvent.getId());
 
         return mapToResponse(savedEvent);
     }

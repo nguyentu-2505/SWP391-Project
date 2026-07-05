@@ -104,6 +104,10 @@ public class ScoreServiceImpl implements ScoreService {
             log.error("Failed to update judge assignment status: {}", e.getMessage());
         }
 
+        if (!savedScores.isEmpty()) {
+            auditLogService.logAction("SAVE_SCORES", "SCORE", submission.getId(), null, "Scores saved by judge " + judge.getUsername() + " for submission " + submission.getId(), submission.getRound().getHackathonEvent().getId());
+        }
+
         return savedScores.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
@@ -159,7 +163,7 @@ public class ScoreServiceImpl implements ScoreService {
             throw new IllegalStateException("Cannot finalize scores when the event is completed or cancelled.");
         }
 
-        auditLogService.logAction("FINALIZE_SCORES", "Round", roundId, null, "All scores for round " + roundId + " finalized.");
+        auditLogService.logAction("FINALIZE_SCORES", "Round", roundId, null, "All scores for round " + roundId + " finalized.", round.getHackathonEvent().getId());
         scoreRepository.finalizeScoresByRound(roundId);
         log.info("Scores finalized successfully for round: {}", roundId);
     }
@@ -228,7 +232,7 @@ public class ScoreServiceImpl implements ScoreService {
         score.setScoredAt(LocalDateTime.now());
         Score updatedScore = scoreRepository.save(score);
 
-        auditLogService.logAction("UPDATE_SCORE", "SCORE", score.getId(), null, "Score updated by " + judge.getUsername());
+        auditLogService.logAction("UPDATE_SCORE", "SCORE", score.getId(), null, "Score updated by " + judge.getUsername(), score.getSubmission().getRound().getHackathonEvent().getId());
 
         return mapToResponse(updatedScore);
     }

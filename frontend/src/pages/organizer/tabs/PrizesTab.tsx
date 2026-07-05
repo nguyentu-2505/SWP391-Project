@@ -16,6 +16,7 @@ interface Prize {
     cash?: number;
     cup?: string;
     certificate?: string;
+    currency?: string;
 }
 
 interface Team {
@@ -36,6 +37,7 @@ interface PrizeForm {
     cash: number | '';
     cup: string;
     certificate: string;
+    currency: string;
 }
 
 const PrizesTab: React.FC = () => {
@@ -48,7 +50,7 @@ const PrizesTab: React.FC = () => {
     // Form states
     const [showForm, setShowForm] = useState(false);
     const [isEditing, setIsEditing] = useState<number | null>(null);
-    const [form, setForm] = useState<PrizeForm>({ name: '', description: '', rank: 1, trackId: '', cash: '', cup: '', certificate: '' });
+    const [form, setForm] = useState<PrizeForm>({ name: '', description: '', rank: 1, trackId: '', cash: '', cup: '', certificate: '', currency: 'VND' });
     const [saving, setSaving] = useState(false);
 
     // Assign states
@@ -103,7 +105,8 @@ const PrizesTab: React.FC = () => {
                 hackathonEventId: Number(eventId),
                 cash: form.cash !== '' ? Number(form.cash) : null,
                 cup: form.cup.trim() || null,
-                certificate: form.certificate.trim() || null
+                certificate: form.certificate.trim() || null,
+                currency: form.currency
             };
 
             if (isEditing) {
@@ -119,7 +122,7 @@ const PrizesTab: React.FC = () => {
                 toast.success('Prize created successfully!');
             }
 
-            setForm({ name: '', description: '', rank: 1, trackId: '', cash: '', cup: '', certificate: '' });
+            setForm({ name: '', description: '', rank: 1, trackId: '', cash: '', cup: '', certificate: '', currency: 'VND' });
             setShowForm(false);
             setIsEditing(null);
             fetchData();
@@ -138,7 +141,8 @@ const PrizesTab: React.FC = () => {
             trackId: prize.trackId || '',
             cash: prize.cash !== undefined && prize.cash !== null ? prize.cash : '',
             cup: prize.cup || '',
-            certificate: prize.certificate || ''
+            certificate: prize.certificate || '',
+            currency: prize.currency || 'VND'
         });
         setIsEditing(prize.id);
         setShowForm(true);
@@ -283,15 +287,35 @@ const PrizesTab: React.FC = () => {
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
                             />
                         </div>
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Cash Value (VNĐ)</label>
-                            <input
-                                type="number" min="0" step="0.01"
-                                value={form.cash}
-                                onChange={e => setForm(f => ({ ...f, cash: e.target.value !== '' ? Number(e.target.value) : '' }))}
-                                placeholder="e.g. 5000000"
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
-                            />
+                        <div className="md:col-span-1">
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="col-span-2">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Cash Value</label>
+                                    <input
+                                        type="number" min="0" step="0.01"
+                                        value={form.cash}
+                                        onChange={e => setForm(f => ({ ...f, cash: e.target.value !== '' ? Number(e.target.value) : '' }))}
+                                        placeholder="e.g. 5000000"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Currency</label>
+                                    <select
+                                        value={form.currency}
+                                        onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+                                    >
+                                        <option value="VND">VNĐ</option>
+                                        <option value="USD">USD ($)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            {form.cash !== '' && (
+                                <div className="text-[10px] text-emerald-700 font-semibold italic mt-1">
+                                    Preview: {form.currency === 'USD' ? '$' : ''}{Number(form.cash).toLocaleString()} {form.currency === 'USD' ? 'USD' : 'VNĐ'}
+                                </div>
+                            )}
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">Cup (e.g. Gold Cup)</label>
@@ -393,7 +417,11 @@ const PrizesTab: React.FC = () => {
                                     {prize.cash !== undefined && prize.cash !== null && (
                                         <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
                                             <span>💵</span>
-                                            <span>{prize.cash.toLocaleString()} VNĐ</span>
+                                            <span>
+                                                {prize.currency === 'USD' ? '$' : ''}
+                                                {prize.cash.toLocaleString()}
+                                                {prize.currency === 'USD' ? ' USD' : ' VNĐ'}
+                                            </span>
                                         </div>
                                     )}
                                     {prize.cup && (

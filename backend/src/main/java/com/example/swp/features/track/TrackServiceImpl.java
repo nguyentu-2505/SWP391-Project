@@ -35,7 +35,12 @@ public class TrackServiceImpl implements TrackService {
     @Override
     public TrackResponse createTrack(CreateTrackRequest request) {
         HackathonEvent hackathonEvent = hackathonEventRepository.findById(request.getHackathonEventId())
-                .orElseThrow(() -> new RuntimeException("Hackathon event not found")); // Replace with custom exception
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found with id: " + request.getHackathonEventId()));
+
+        if (hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT 
+                && hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot create track: Configurations can only be added to events in DRAFT or PUBLISHED status.");
+        }
 
         boolean nameExists = trackRepository.findByHackathonEventId(hackathonEvent.getId()).stream()
                 .anyMatch(t -> t.getName().equalsIgnoreCase(request.getName().trim()));
@@ -50,6 +55,7 @@ public class TrackServiceImpl implements TrackService {
                 .build();
 
         Track savedTrack = trackRepository.save(newTrack);
+        auditLogService.logAction("CREATE_TRACK", "TRACK", savedTrack.getId(), null, "Created track " + savedTrack.getName(), hackathonEvent.getId());
         return mapToResponse(savedTrack);
     }
 
@@ -117,7 +123,8 @@ public class TrackServiceImpl implements TrackService {
             "TRACK",
             trackId,
             null,
-            "Assigned mentor " + mentor.getUsername()
+            "Assigned mentor " + mentor.getUsername(),
+            track.getHackathonEvent().getId()
         );
 
         return mapToMentorResponse(saved);
@@ -140,7 +147,8 @@ public class TrackServiceImpl implements TrackService {
             "TRACK",
             trackId,
             "Mentor " + assignment.getMentor().getUsername(),
-            null
+            null,
+            assignment.getEvent().getId()
         );
     }
 
@@ -185,7 +193,7 @@ public class TrackServiceImpl implements TrackService {
         trackMentorRepository.deleteByTrackId(id);
         trackRepository.delete(track);
 
-        auditLogService.logAction("DELETE_TRACK", "Track", id, "Track name: " + track.getName(), null);
+        auditLogService.logAction("DELETE_TRACK", "Track", id, "Track name: " + track.getName(), null, event.getId());
     }
 
     @Override
@@ -221,6 +229,7 @@ public class TrackServiceImpl implements TrackService {
         track.setDescription(request.getDescription());
 
         Track updatedTrack = trackRepository.save(track);
+        auditLogService.logAction("UPDATE_TRACK", "TRACK", updatedTrack.getId(), null, "Updated track " + updatedTrack.getName(), event.getId());
         return mapToResponse(updatedTrack);
     }
 

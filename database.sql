@@ -295,6 +295,7 @@ CREATE TABLE audit_log (
     entity_id   BIGINT,
     old_value   NVARCHAR(MAX),
     new_value   NVARCHAR(MAX),
+    event_id    BIGINT,
     FOREIGN KEY (user_id) REFERENCES _user(id)
 );
 GO
