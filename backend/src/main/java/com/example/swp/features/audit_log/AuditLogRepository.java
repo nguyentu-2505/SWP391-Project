@@ -19,5 +19,5 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
             "(al.entityType = 'PRIZE' AND al.entityId IN (SELECT p.id FROM Prize p WHERE p.hackathonEvent.id = :eventId)) OR " +
             "(al.entityType = 'JUDGE_ASSIGNMENT' AND al.entityId IN (SELECT ja.id FROM JudgeAssignment ja WHERE ja.round.hackathonEvent.id = :eventId)) " +
             "ORDER BY al.createdAt DESC")
-    List<AuditLog> findByEventIdOrderByCreatedAtDesc(@org.springframework.data.repository.query.Param("eventId") Long eventId);
+    org.springframework.data.domain.Page<AuditLog> findByEventIdOrderByCreatedAtDesc(@org.springframework.data.repository.query.Param("eventId") Long eventId, org.springframework.data.domain.Pageable pageable);
 }

@@ -19,6 +19,7 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
     private final UserRepository userRepository;
+    private final com.example.swp.features.hackathon_event.HackathonEventRepository hackathonEventRepository;
 
     @Override
     public AuditLogResponse createAuditLog(CreateAuditLogRequest request) {
@@ -50,10 +51,22 @@ public class AuditLogServiceImpl implements AuditLogService {
     }
 
     @Override
-    public List<AuditLogResponse> getAuditLogsByEvent(Long eventId) {
-        return auditLogRepository.findByEventIdOrderByCreatedAtDesc(eventId).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public org.springframework.data.domain.Page<AuditLogResponse> getAuditLogsByEvent(Long eventId, org.springframework.data.domain.Pageable pageable) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+
+        com.example.swp.features.hackathon_event.HackathonEvent event = hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
+
+        if (currentUser.getRole() != com.example.swp.features.user.Role.ADMIN) {
+            if (event.getOrganizer() == null || !event.getOrganizer().getId().equals(currentUser.getId())) {
+                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to view the audit logs for this event.");
+            }
+        }
+
+        return auditLogRepository.findByEventIdOrderByCreatedAtDesc(eventId, pageable)
+                .map(this::mapToResponse);
     }
     
     @Override

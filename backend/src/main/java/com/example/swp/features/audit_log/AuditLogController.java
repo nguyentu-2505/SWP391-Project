@@ -32,8 +32,12 @@ public class AuditLogController {
 
     @GetMapping("/event/{eventId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<ApiResponse<List<AuditLogResponse>>> getAuditLogsByEvent(@PathVariable Long eventId) {
-        List<AuditLogResponse> responses = auditLogService.getAuditLogsByEvent(eventId);
-        return ResponseEntity.ok(ApiResponse.success(responses));
+    public ResponseEntity<ApiResponse<List<AuditLogResponse>>> getAuditLogsByEvent(
+            @PathVariable Long eventId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        org.springframework.data.domain.Page<AuditLogResponse> responsePage = auditLogService.getAuditLogsByEvent(
+                eventId, org.springframework.data.domain.PageRequest.of(page, size));
+        return ResponseEntity.ok(ApiResponse.success(responsePage));
     }
 }

@@ -9,7 +9,7 @@ public interface AuditLogService {
     AuditLogResponse createAuditLog(CreateAuditLogRequest request);
     List<AuditLogResponse> getAllAuditLogs();
     List<AuditLogResponse> getAuditLogsByUser(Long userId);
-    List<AuditLogResponse> getAuditLogsByEvent(Long eventId);
+    org.springframework.data.domain.Page<AuditLogResponse> getAuditLogsByEvent(Long eventId, org.springframework.data.domain.Pageable pageable);
     void logAction(String action, String entityType, Long entityId, String oldValue, String newValue, Long eventId);
     
     default void logAction(String action, String entityType, Long entityId, String oldValue, String newValue) {
