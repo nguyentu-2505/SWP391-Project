@@ -324,7 +324,7 @@ const RoundsTab: React.FC = () => {
                                     </div>
                                     {idx < rounds.length - 1 ? (
                                         <span className="px-2 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-full">
-                                            Advancement: {round.advancementSlots || 2} teams
+                                            Advancement: {round.advancementSlots || 2} teams (per Track)
                                         </span>
                                     ) : (
                                         <span className="px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 rounded-full">

@@ -209,7 +209,17 @@ const EventDetailPage: React.FC = () => {
                                                         <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded text-[9px] font-bold">Ended Early</span>
                                                     )}
                                                 </h3>
-                                                <p className="text-xs text-gray-500 mt-1">
+                                                {tracks.length > 0 && (
+                                                    <div className="flex flex-wrap items-center gap-1 mt-1">
+                                                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Tracks:</span>
+                                                        {tracks.map(t => (
+                                                            <span key={t.id} className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                                                {t.name}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <p className="text-xs text-gray-500 mt-1.5">
                                                     Submission Period: {new Date(r.startTime).toLocaleString()} - {new Date(r.endTime).toLocaleString()}
                                                 </p>
                                                 {r.gradingEndTime && (
@@ -219,7 +229,7 @@ const EventDetailPage: React.FC = () => {
                                                 )}
                                                 {index < rounds.length - 1 ? (
                                                      <p className="text-xs text-blue-700 font-semibold mt-1">
-                                                         Advancement Slots: {r.advancementSlots ? `${r.advancementSlots} teams` : 'Unlimited'}
+                                                         Advancement Slots: {r.advancementSlots ? `${r.advancementSlots} teams` : 'Unlimited'} (per Track)
                                                      </p>
                                                  ) : (
                                                      <p className="text-xs text-green-700 font-bold mt-1">
