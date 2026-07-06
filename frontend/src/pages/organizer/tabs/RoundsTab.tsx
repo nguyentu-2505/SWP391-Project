@@ -22,10 +22,11 @@ interface RoundForm {
     description: string;
     startTime: string;
     endTime: string;
+    gradingEndTime: string;
     advancementSlots: number;
 }
 
-const emptyForm: RoundForm = { name: '', description: '', startTime: '', endTime: '', advancementSlots: 2 };
+const emptyForm: RoundForm = { name: '', description: '', startTime: '', endTime: '', gradingEndTime: '', advancementSlots: 2 };
 
 const RoundsTab: React.FC = () => {
     const { eventId } = useParams<{ eventId: string }>();
@@ -76,8 +77,9 @@ const RoundsTab: React.FC = () => {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.name.trim()) { toast.error('Round name cannot be empty.'); return; }
-        if (!form.startTime || !form.endTime) { toast.error('Start and end times are required.'); return; }
+        if (!form.startTime || !form.endTime || !form.gradingEndTime) { toast.error('Start, end, and grading end times are required.'); return; }
         if (form.startTime >= form.endTime) { toast.error('End time must be after start time.'); return; }
+        if (form.gradingEndTime <= form.endTime) { toast.error('Grading end time must be after round end time.'); return; }
 
         setSaving(true);
         try {
@@ -120,12 +122,16 @@ const RoundsTab: React.FC = () => {
             toast.error('Round name is required.');
             return;
         }
-        if (!editingRound.startTime || !editingRound.endTime) {
-            toast.error('Start and end times are required.');
+        if (!editingRound.startTime || !editingRound.endTime || !editingRound.gradingEndTime) {
+            toast.error('Start, end, and grading end times are required.');
             return;
         }
         if (editingRound.startTime >= editingRound.endTime) {
             toast.error('End time must be after start time.');
+            return;
+        }
+        if (editingRound.gradingEndTime <= editingRound.endTime) {
+            toast.error('Grading end time must be after round end time.');
             return;
         }
         const loadingToast = toast.loading('Updating round...');
@@ -135,6 +141,7 @@ const RoundsTab: React.FC = () => {
                 description: editingRound.description,
                 startTime: editingRound.startTime,
                 endTime: editingRound.endTime,
+                gradingEndTime: editingRound.gradingEndTime,
                 hackathonEventId: Number(eventId),
                 advancementSlots: Number(editingRound.advancementSlots || 2)
             });
@@ -145,6 +152,23 @@ const RoundsTab: React.FC = () => {
         } catch (err: any) {
             toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to update round.', { id: loadingToast });
         }
+    };
+
+    const handleEndGradingEarly = (id: number) => {
+        setConfirmTitle('Kết thúc chấm điểm sớm');
+        setConfirmMessage('Bạn có chắc chắn muốn kết thúc sớm thời gian chấm điểm cho vòng thi này? Bảng xếp hạng sẽ hiển thị ngay lập tức.');
+        setConfirmAction(() => async () => {
+            const loadingToast = toast.loading('Đang kết thúc chấm điểm...');
+            try {
+                await api.post(`/rounds/${id}/end-grading`);
+                toast.success('Đã kết thúc chấm điểm sớm thành công!', { id: loadingToast });
+                fetchRounds();
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || 'Không thể kết thúc chấm điểm.', { id: loadingToast });
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
     };
 
     if (loading) return (
@@ -223,6 +247,16 @@ const RoundsTab: React.FC = () => {
                             />
                         </div>
                         <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Grading End Time *</label>
+                            <input
+                                type="datetime-local"
+                                value={form.gradingEndTime}
+                                onChange={e => setForm(f => ({ ...f, gradingEndTime: e.target.value }))}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
+                        <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">Advancement Slots (For non-final rounds) *</label>
                             <input
                                 type="number"
@@ -273,8 +307,30 @@ const RoundsTab: React.FC = () => {
                                         </span>
                                     )}
                                 </div>
+                                {round.gradingEndTime && (
+                                    <div className="text-[11px] text-gray-500 font-medium mt-1">
+                                        Grading Period: <span className="text-amber-700 font-semibold">{new Date(round.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(round.gradingEndTime).toLocaleString()}</span>
+                                        {round.gradingEnded ? (
+                                            <span className="ml-2 px-1.5 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded text-[9px] font-bold">Ended Early</span>
+                                        ) : new Date() >= new Date(round.gradingEndTime) ? (
+                                            <span className="ml-2 px-1.5 py-0.5 bg-green-100 text-green-700 border border-green-200 rounded text-[9px] font-bold">Finished</span>
+                                        ) : new Date() >= new Date(round.endTime) ? (
+                                            <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded text-[9px] font-bold animate-pulse">Grading...</span>
+                                        ) : null}
+                                    </div>
+                                )}
                             </div>
-                            <div className="flex items-center gap-1">                                 <button
+                            <div className="flex items-center gap-2">
+                                {round.gradingEndTime && !round.gradingEnded && new Date() < new Date(round.gradingEndTime) && (
+                                     <button
+                                         onClick={() => handleEndGradingEarly(round.id)}
+                                         className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
+                                         title="Kết thúc sớm vòng thi hoặc thời gian chấm điểm"
+                                     >
+                                         End Early
+                                     </button>
+                                )}
+                                <button
                                     onClick={() => openEditModal(round)}
                                     className="text-blue-400 hover:text-blue-600 transition-colors p-1 cursor-pointer"
                                     title="Edit round"
@@ -347,6 +403,16 @@ const RoundsTab: React.FC = () => {
                                     required
                                 />
                             </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Grading End Time *</label>
+                            <input
+                                type="datetime-local"
+                                value={editingRound.gradingEndTime ? editingRound.gradingEndTime.slice(0, 16) : ''}
+                                onChange={e => setEditingRound({ ...editingRound, gradingEndTime: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                                required
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Advancement Slots (For non-final rounds) *</label>

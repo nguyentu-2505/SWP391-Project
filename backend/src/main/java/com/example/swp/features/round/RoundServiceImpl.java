@@ -30,7 +30,7 @@ public class RoundServiceImpl implements RoundService {
             throw new IllegalStateException("Cannot create round: Configurations can only be added to events in DRAFT or PUBLISHED status.");
         }
 
-        validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, null, request.getAdvancementSlots());
+        validateRoundTimeline(request.getStartTime(), request.getEndTime(), request.getGradingEndTime(), hackathonEvent, null, request.getAdvancementSlots());
 
         List<Round> existing = roundRepository.findByHackathonEventId(hackathonEvent.getId());
         boolean nameExists = existing.stream()
@@ -45,6 +45,8 @@ public class RoundServiceImpl implements RoundService {
                 .description(request.getDescription())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
+                .gradingEndTime(request.getGradingEndTime())
+                .gradingEnded(false)
                 .hackathonEvent(hackathonEvent)
                 .roundOrder(nextOrder)
                 .advancementSlots(request.getAdvancementSlots() != null && request.getAdvancementSlots() > 0 ? request.getAdvancementSlots() : 2)
@@ -104,7 +106,7 @@ public class RoundServiceImpl implements RoundService {
             throw new IllegalStateException("Cannot edit round: Only events in DRAFT, PUBLISHED, or IN_PROGRESS status can have their rounds modified.");
         }
 
-        validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, id, request.getAdvancementSlots());
+        validateRoundTimeline(request.getStartTime(), request.getEndTime(), request.getGradingEndTime(), hackathonEvent, id, request.getAdvancementSlots());
 
         boolean nameExists = roundRepository.findByHackathonEventId(hackathonEvent.getId()).stream()
                 .anyMatch(r -> !r.getId().equals(id) && r.getName().equalsIgnoreCase(request.getName().trim()));
@@ -117,6 +119,7 @@ public class RoundServiceImpl implements RoundService {
         oldMap.put("description", round.getDescription());
         oldMap.put("startTime", round.getStartTime() != null ? round.getStartTime().toString() : null);
         oldMap.put("endTime", round.getEndTime() != null ? round.getEndTime().toString() : null);
+        oldMap.put("gradingEndTime", round.getGradingEndTime() != null ? round.getGradingEndTime().toString() : null);
         oldMap.put("advancementSlots", round.getAdvancementSlots());
 
         java.util.Map<String, Object> newMap = new java.util.HashMap<>();
@@ -124,6 +127,7 @@ public class RoundServiceImpl implements RoundService {
         newMap.put("description", request.getDescription());
         newMap.put("startTime", request.getStartTime() != null ? request.getStartTime().toString() : null);
         newMap.put("endTime", request.getEndTime() != null ? request.getEndTime().toString() : null);
+        newMap.put("gradingEndTime", request.getGradingEndTime() != null ? request.getGradingEndTime().toString() : null);
         newMap.put("advancementSlots", request.getAdvancementSlots() != null && request.getAdvancementSlots() > 0 ? request.getAdvancementSlots() : round.getAdvancementSlots());
 
         String oldValueJson = null;
@@ -140,6 +144,7 @@ public class RoundServiceImpl implements RoundService {
         round.setDescription(request.getDescription());
         round.setStartTime(request.getStartTime());
         round.setEndTime(request.getEndTime());
+        round.setGradingEndTime(request.getGradingEndTime());
         if (request.getAdvancementSlots() != null && request.getAdvancementSlots() > 0) {
             round.setAdvancementSlots(request.getAdvancementSlots());
         }
@@ -149,15 +154,21 @@ public class RoundServiceImpl implements RoundService {
         return mapToResponse(updatedRound);
     }
 
-    private void validateRoundTimeline(java.time.LocalDateTime start, java.time.LocalDateTime end, HackathonEvent event, Long currentRoundId, Integer newAdvancementSlots) {
+    private void validateRoundTimeline(java.time.LocalDateTime start, java.time.LocalDateTime end, java.time.LocalDateTime gradingEnd, HackathonEvent event, Long currentRoundId, Integer newAdvancementSlots) {
         if (start.isAfter(end) || start.isEqual(end)) {
             throw new IllegalArgumentException("Round start time must be before end time.");
+        }
+        if (gradingEnd == null) {
+            throw new IllegalArgumentException("Grading end time cannot be null.");
+        }
+        if (gradingEnd.isBefore(end) || gradingEnd.isEqual(end)) {
+            throw new IllegalArgumentException("Grading end time must be after round end time.");
         }
         if (start.isBefore(event.getStartTime())) {
             throw new IllegalArgumentException("Round start time cannot be before event start time (" + event.getStartTime() + ").");
         }
-        if (end.isAfter(event.getEndTime())) {
-            throw new IllegalArgumentException("Round end time cannot be after event end time (" + event.getEndTime() + ").");
+        if (gradingEnd.isAfter(event.getEndTime())) {
+            throw new IllegalArgumentException("Round grading end time cannot be after event end time (" + event.getEndTime() + ").");
         }
         if (event.getRegistrationEnd() != null && start.isBefore(event.getRegistrationEnd())) {
             throw new IllegalArgumentException("Round start time must be after event registration end time (" + event.getRegistrationEnd() + ").");
@@ -169,6 +180,7 @@ public class RoundServiceImpl implements RoundService {
                     .name("New Round")
                     .startTime(start)
                     .endTime(end)
+                    .gradingEndTime(gradingEnd)
                     .advancementSlots(newAdvancementSlots != null && newAdvancementSlots > 0 ? newAdvancementSlots : 2)
                     .build();
             allRounds.add(temp);
@@ -177,6 +189,7 @@ public class RoundServiceImpl implements RoundService {
                 if (allRounds.get(i).getId().equals(currentRoundId)) {
                     allRounds.get(i).setStartTime(start);
                     allRounds.get(i).setEndTime(end);
+                    allRounds.get(i).setGradingEndTime(gradingEnd);
                     if (newAdvancementSlots != null && newAdvancementSlots > 0) {
                         allRounds.get(i).setAdvancementSlots(newAdvancementSlots);
                     }
@@ -192,6 +205,10 @@ public class RoundServiceImpl implements RoundService {
             Round current = allRounds.get(i);
             if (i < allRounds.size() - 1) {
                 Round next = allRounds.get(i + 1);
+                if (current.getGradingEndTime() != null && next.getStartTime().isBefore(current.getGradingEndTime())) {
+                    throw new IllegalArgumentException("Thời gian bắt đầu của vòng tiếp theo '" + next.getName() + "' (" + next.getStartTime() + 
+                            ") phải sau thời gian kết thúc chấm điểm của vòng trước '" + current.getName() + "' (" + current.getGradingEndTime() + ").");
+                }
                 if (current.getEndTime().isAfter(next.getStartTime())) {
                     throw new IllegalArgumentException("Round times overlap: '" + current.getName() + "' ends at " + current.getEndTime() + 
                             ", but next round starts at " + next.getStartTime() + ".");
@@ -213,8 +230,25 @@ public class RoundServiceImpl implements RoundService {
                 .description(round.getDescription())
                 .startTime(round.getStartTime())
                 .endTime(round.getEndTime())
+                .gradingEndTime(round.getGradingEndTime())
+                .gradingEnded(round.getGradingEnded())
                 .hackathonEventId(round.getHackathonEvent().getId())
                 .advancementSlots(round.getAdvancementSlots())
                 .build();
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public RoundResponse endGrading(Long id) {
+        Round round = roundRepository.findById(id)
+                .orElseThrow(() -> new com.example.swp.exception.ResourceNotFoundException("Round not found: " + id));
+
+        round.setGradingEnded(true);
+        round.setGradingEndTime(java.time.LocalDateTime.now());
+        Round saved = roundRepository.save(round);
+
+        auditLogService.logAction("END_GRADING", "ROUND", saved.getId(), null, "Ended grading early for round " + saved.getName(), saved.getHackathonEvent().getId());
+
+        return mapToResponse(saved);
     }
 }

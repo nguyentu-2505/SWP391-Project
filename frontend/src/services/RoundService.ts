@@ -8,6 +8,8 @@ export interface Round {
     description: string;
     startTime: string;
     endTime: string;
+    gradingEndTime?: string;
+    gradingEnded?: boolean;
 }
 
 export interface CreateRoundRequest {
