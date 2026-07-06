@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
 import { Trophy, Plus, Loader2, Gift, CheckCircle, Edit2, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 interface Prize {
     id: number;
@@ -58,6 +59,13 @@ const PrizesTab: React.FC = () => {
     const [assignTeamId, setAssignTeamId] = useState<number | ''>('');
 
     const [autoAssigning, setAutoAssigning] = useState(false);
+
+    // Confirm Modal State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmTitle, setConfirmTitle] = useState('');
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
+    const [confirmIsDanger, setConfirmIsDanger] = useState(false);
 
     // Filter states
     const [selectedTrackId, setSelectedTrackId] = useState<number | ''>('');
@@ -148,15 +156,21 @@ const PrizesTab: React.FC = () => {
         setShowForm(true);
     };
 
-    const handleDelete = async (prizeId: number) => {
-        if (!confirm('Are you sure you want to delete this prize?')) return;
-        try {
-            await api.delete(`/prizes/${prizeId}`);
-            toast.success('Prize deleted successfully!');
-            fetchData();
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || 'Failed to delete prize.');
-        }
+    const handleDelete = (prizeId: number) => {
+        setConfirmTitle('Delete Prize');
+        setConfirmMessage('Are you sure you want to delete this prize?');
+        setConfirmIsDanger(true);
+        setConfirmAction(() => async () => {
+            try {
+                await api.delete(`/prizes/${prizeId}`);
+                toast.success('Prize deleted successfully!');
+                fetchData();
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || 'Failed to delete prize.');
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
     };
 
     const handleAssign = async (prizeId: number) => {
@@ -172,22 +186,29 @@ const PrizesTab: React.FC = () => {
         }
     };
 
-    const handleAutoAssign = async () => {
-        if (!confirm('Auto-assign will evaluate all completed submissions and award prizes based on score rank. Continue?')) return;
-        setAutoAssigning(true);
-        try {
-            await api.post(`/prizes/event/${eventId}/auto-assign`);
-            toast.success('Prizes auto-assigned successfully!');
-            fetchData();
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || 'Failed to auto-assign prizes.');
-        } finally {
-            setAutoAssigning(false);
-        }
+    const handleAutoAssign = () => {
+        setConfirmTitle('Auto-Assign Prizes');
+        setConfirmMessage('Auto-assign will evaluate all completed submissions and award prizes based on score rank. Continue?');
+        setConfirmIsDanger(false);
+        setConfirmAction(() => async () => {
+            setAutoAssigning(true);
+            setConfirmOpen(false);
+            try {
+                await api.post(`/prizes/event/${eventId}/auto-assign`);
+                toast.success('Prizes auto-assigned successfully!');
+                fetchData();
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || 'Failed to auto-assign prizes.');
+            } finally {
+                setAutoAssigning(false);
+            }
+        });
+        setConfirmOpen(true);
     };
 
     return (
-        <div>
+        <>
+            <div>
             <div className="flex flex-wrap items-center gap-4 mb-6">
                 <div className="flex items-center gap-2">
                     <Trophy size={20} className="text-yellow-500" />
@@ -499,6 +520,16 @@ const PrizesTab: React.FC = () => {
 
 
         </div>
+        <ConfirmModal
+            isOpen={confirmOpen}
+            title={confirmTitle}
+            message={confirmMessage}
+            isDanger={confirmIsDanger}
+            confirmText={confirmIsDanger ? 'Delete' : 'Continue'}
+            onConfirm={confirmAction}
+            onCancel={() => setConfirmOpen(false)}
+        />
+        </>
     );
 };
 

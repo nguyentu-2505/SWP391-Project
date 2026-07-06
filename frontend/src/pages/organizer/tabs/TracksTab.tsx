@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import { Tag, Plus, Trash2, Loader2, Users, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../../components/Modal';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 interface Track {
     id: number;
@@ -34,6 +35,13 @@ const TracksTab: React.FC = () => {
     const [mentorUserIdInput, setMentorUserIdInput] = useState('');
     const [mentorLoading, setMentorLoading] = useState(false);
     const [availableMentors, setAvailableMentors] = useState<any[]>([]);
+
+    // Confirmation Modal State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmTitle, setConfirmTitle] = useState('');
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
+    const [confirmIsDanger, setConfirmIsDanger] = useState(false);
 
     const fetchTracks = async () => {
         if (!eventId) return;
@@ -81,15 +89,21 @@ const TracksTab: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this track? Teams in this track will become unassigned.')) return;
-        try {
-            await api.delete(`/tracks/${id}`);
-            toast.success('Track deleted successfully.');
-            setTracks(prev => prev.filter(t => t.id !== id));
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete track.');
-        }
+    const handleDelete = (id: number) => {
+        setConfirmTitle('Delete Track');
+        setConfirmMessage('Are you sure you want to delete this track? Teams in this track will become unassigned.');
+        setConfirmIsDanger(true);
+        setConfirmAction(() => async () => {
+            try {
+                await api.delete(`/tracks/${id}`);
+                toast.success('Track deleted successfully.');
+                setTracks(prev => prev.filter(t => t.id !== id));
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete track.');
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
     };
 
     const openEditModal = (track: Track) => {
@@ -156,19 +170,25 @@ const TracksTab: React.FC = () => {
         }
     };
 
-    const handleRemoveMentor = async (mentorId: number) => {
+    const handleRemoveMentor = (mentorId: number) => {
         if (!mentorModalTrackId) return;
-        if (!confirm('Remove this mentor from the track?')) return;
-        setMentorLoading(true);
-        try {
-            await api.delete(`/tracks/${mentorModalTrackId}/mentors/${mentorId}`);
-            toast.success('Mentor removed.');
-            fetchMentors(mentorModalTrackId);
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to remove mentor.');
-        } finally {
-            setMentorLoading(false);
-        }
+        setConfirmTitle('Remove Mentor');
+        setConfirmMessage('Are you sure you want to remove this mentor from the track?');
+        setConfirmIsDanger(false);
+        setConfirmAction(() => async () => {
+            setMentorLoading(true);
+            try {
+                await api.delete(`/tracks/${mentorModalTrackId}/mentors/${mentorId}`);
+                toast.success('Mentor removed.');
+                fetchMentors(mentorModalTrackId);
+            } catch (err: any) {
+                toast.error(err.response?.data?.message || 'Failed to remove mentor.');
+            } finally {
+                setMentorLoading(false);
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
     };
 
     if (loading) return (
@@ -184,7 +204,8 @@ const TracksTab: React.FC = () => {
     ];
 
     return (
-        <div>
+        <>
+            <div>
             <div className="flex items-center gap-2 mb-4">
                 <Tag size={20} className="text-gray-600" />
                 <h2 className="text-xl font-semibold text-gray-800">Competition Tracks</h2>
@@ -389,6 +410,16 @@ const TracksTab: React.FC = () => {
                 </Modal>
             )}
         </div>
+        <ConfirmModal
+            isOpen={confirmOpen}
+            title={confirmTitle}
+            message={confirmMessage}
+            isDanger={confirmIsDanger}
+            confirmText={confirmIsDanger ? 'Delete' : 'Confirm'}
+            onConfirm={confirmAction}
+            onCancel={() => setConfirmOpen(false)}
+        />
+        </>
     );
 };
 

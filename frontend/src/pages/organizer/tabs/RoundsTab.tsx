@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import { Clock, Plus, Trash2, Loader2, CalendarDays, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../../components/Modal';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 // trigger re-check
 
@@ -34,6 +35,12 @@ const RoundsTab: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingRound, setEditingRound] = useState<Round | null>(null);
     const [eventDetails, setEventDetails] = useState<any>(null);
+
+    // Confirm Modal State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmTitle, setConfirmTitle] = useState('');
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
 
     const fetchRounds = async () => {
         if (!eventId) return;
@@ -84,15 +91,20 @@ const RoundsTab: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this round? This action will also delete all submissions and scores in this round.')) return;
-        try {
-            await api.delete(`/rounds/${id}`);
-            toast.success('Round deleted successfully.');
-            setRounds(prev => prev.filter(r => r.id !== id));
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete round.');
-        }
+    const handleDelete = (id: number) => {
+        setConfirmTitle('Delete Round');
+        setConfirmMessage('Are you sure you want to delete this round? This will also delete all submissions and scores in this round.');
+        setConfirmAction(() => async () => {
+            try {
+                await api.delete(`/rounds/${id}`);
+                toast.success('Round deleted successfully.');
+                setRounds(prev => prev.filter(r => r.id !== id));
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete round.');
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
     };
 
     const openEditModal = (round: Round) => {
@@ -137,7 +149,8 @@ const RoundsTab: React.FC = () => {
     );
 
     return (
-        <div>
+        <>
+            <div>
             <div className="flex items-center gap-2 mb-4">
                 <CalendarDays size={20} className="text-gray-600" />
                 <div className="flex-1">
@@ -329,6 +342,16 @@ const RoundsTab: React.FC = () => {
                 </Modal>
             )}
         </div>
+        <ConfirmModal
+            isOpen={confirmOpen}
+            title={confirmTitle}
+            message={confirmMessage}
+            isDanger={true}
+            confirmText="Delete"
+            onConfirm={confirmAction}
+            onCancel={() => setConfirmOpen(false)}
+        />
+        </>
     );
 };
 

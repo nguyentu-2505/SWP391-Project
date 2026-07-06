@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import toast from 'react-hot-toast';
 import { JudgeAssignmentService } from '../../../services/JudgeAssignmentService';
 import { Trash2 } from 'lucide-react';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 interface Round {
     id: number;
@@ -32,6 +33,10 @@ const JudgesTab: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [assignments, setAssignments] = useState<any[]>([]);
 
+    // Confirm Modal State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
+
     useEffect(() => {
         const fetchData = async () => {
             if (!eventId) return;
@@ -55,16 +60,19 @@ const JudgesTab: React.FC = () => {
         fetchData();
     }, [eventId]);
 
-    const handleUnassign = async (assignmentId: number) => {
-        if (!confirm('Are you sure you want to unassign this judge?')) return;
-        try {
-            await api.delete(`/judge-assignments/${assignmentId}`);
-            toast.success("Judge unassigned successfully!");
-            const res = await api.get(`/judge-assignments/event/${eventId}`);
-            setAssignments(res.data.data);
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || "Failed to unassign judge.");
-        }
+    const handleUnassign = (assignmentId: number) => {
+        setConfirmAction(() => async () => {
+            try {
+                await api.delete(`/judge-assignments/${assignmentId}`);
+                toast.success("Judge unassigned successfully!");
+                const res = await api.get(`/judge-assignments/event/${eventId}`);
+                setAssignments(res.data.data);
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || "Failed to unassign judge.");
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
     };
 
     const handleAssignJudge = async () => {
@@ -89,7 +97,8 @@ const JudgesTab: React.FC = () => {
     if (loading) return <div>Loading judge assignment data...</div>;
 
     return (
-        <div>
+        <>
+            <div>
             <h2 className="text-2xl font-semibold mb-4">Assign Judges</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
                 <div>
@@ -183,6 +192,16 @@ const JudgesTab: React.FC = () => {
 
             </div>
         </div>
+        <ConfirmModal
+            isOpen={confirmOpen}
+            title="Unassign Judge"
+            message="Are you sure you want to unassign this judge? They will lose access to grade submissions for this round."
+            isDanger={false}
+            confirmText="Unassign"
+            onConfirm={confirmAction}
+            onCancel={() => setConfirmOpen(false)}
+        />
+        </>
     );
 };
 
