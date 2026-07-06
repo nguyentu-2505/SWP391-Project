@@ -14,6 +14,7 @@ interface Round {
     description: string;
     startTime: string;
     endTime: string;
+    advancementSlots?: number;
 }
 
 interface RoundForm {
@@ -21,9 +22,10 @@ interface RoundForm {
     description: string;
     startTime: string;
     endTime: string;
+    advancementSlots: number;
 }
 
-const emptyForm: RoundForm = { name: '', description: '', startTime: '', endTime: '' };
+const emptyForm: RoundForm = { name: '', description: '', startTime: '', endTime: '', advancementSlots: 2 };
 
 const RoundsTab: React.FC = () => {
     const { eventId } = useParams<{ eventId: string }>();
@@ -108,7 +110,7 @@ const RoundsTab: React.FC = () => {
     };
 
     const openEditModal = (round: Round) => {
-        setEditingRound({ ...round });
+        setEditingRound({ ...round, advancementSlots: round.advancementSlots || 2 });
         setIsEditModalOpen(true);
     };
 
@@ -134,6 +136,7 @@ const RoundsTab: React.FC = () => {
                 startTime: editingRound.startTime,
                 endTime: editingRound.endTime,
                 hackathonEventId: Number(eventId),
+                advancementSlots: Number(editingRound.advancementSlots || 2)
             });
             toast.success('Round updated successfully!', { id: loadingToast });
             setIsEditModalOpen(false);
@@ -219,6 +222,17 @@ const RoundsTab: React.FC = () => {
                                 required
                             />
                         </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Advancement Slots (For non-final rounds) *</label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={form.advancementSlots}
+                                onChange={e => setForm(f => ({ ...f, advancementSlots: Number(e.target.value) }))}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
                     </div>
                     <div className="flex gap-2 justify-end">
                         <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
@@ -244,9 +258,20 @@ const RoundsTab: React.FC = () => {
                             <div className="flex-1">
                                 <p className="font-semibold text-gray-900">{round.name}</p>
                                 {round.description && <p className="text-xs text-gray-500 mt-0.5">{round.description}</p>}
-                                <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
-                                    <Clock size={12} />
-                                    {new Date(round.startTime).toLocaleString()} → {new Date(round.endTime).toLocaleString()}
+                                <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                                        <Clock size={12} />
+                                        {new Date(round.startTime).toLocaleString()} → {new Date(round.endTime).toLocaleString()}
+                                    </div>
+                                    {idx < rounds.length - 1 ? (
+                                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-full">
+                                            Advancement: {round.advancementSlots || 2} teams
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 rounded-full">
+                                            Final Round
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">                                 <button
@@ -322,6 +347,17 @@ const RoundsTab: React.FC = () => {
                                     required
                                 />
                             </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Advancement Slots (For non-final rounds) *</label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={editingRound.advancementSlots || 2}
+                                onChange={e => setEditingRound({ ...editingRound, advancementSlots: Number(e.target.value) })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                                required
+                            />
                         </div>
                         <div className="flex justify-end gap-3 pt-2">
                             <button

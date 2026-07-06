@@ -207,9 +207,15 @@ const EventDetailPage: React.FC = () => {
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     Timeline: {new Date(r.startTime).toLocaleString()} - {new Date(r.endTime).toLocaleString()}
                                                 </p>
-                                                <p className="text-xs text-blue-700 font-semibold mt-1">
-                                                    Advancement Slots: {r.advancementSlots ? `${r.advancementSlots} teams` : 'Unlimited'}
-                                                </p>
+                                                {index < rounds.length - 1 ? (
+                                                     <p className="text-xs text-blue-700 font-semibold mt-1">
+                                                         Advancement Slots: {r.advancementSlots ? `${r.advancementSlots} teams` : 'Unlimited'}
+                                                     </p>
+                                                 ) : (
+                                                     <p className="text-xs text-green-700 font-bold mt-1">
+                                                         Final Round
+                                                     </p>
+                                                 )}
                                             </div>
                                         ))}
                                     </div>

@@ -197,8 +197,8 @@ public class RoundServiceImpl implements RoundService {
                             ", but next round starts at " + next.getStartTime() + ".");
                 }
                 if (current.getAdvancementSlots() != null && next.getAdvancementSlots() != null) {
-                    if (next.getAdvancementSlots() > current.getAdvancementSlots()) {
-                        throw new IllegalArgumentException("Advancement slots of subsequent rounds must be less than or equal to the previous round. Round '" + 
+                    if (next.getAdvancementSlots() >= current.getAdvancementSlots()) {
+                        throw new IllegalArgumentException("Advancement slots of subsequent round must be less than the previous round. Round '" + 
                                 current.getName() + "' has " + current.getAdvancementSlots() + " slots, but next round has " + next.getAdvancementSlots() + " slots.");
                     }
                 }
