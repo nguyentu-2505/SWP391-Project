@@ -97,9 +97,11 @@ public class RoundServiceImpl implements RoundService {
 
         HackathonEvent hackathonEvent = round.getHackathonEvent();
 
-        // Check if event status is DRAFT
-        if (hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT) {
-            throw new IllegalStateException("Cannot edit round: Only events in DRAFT status can have their rounds modified.");
+        // Check if event status is DRAFT, PUBLISHED, or IN_PROGRESS
+        if (hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT
+                && hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED
+                && hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Cannot edit round: Only events in DRAFT, PUBLISHED, or IN_PROGRESS status can have their rounds modified.");
         }
 
         validateRoundTimeline(request.getStartTime(), request.getEndTime(), hackathonEvent, id, request.getAdvancementSlots());

@@ -7,12 +7,15 @@ import { UploadCloud, Link as LinkIcon, AlertCircle, CheckCircle2, ChevronLeft, 
 interface Round {
     id: number;
     name: string;
+    startTime: string;
+    endTime: string;
 }
 
 interface TeamDetails {
     id: number;
     name: string;
     status: string;
+    trackName?: string;
 }
 
 const SubmitProjectPage: React.FC = () => {
@@ -45,7 +48,21 @@ const SubmitProjectPage: React.FC = () => {
                 setMyTeam(teamRes.data.data);
                 
                 const roundsData = roundsRes.data.data ?? roundsRes.data;
-                setRounds(Array.isArray(roundsData) ? roundsData : []);
+                const fetchedRounds = Array.isArray(roundsData) ? roundsData : [];
+                setRounds(fetchedRounds);
+
+                // Auto detect active round based on current date
+                const now = new Date();
+                const active = fetchedRounds.find((r: any) => {
+                    const start = new Date(r.startTime);
+                    const end = new Date(r.endTime);
+                    return now >= start && now <= end;
+                });
+                if (active) {
+                    setRoundId(active.id);
+                } else {
+                    setRoundId('');
+                }
             } catch (err) {
                 setError('Failed to load necessary data for submission. Are you in a team for this event?');
             } finally {
@@ -54,6 +71,13 @@ const SubmitProjectPage: React.FC = () => {
         };
         fetchData();
     }, [eventId]);
+
+    const activeRound = rounds.find(r => {
+        const now = new Date();
+        const start = new Date(r.startTime);
+        const end = new Date(r.endTime);
+        return now >= start && now <= end;
+    });
 
     const isValidUrl = (url: string) => {
         if (!url) return true; // Optional fields are valid if empty
@@ -177,41 +201,34 @@ const SubmitProjectPage: React.FC = () => {
                             <p className="text-sm mt-1">Please return to your team dashboard and finalize your team first.</p>
                         </div>
                     </div>
+                ) : !activeRound ? (
+                    <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
+                        <AlertCircle className="shrink-0 mt-0.5" size={20} />
+                        <div>
+                            <p className="font-bold text-base">Hiện tại không có vòng thi nào đang diễn ra</p>
+                            <p className="text-sm mt-1 text-gray-600">Hệ thống đang trong thời gian chấm bài hoặc chuẩn bị cho vòng thi tiếp theo. Vui lòng quay lại sau.</p>
+                        </div>
+                    </div>
                 ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Round Selection */}
-                    <div>
-                        <label htmlFor="round" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
-                            Select Round <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                            <select
-                                id="round"
-                                value={roundId}
-                                onChange={(e) => {
-                                    setRoundId(Number(e.target.value));
-                                    setError('');
-                                }}
-                                className={`w-full px-3 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all appearance-none cursor-pointer ${
-                                    !roundId && error ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
-                                }`}
-                            >
-                                <option value="" disabled>-- Select the round you are submitting for --</option>
-                                {rounds.map(round => (
-                                    <option key={round.id} value={round.id}>{round.name}</option>
-                                ))}
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                                </svg>
+                    {/* Active Round & Track Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                                Submitting for Round
+                            </label>
+                            <div className="px-3 py-2.5 bg-slate-50 border border-outline-variant rounded-lg text-sm font-semibold text-gray-900">
+                                {activeRound.name}
                             </div>
                         </div>
-                        {rounds.length === 0 && (
-                            <p className="mt-1.5 text-xs text-amber-600 font-medium flex items-center gap-1">
-                                <AlertCircle size={12} /> No rounds available for this event yet.
-                            </p>
-                        )}
+                        <div>
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                                Track
+                            </label>
+                            <div className="px-3 py-2.5 bg-slate-50 border border-outline-variant rounded-lg text-sm font-semibold text-gray-900">
+                                {myTeam?.trackName || 'General Track'}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Repository URL */}
