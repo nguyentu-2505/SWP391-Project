@@ -10,8 +10,6 @@ import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import CertificatesPage from './pages/CertificatesPage';
 import NotificationsPage from './pages/NotificationsPage';
-import MentorDirectoryPage from './pages/MentorDirectoryPage';
-import MentorDetailPage from './pages/MentorDetailPage';
 import TeamDetailPage from './pages/TeamDetailPage';
 import AdminMentorProfilePage from './pages/admin/AdminMentorProfilePage';
 import SystemPreferencesPage from './pages/admin/SystemPreferencesPage';
@@ -96,8 +94,6 @@ function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/certificates" element={<CertificatesPage />} />
-              <Route path="/mentors" element={<MentorDirectoryPage />} />
-              <Route path="/mentors/:mentorId" element={<MentorDetailPage />} />
               <Route path="/teams/:teamId" element={<TeamDetailPage />} />
               
               {/* Participant Routes */}
