@@ -59,14 +59,6 @@ public class TeamServiceImpl implements TeamService {
         if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
             throw new IllegalStateException("Teams can only be created when the hackathon is PUBLISHED (registration is open).");
         }
-
-        LocalDateTime now = LocalDateTime.now();
-        if (event.getRegistrationStart() != null && now.isBefore(event.getRegistrationStart())) {
-            throw new IllegalStateException("Registration has not started yet.");
-        }
-        if (event.getRegistrationEnd() != null && now.isAfter(event.getRegistrationEnd())) {
-            throw new IllegalStateException("Registration has closed.");
-        }
                 
         Track track = trackRepository.findById(request.getTrackId())
                 .orElseThrow(() -> new ResourceNotFoundException("Track not found"));
