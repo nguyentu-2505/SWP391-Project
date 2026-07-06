@@ -41,8 +41,6 @@ public class TeamServiceImpl implements TeamService {
     private final com.example.swp.features.mentorship_request.MentorshipRequestRepository mentorshipRequestRepository;
     private final com.example.swp.features.team_invitation.TeamInvitationRepository teamInvitationRepository;
     private final com.example.swp.features.submission.SubmissionRepository submissionRepository;
-    private final com.example.swp.util.EmailService emailService;
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(TeamServiceImpl.class);
 
     @Override
     @Transactional
@@ -194,20 +192,6 @@ public class TeamServiceImpl implements TeamService {
                     "TEAM",
                     team.getId()
             );
-            if (member.getUser().getEmail() != null) {
-                try {
-                    emailService.sendSimpleMessage(
-                        member.getUser().getEmail(),
-                        "Team Disqualified - " + team.getName(),
-                        "Dear " + member.getUser().getUsername() + ",\n\n" +
-                        "We regret to inform you that your team '" + team.getName() + "' has been disqualified from the event '" + team.getEvent().getName() + "'.\n" +
-                        "Reason: " + request.getReason() + "\n\n" +
-                        "Best regards,\nOrganizer Team"
-                    );
-                } catch (Exception e) {
-                    log.error("Failed to send disqualification email to: {}", member.getUser().getEmail(), e);
-                }
-            }
         }
     }
 

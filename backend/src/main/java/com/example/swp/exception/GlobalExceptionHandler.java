@@ -43,26 +43,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex) {
-        String msg = "Database integrity constraint violation.";
-        String specificMsg = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
-        if (specificMsg != null) {
-            String lower = specificMsg.toLowerCase();
-            if (lower.contains("uq__user") || lower.contains("username") || lower.contains("email") || lower.contains("_user")) {
-                msg = "Username or email already exists.";
-            } else if (lower.contains("track") || lower.contains("uq_track") || lower.contains("uq__track")) {
-                msg = "Track name already exists in this hackathon.";
-            } else if (lower.contains("round") || lower.contains("uq_round") || lower.contains("uq__round")) {
-                msg = "Round name already exists in this hackathon.";
-            } else if (lower.contains("prize") || lower.contains("uq_prize") || lower.contains("uq__prize")) {
-                msg = "Prize name or rank already exists.";
-            } else if (lower.contains("foreign key") || lower.contains("reference") || lower.contains("violation of foreign key")) {
-                msg = "Cannot delete or update this record because it is referenced by other data.";
-            } else {
-                msg = "Database violation: " + specificMsg;
-            }
-        }
         return new ResponseEntity<>(
-                ApiResponse.error("BAD_REQUEST", msg),
+                ApiResponse.error("BAD_REQUEST", "Database constraint violation: Username or email already exists."),
                 HttpStatus.BAD_REQUEST
         );
     }
