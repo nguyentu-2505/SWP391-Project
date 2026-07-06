@@ -203,10 +203,20 @@ const EventDetailPage: React.FC = () => {
                                                 <div className="absolute -left-[31px] top-0.5 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                                                     {index + 1}
                                                 </div>
-                                                <h3 className="font-bold text-sm text-gray-900">{r.name}</h3>
+                                                <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
+                                                    {r.name}
+                                                    {r.gradingEnded && (
+                                                        <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded text-[9px] font-bold">Ended Early</span>
+                                                    )}
+                                                </h3>
                                                 <p className="text-xs text-gray-500 mt-1">
-                                                    Timeline: {new Date(r.startTime).toLocaleString()} - {new Date(r.endTime).toLocaleString()}
+                                                    Submission Period: {new Date(r.startTime).toLocaleString()} - {new Date(r.endTime).toLocaleString()}
                                                 </p>
+                                                {r.gradingEndTime && (
+                                                    <p className="text-[11px] text-gray-500 mt-0.5">
+                                                        Grading Period: <span className="text-amber-700 font-medium">{new Date(r.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(r.gradingEndTime).toLocaleString()}</span>
+                                                    </p>
+                                                )}
                                                 {index < rounds.length - 1 ? (
                                                      <p className="text-xs text-blue-700 font-semibold mt-1">
                                                          Advancement Slots: {r.advancementSlots ? `${r.advancementSlots} teams` : 'Unlimited'}

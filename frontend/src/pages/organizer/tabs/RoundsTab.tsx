@@ -177,6 +177,25 @@ const RoundsTab: React.FC = () => {
         setConfirmOpen(true);
     };
 
+    const handleAdvanceTeams = (id: number) => {
+        setConfirmTitle('Advance Teams / Complete Event');
+        setConfirmMessage('Are you sure you want to proceed? This will calculate rankings and advance teams (or complete the event if this is the final round).');
+        setConfirmText('Confirm');
+        setConfirmIsDanger(false);
+        setConfirmAction(() => async () => {
+            const loadingToast = toast.loading('Processing...');
+            try {
+                const res = await api.post(`/rounds/${id}/advance`);
+                toast.success(res.data.message || 'Processed successfully!', { id: loadingToast });
+                fetchRounds();
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to process.', { id: loadingToast });
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
+    };
+
     if (loading) return (
         <div className="flex justify-center py-10"><Loader2 className="animate-spin text-blue-500" size={28} /></div>
     );
@@ -327,6 +346,24 @@ const RoundsTab: React.FC = () => {
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
+                                {(round.gradingEnded || new Date() >= new Date(round.gradingEndTime)) && idx < rounds.length - 1 && (
+                                     <button
+                                         onClick={() => handleAdvanceTeams(round.id)}
+                                         className="text-[10px] bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
+                                         title="Advance top teams to the next round"
+                                     >
+                                         Advance Teams
+                                     </button>
+                                )}
+                                {(round.gradingEnded || new Date() >= new Date(round.gradingEndTime)) && idx === rounds.length - 1 && (
+                                     <button
+                                         onClick={() => handleAdvanceTeams(round.id)}
+                                         className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
+                                         title="Complete hackathon and generate final scores"
+                                     >
+                                         Complete Event
+                                     </button>
+                                )}
                                 {round.gradingEndTime && !round.gradingEnded && new Date() < new Date(round.gradingEndTime) && (
                                      <button
                                          onClick={() => handleEndGradingEarly(round.id)}
