@@ -5,6 +5,7 @@ import RegisterPage from './pages/RegisterPage';
 import VerifyOtpPage from './pages/VerifyOtpPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import SupportTicketsPage from './pages/SupportTicketsPage';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
@@ -139,6 +140,7 @@ function App() {
 
               {/* Generic/Admin Routes (for now) */}
               <Route element={<PrivateRoute allowedRoles={[Role.ADMIN]} />}>
+                <Route path="/support-tickets" element={<SupportTicketsPage />} />
                 <Route path="/teams" element={<TeamsPage />} />
                 <Route path="/rounds" element={<RoundsPage />} />
                 <Route path="/submissions" element={<SubmissionsPage />} />

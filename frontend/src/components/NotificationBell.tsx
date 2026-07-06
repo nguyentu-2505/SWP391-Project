@@ -109,10 +109,15 @@ const NotificationBell: React.FC = () => {
                 setUnreadCount(prev => Math.max(0, prev - 1));
             } catch { /* ignore */ }
         }
+        
+        setOpen(false); // Close dropdown before navigating
+        
         // Navigate to relevant page based on type
         if (notif.type === 'TEAM_INVITATION' || notif.type === 'INVITATION_ACCEPTED' || notif.type === 'INVITATION_DECLINED') {
-            setOpen(false);
             navigate('/invitations');
+        } else {
+            // Default navigation for SYSTEM messages and others
+            navigate('/notifications');
         }
     };
 
@@ -187,6 +192,19 @@ const NotificationBell: React.FC = () => {
                                 </div>
                             ))
                         )}
+                    </div>
+                    
+                    {/* Footer - View All */}
+                    <div className="border-t border-gray-100 p-2 text-center bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <button
+                            onClick={() => {
+                                setOpen(false);
+                                navigate('/notifications');
+                            }}
+                            className="text-xs font-semibold text-blue-600 hover:text-blue-800 w-full py-1"
+                        >
+                            View all notifications
+                        </button>
                     </div>
                 </div>
             )}
