@@ -251,6 +251,9 @@ CREATE TABLE mentorship_request (
                                     status      NVARCHAR(50) DEFAULT 'OPEN',       -- OPEN, IN_PROGRESS, RESOLVED
                                     created_at  DATETIME2 DEFAULT GETDATE(),
                                     resolved_at DATETIME2,                         -- thêm từ patch.sql
+                                    answer      NVARCHAR(MAX),
+                                    reject_reason NVARCHAR(MAX),
+                                    version     INT,
                                     FOREIGN KEY (team_id)   REFERENCES team(id)  ON DELETE CASCADE,
                                     FOREIGN KEY (mentor_id) REFERENCES _user(id)
 );
