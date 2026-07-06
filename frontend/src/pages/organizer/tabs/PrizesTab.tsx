@@ -23,6 +23,8 @@ interface Prize {
 interface Team {
     id: number;
     name: string;
+    trackId?: number;
+    trackName?: string;
 }
 
 interface Track {
@@ -482,9 +484,14 @@ const PrizesTab: React.FC = () => {
                                                     className="w-full text-sm px-2.5 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-yellow-500"
                                                 >
                                                     <option value="">-- Select team --</option>
-                                                    {teams.map(t => (
-                                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                                    ))}
+                                                    {teams
+                                                        .filter(t => !prize.trackId || t.trackId === prize.trackId)
+                                                        .map(t => (
+                                                            <option key={t.id} value={t.id}>
+                                                                {t.name} {t.trackName ? `(${t.trackName})` : ''}
+                                                            </option>
+                                                        ))
+                                                    }
                                                 </select>
                                                 <div className="flex justify-end gap-2 mt-1">
                                                     <button
