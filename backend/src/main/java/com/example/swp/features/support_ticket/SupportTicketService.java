@@ -9,4 +9,5 @@ public interface SupportTicketService {
     SupportTicketResponse createTicket(CreateTicketRequest request);
     Page<SupportTicketResponse> getAllTickets(Pageable pageable);
     SupportTicketResponse resolveTicket(Long id);
+    SupportTicketResponse replyTicket(Long id, com.example.swp.features.support_ticket.dto.ReplyTicketRequest request);
 }

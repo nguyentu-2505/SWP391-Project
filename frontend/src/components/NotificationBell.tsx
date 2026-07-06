@@ -99,26 +99,57 @@ const NotificationBell: React.FC = () => {
         } catch { /* ignore */ }
     };
 
-    const handleNotificationClick = async (notif: NotificationItem) => {
+    const handleNotificationClick = (notif: NotificationItem) => {
+        console.log("Notification clicked:", notif);
         if (!notif.isRead) {
-            try {
-                await NotificationService.markAsRead(notif.id);
-                setNotifications(prev =>
-                    prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n)
-                );
-                setUnreadCount(prev => Math.max(0, prev - 1));
-            } catch { /* ignore */ }
+            NotificationService.markAsRead(notif.id).catch(console.error);
+            setNotifications(prev =>
+                prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n)
+            );
+            setUnreadCount(prev => Math.max(0, prev - 1));
         }
         
-        setOpen(false); // Close dropdown before navigating
-        
-        // Navigate to relevant page based on type
-        if (notif.type === 'TEAM_INVITATION' || notif.type === 'INVITATION_ACCEPTED' || notif.type === 'INVITATION_DECLINED') {
-            navigate('/invitations');
-        } else {
-            // Default navigation for SYSTEM messages and others
-            navigate('/notifications');
+        const typeStr = notif.type ? notif.type.toUpperCase() : '';
+        switch (typeStr) {
+            case 'TEAM_INVITATION':
+            case 'INVITE':
+            case 'INVITATION_DECLINED':
+            case 'TEAM_INVITATION_REVOKED':
+                console.log("Navigating to /invitations");
+                navigate('/invitations');
+                break;
+            case 'INVITATION_ACCEPTED':
+            case 'TEAM_MEMBER_JOINED':
+            case 'TEAM_DISQUALIFIED':
+            case 'TEAM':
+                console.log("Navigating to /my-team");
+                navigate('/my-team');
+                break;
+            case 'HACKATHON_EVENT':
+            case 'SYSTEM_ALERT':
+                console.log("Navigating to /events");
+                navigate('/events');
+                break;
+            case 'MENTORSHIP_REQUEST':
+                console.log("Navigating to mentorship requests");
+                navigate(typeStr === 'MENTORSHIP_REQUEST' ? '/mentor/requests' : '/my-mentorship-requests');
+                break;
+            case 'MENTORSHIP_ACCEPTED':
+            case 'MENTORSHIP_RESOLVED':
+            case 'MENTORSHIP_REJECTED':
+                console.log("Navigating to /my-mentorship-requests");
+                navigate('/my-mentorship-requests');
+                break;
+            case 'SUPPORT_TICKET_CREATED':
+                console.log("Navigating to /support-tickets");
+                navigate('/support-tickets');
+                break;
+            default:
+                console.log("No specific route for type:", typeStr);
+                break;
         }
+        
+        setOpen(false);
     };
 
     return (

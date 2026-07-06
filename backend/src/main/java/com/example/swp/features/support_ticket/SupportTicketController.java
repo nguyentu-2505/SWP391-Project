@@ -43,4 +43,13 @@ public class SupportTicketController {
         SupportTicketResponse response = supportTicketService.resolveTicket(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    @PatchMapping("/{id}/reply")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<SupportTicketResponse>> replyTicket(
+            @PathVariable Long id,
+            @Valid @RequestBody com.example.swp.features.support_ticket.dto.ReplyTicketRequest request) {
+        SupportTicketResponse response = supportTicketService.replyTicket(id, request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 }

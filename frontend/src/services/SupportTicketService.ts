@@ -31,5 +31,10 @@ export const SupportTicketService = {
     resolveTicket: async (id: number): Promise<SupportTicketResponse> => {
         const response = await api.patch(`/support-tickets/${id}/resolve`);
         return response.data.data;
+    },
+
+    replyTicket: async (id: number, replyMessage: string): Promise<SupportTicketResponse> => {
+        const response = await api.patch(`/support-tickets/${id}/reply`, { replyMessage });
+        return response.data.data;
     }
 };

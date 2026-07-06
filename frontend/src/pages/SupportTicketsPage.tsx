@@ -6,6 +6,8 @@ const SupportTicketsPage: React.FC = () => {
     const [tickets, setTickets] = useState<SupportTicketResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+    const [replyingId, setReplyingId] = useState<number | null>(null);
+    const [replyMessage, setReplyMessage] = useState<string>('');
 
     const fetchTickets = async () => {
         try {
@@ -30,6 +32,21 @@ const SupportTicketsPage: React.FC = () => {
             setTickets(prev => prev.map(t => t.id === id ? { ...t, status: 'RESOLVED' } : t));
         } catch (error) {
             console.error("Failed to resolve ticket", error);
+        } finally {
+            setActionLoadingId(null);
+        }
+    };
+
+    const handleReply = async (id: number) => {
+        if (!replyMessage.trim()) return;
+        try {
+            setActionLoadingId(id);
+            await SupportTicketService.replyTicket(id, replyMessage);
+            setTickets(prev => prev.map(t => t.id === id ? { ...t, status: 'RESOLVED' } : t));
+            setReplyingId(null);
+            setReplyMessage('');
+        } catch (error) {
+            console.error("Failed to reply to ticket", error);
         } finally {
             setActionLoadingId(null);
         }
@@ -97,18 +114,59 @@ const SupportTicketsPage: React.FC = () => {
 
                                 <div>
                                     {ticket.status === 'PENDING' && (
-                                        <button
-                                            onClick={() => handleResolve(ticket.id)}
-                                            disabled={actionLoadingId === ticket.id}
-                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                                        >
-                                            {actionLoadingId === ticket.id ? (
-                                                <Loader2 size={16} className="animate-spin" />
+                                        <div className="flex flex-col gap-2 min-w-[200px]">
+                                            {replyingId === ticket.id ? (
+                                                <div className="flex flex-col gap-2">
+                                                    <textarea 
+                                                        className="w-full text-sm p-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-100 outline-none resize-none" 
+                                                        rows={3} 
+                                                        placeholder="Type your reply here..."
+                                                        value={replyMessage}
+                                                        onChange={(e) => setReplyMessage(e.target.value)}
+                                                        disabled={actionLoadingId === ticket.id}
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleReply(ticket.id)}
+                                                            disabled={actionLoadingId === ticket.id || !replyMessage.trim()}
+                                                            className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1 disabled:opacity-70 disabled:cursor-not-allowed"
+                                                        >
+                                                            {actionLoadingId === ticket.id ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                                                            Send Reply
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setReplyingId(null); setReplyMessage(''); }}
+                                                            disabled={actionLoadingId === ticket.id}
+                                                            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             ) : (
-                                                <CheckCircle size={16} />
+                                                <>
+                                                    <button
+                                                        onClick={() => { setReplyingId(ticket.id); setReplyMessage(''); }}
+                                                        className="w-full px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                                                    >
+                                                        <Mail size={16} />
+                                                        Reply by Email
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleResolve(ticket.id)}
+                                                        disabled={actionLoadingId === ticket.id}
+                                                        className="w-full px-4 py-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                                    >
+                                                        {actionLoadingId === ticket.id ? (
+                                                            <Loader2 size={16} className="animate-spin" />
+                                                        ) : (
+                                                            <CheckCircle size={16} />
+                                                        )}
+                                                        Mark Resolved (No Reply)
+                                                    </button>
+                                                </>
                                             )}
-                                            Mark Resolved
-                                        </button>
+                                        </div>
                                     )}
                                 </div>
                             </div>
