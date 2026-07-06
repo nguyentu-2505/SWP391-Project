@@ -9,6 +9,8 @@ interface Round {
     name: string;
     startTime: string;
     endTime: string;
+    gradingEnded?: boolean;
+    gradingEndTime?: string;
 }
 
 interface TeamDetails {
@@ -54,8 +56,11 @@ const SubmitProjectPage: React.FC = () => {
                 // Auto detect active round based on current date
                 const now = new Date();
                 const active = fetchedRounds.find((r: any) => {
+                    if (r.gradingEnded) return false;
                     const start = new Date(r.startTime);
                     const end = new Date(r.endTime);
+                    const gradingEnd = r.gradingEndTime ? new Date(r.gradingEndTime) : null;
+                    if (gradingEnd && now >= gradingEnd) return false;
                     return now >= start && now <= end;
                 });
                 if (active) {
@@ -73,9 +78,12 @@ const SubmitProjectPage: React.FC = () => {
     }, [eventId]);
 
     const activeRound = rounds.find(r => {
+        if (r.gradingEnded) return false;
         const now = new Date();
         const start = new Date(r.startTime);
         const end = new Date(r.endTime);
+        const gradingEnd = r.gradingEndTime ? new Date(r.gradingEndTime) : null;
+        if (gradingEnd && now >= gradingEnd) return false;
         return now >= start && now <= end;
     });
 

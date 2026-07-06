@@ -73,6 +73,10 @@ public class SubmissionServiceImpl implements SubmissionService {
         Round round = roundRepository.findById(request.getRoundId())
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
 
+        if (Boolean.TRUE.equals(round.getGradingEnded())) {
+            throw new IllegalStateException("The round has ended early and is no longer accepting submissions.");
+        }
+
         if (round.getRoundOrder() > 1) {
             boolean advanced = teamRoundAdvancementRepository.existsByTeamIdAndToRoundId(team.getId(), round.getId());
             if (!advanced) {
