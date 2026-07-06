@@ -331,8 +331,9 @@ public class HackathonEventServiceImpl implements HackathonEventService {
 
         if (newStatus == HackathonStatus.IN_PROGRESS) {
             long teamCount = teamRepository.findByEventId(event.getId()).size();
-            if (teamCount < 2) {
-                throw new IllegalStateException("Cannot start event: At least 2 teams are required to start the hackathon (currently " + teamCount + ").");
+            int requiredTeams = event.getMinTeamSize() != null ? event.getMinTeamSize() : 2;
+            if (teamCount < requiredTeams) {
+                throw new IllegalStateException("Cannot start event: At least " + requiredTeams + " teams are required to start the hackathon (currently " + teamCount + ").");
             }
         }
 

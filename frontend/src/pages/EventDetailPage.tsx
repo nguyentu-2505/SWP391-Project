@@ -89,6 +89,26 @@ const EventDetailPage: React.FC = () => {
         }
     };
 
+    const getRegistrationStatus = () => {
+        if (!event) return { label: 'Closed', color: 'bg-red-50 text-red-700 border-red-200', canRegister: false };
+        const now = new Date();
+        const start = new Date(event.registrationStart);
+        const end = new Date(event.registrationEnd);
+
+        if (event.status !== 'PUBLISHED') {
+            return { label: 'Closed', color: 'bg-red-50 text-red-700 border-red-200', canRegister: false };
+        }
+        if (now < start) {
+            return { label: 'Not Started', color: 'bg-amber-50 text-amber-700 border-amber-200', canRegister: false };
+        }
+        if (now > end) {
+            return { label: 'Closed', color: 'bg-red-50 text-red-700 border-red-200', canRegister: false };
+        }
+        return { label: 'Open', color: 'bg-green-50 text-green-700 border-green-200', canRegister: true };
+    };
+
+    const regStatus = getRegistrationStatus();
+
     if (loading) {
         return (
             <div className="max-w-[1440px] mx-auto space-y-6">
@@ -292,9 +312,14 @@ const EventDetailPage: React.FC = () => {
                                     <div className="pt-0 flex items-start gap-3">
                                         <Clock size={16} className="text-on-surface-variant shrink-0 mt-0.5" />
                                         <div>
-                                            <p className="text-xs font-semibold text-on-surface">Registration Period</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-xs font-semibold text-on-surface">Registration Period</p>
+                                                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold border ${regStatus.color}`}>
+                                                    {regStatus.label}
+                                                </span>
+                                            </div>
                                             <p className="text-xs text-on-surface-variant mt-0.5">
-                                                {new Date(event.registrationStart).toLocaleDateString()} - {new Date(event.registrationEnd).toLocaleDateString()}
+                                                {new Date(event.registrationStart).toLocaleString()} - {new Date(event.registrationEnd).toLocaleString()}
                                             </p>
                                         </div>
                                     </div>
@@ -305,7 +330,7 @@ const EventDetailPage: React.FC = () => {
                                         <div>
                                             <p className="text-xs font-semibold text-on-surface">Hackathon Dates</p>
                                             <p className="text-xs text-on-surface-variant mt-0.5">
-                                                {new Date(event.startTime).toLocaleDateString()} - {new Date(event.endTime).toLocaleDateString()}
+                                                {new Date(event.startTime).toLocaleString()} - {new Date(event.endTime).toLocaleString()}
                                             </p>
                                         </div>
                                     </div>
@@ -316,9 +341,12 @@ const EventDetailPage: React.FC = () => {
                                         <button 
                                             className="w-full py-2.5 text-sm font-bold text-white bg-primary-container hover:bg-[#d9611b] rounded-lg shadow-sm transition-colors disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed"
                                             onClick={handleRegister}
-                                            disabled={isRegistered || isRegistering}
+                                            disabled={isRegistered || isRegistering || !regStatus.canRegister}
                                         >
-                                            {isRegistered ? 'Successfully Registered' : (isRegistering ? 'Registering...' : 'Register Now')}
+                                            {isRegistered ? 'Successfully Registered' : 
+                                             isRegistering ? 'Registering...' : 
+                                             !regStatus.canRegister ? (new Date() < new Date(event.registrationStart) ? 'Registration Not Started' : 'Registration Closed') : 
+                                             'Register Now'}
                                         </button>
                                     </div>
                                 )}
