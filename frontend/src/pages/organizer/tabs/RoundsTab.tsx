@@ -44,6 +44,8 @@ const RoundsTab: React.FC = () => {
     const [confirmTitle, setConfirmTitle] = useState('');
     const [confirmMessage, setConfirmMessage] = useState('');
     const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
+    const [confirmText, setConfirmText] = useState('Delete');
+    const [confirmIsDanger, setConfirmIsDanger] = useState(true);
 
     const fetchRounds = async () => {
         if (!eventId) return;
@@ -98,6 +100,8 @@ const RoundsTab: React.FC = () => {
     const handleDelete = (id: number) => {
         setConfirmTitle('Delete Round');
         setConfirmMessage('Are you sure you want to delete this round? This will also delete all submissions and scores in this round.');
+        setConfirmText('Delete');
+        setConfirmIsDanger(true);
         setConfirmAction(() => async () => {
             try {
                 await api.delete(`/rounds/${id}`);
@@ -155,16 +159,18 @@ const RoundsTab: React.FC = () => {
     };
 
     const handleEndGradingEarly = (id: number) => {
-        setConfirmTitle('Kết thúc chấm điểm sớm');
-        setConfirmMessage('Bạn có chắc chắn muốn kết thúc sớm thời gian chấm điểm cho vòng thi này? Bảng xếp hạng sẽ hiển thị ngay lập tức.');
+        setConfirmTitle('Kết thúc sớm vòng thi');
+        setConfirmMessage('Bạn có chắc chắn muốn kết thúc sớm thời gian nộp bài / chấm điểm cho vòng thi này? Bảng xếp hạng sẽ hiển thị ngay lập tức.');
+        setConfirmText('End');
+        setConfirmIsDanger(false);
         setConfirmAction(() => async () => {
-            const loadingToast = toast.loading('Đang kết thúc chấm điểm...');
+            const loadingToast = toast.loading('Đang kết thúc sớm...');
             try {
                 await api.post(`/rounds/${id}/end-grading`);
-                toast.success('Đã kết thúc chấm điểm sớm thành công!', { id: loadingToast });
+                toast.success('Đã kết thúc sớm thành công!', { id: loadingToast });
                 fetchRounds();
             } catch (err: any) {
-                toast.error(err.response?.data?.error?.message || 'Không thể kết thúc chấm điểm.', { id: loadingToast });
+                toast.error(err.response?.data?.error?.message || 'Không thể kết thúc sớm.', { id: loadingToast });
             }
             setConfirmOpen(false);
         });
@@ -448,8 +454,8 @@ const RoundsTab: React.FC = () => {
             isOpen={confirmOpen}
             title={confirmTitle}
             message={confirmMessage}
-            isDanger={true}
-            confirmText="Delete"
+            isDanger={confirmIsDanger}
+            confirmText={confirmText}
             onConfirm={confirmAction}
             onCancel={() => setConfirmOpen(false)}
         />

@@ -494,7 +494,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private String generateUniqueSlug(String baseSlug) {
         String slug = baseSlug;
         int counter = 1;
-        while (hackathonEventRepository.findBySlugAndIsDeletedFalse(slug).isPresent()) {
+        while (hackathonEventRepository.existsBySlug(slug)) {
             slug = baseSlug + "-" + counter;
             counter++;
         }
@@ -533,7 +533,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         String baseName = "Copy of " + original.getName();
         String candidateSlug = slugify.slugify(baseName);
         int counter = 1;
-        while (hackathonEventRepository.findBySlugAndIsDeletedFalse(candidateSlug).isPresent()) {
+        while (hackathonEventRepository.existsBySlug(candidateSlug)) {
             candidateSlug = slugify.slugify(baseName + "-" + counter);
             counter++;
         }

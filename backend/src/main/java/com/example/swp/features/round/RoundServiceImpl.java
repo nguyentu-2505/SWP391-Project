@@ -243,8 +243,12 @@ public class RoundServiceImpl implements RoundService {
         Round round = roundRepository.findById(id)
                 .orElseThrow(() -> new com.example.swp.exception.ResourceNotFoundException("Round not found: " + id));
 
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
         round.setGradingEnded(true);
-        round.setGradingEndTime(java.time.LocalDateTime.now());
+        round.setGradingEndTime(now);
+        if (round.getEndTime() == null || round.getEndTime().isAfter(now)) {
+            round.setEndTime(now);
+        }
         Round saved = roundRepository.save(round);
 
         auditLogService.logAction("END_GRADING", "ROUND", saved.getId(), null, "Ended grading early for round " + saved.getName(), saved.getHackathonEvent().getId());

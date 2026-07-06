@@ -42,6 +42,11 @@ public class MentorshipRequestService {
                 .filter(tm -> tm.isLeader())
                 .orElseThrow(() -> new AccessDeniedException("Only the team leader can request mentorship."));
 
+        if (team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot request mentorship when the event is completed or cancelled.");
+        }
+
         MentorshipRequest newRequest = MentorshipRequest.builder()
                 .team(team)
                 .title(request.getTitle())
@@ -83,6 +88,11 @@ public class MentorshipRequestService {
         MentorshipRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mentorship request not found"));
 
+        if (request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot accept mentorship request when the event is completed or cancelled.");
+        }
+
         if (request.getStatus() != MentorshipRequestStatus.OPEN) {
             throw new IllegalStateException("This request is no longer open.");
         }
@@ -121,6 +131,11 @@ public class MentorshipRequestService {
             throw new AccessDeniedException("Only the assigned mentor or team leader can resolve this request.");
         }
 
+        if (request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot resolve mentorship request when the event is completed or cancelled.");
+        }
+
         request.setStatus(MentorshipRequestStatus.RESOLVED);
         request.setResolvedAt(LocalDateTime.now());
         request.setAnswer(payload.getAnswer());
@@ -153,6 +168,11 @@ public class MentorshipRequestService {
             throw new IllegalStateException("Only open requests can be declined.");
         }
 
+        if (request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot decline mentorship request when the event is completed or cancelled.");
+        }
+
         request.setStatus(MentorshipRequestStatus.REJECTED);
         request.setMentor(mentor); // Record who rejected it
         request.setRejectReason(payload.getReason());
@@ -183,6 +203,11 @@ public class MentorshipRequestService {
         boolean isLeaderOfTeam = findTeamLeader(request.getTeam()).getId().equals(currentUser.getId());
         if (!isLeaderOfTeam && currentUser.getRole() != Role.ADMIN && currentUser.getRole() != Role.ORGANIZER) {
             throw new AccessDeniedException("Only the team leader or an admin can cancel this request.");
+        }
+
+        if (request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot cancel mentorship request when the event is completed or cancelled.");
         }
 
         requestRepository.delete(request);

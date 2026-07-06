@@ -197,6 +197,11 @@ public class TeamServiceImpl implements TeamService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
 
+        if (team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot edit team details when the event is completed or cancelled.");
+        }
+
         boolean isCurrentUserAdmin = currentUser.getRole() == com.example.swp.features.user.Role.ADMIN || currentUser.getRole() == com.example.swp.features.user.Role.ORGANIZER;
         boolean isCurrentUserLeader = teamMemberRepository.existsByTeamIdAndUserIdAndIsLeaderTrue(teamId, currentUser.getId());
 
@@ -273,6 +278,11 @@ public class TeamServiceImpl implements TeamService {
 
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+
+        if (team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot finalize team when the event is completed or cancelled.");
+        }
 
         boolean isCurrentUserLeader = teamMemberRepository.existsByTeamIdAndUserIdAndIsLeaderTrue(teamId, currentUser.getId());
         if (!isCurrentUserLeader) {
