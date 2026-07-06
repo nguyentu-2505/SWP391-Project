@@ -335,6 +335,26 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             if (teamCount < requiredTeams) {
                 throw new IllegalStateException("Cannot start event: At least " + requiredTeams + " teams are required to start the hackathon (currently " + teamCount + ").");
             }
+
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            // Automatically adjust timeline dates to match the manual start
+            if (event.getRegistrationEnd() == null || event.getRegistrationEnd().isAfter(now)) {
+                event.setRegistrationEnd(now);
+            }
+            event.setStartTime(now);
+
+            // Adjust first round start time to now so submissions can begin immediately
+            List<com.example.swp.features.round.Round> rounds = roundRepository.findByHackathonEventId(event.getId());
+            if (rounds != null) {
+                for (com.example.swp.features.round.Round round : rounds) {
+                    if (round.getRoundOrder() == 1) {
+                        if (round.getStartTime() == null || round.getStartTime().isAfter(now)) {
+                            round.setStartTime(now);
+                            roundRepository.save(round);
+                        }
+                    }
+                }
+            }
         }
 
         event.setStatus(newStatus);
