@@ -203,14 +203,22 @@ public class RoundServiceImpl implements RoundService {
         // Check overlaps and sequential slots
         for (int i = 0; i < allRounds.size(); i++) {
             Round current = allRounds.get(i);
+            java.time.LocalDateTime currentEndTime = current.getEndTime();
+            java.time.LocalDateTime currentGradingEndTime = current.getGradingEndTime();
+            if (Boolean.TRUE.equals(current.getGradingEnded()) && currentGradingEndTime != null) {
+                if (currentEndTime == null || currentEndTime.isAfter(currentGradingEndTime)) {
+                    currentEndTime = currentGradingEndTime;
+                }
+            }
+
             if (i < allRounds.size() - 1) {
                 Round next = allRounds.get(i + 1);
-                if (current.getGradingEndTime() != null && next.getStartTime().isBefore(current.getGradingEndTime())) {
+                if (currentGradingEndTime != null && next.getStartTime().isBefore(currentGradingEndTime)) {
                     throw new IllegalArgumentException("Thời gian bắt đầu của vòng tiếp theo '" + next.getName() + "' (" + next.getStartTime() + 
-                            ") phải sau thời gian kết thúc chấm điểm của vòng trước '" + current.getName() + "' (" + current.getGradingEndTime() + ").");
+                            ") phải sau thời gian kết thúc chấm điểm của vòng trước '" + current.getName() + "' (" + currentGradingEndTime + ").");
                 }
-                if (current.getEndTime().isAfter(next.getStartTime())) {
-                    throw new IllegalArgumentException("Round times overlap: '" + current.getName() + "' ends at " + current.getEndTime() + 
+                if (currentEndTime != null && currentEndTime.isAfter(next.getStartTime())) {
+                    throw new IllegalArgumentException("Round times overlap: '" + current.getName() + "' ends at " + currentEndTime + 
                             ", but next round starts at " + next.getStartTime() + ".");
                 }
                 if (current.getAdvancementSlots() != null && next.getAdvancementSlots() != null) {
