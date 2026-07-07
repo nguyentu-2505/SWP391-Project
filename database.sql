@@ -251,6 +251,9 @@ CREATE TABLE mentorship_request (
                                     status      NVARCHAR(50) DEFAULT 'OPEN',       -- OPEN, IN_PROGRESS, RESOLVED
                                     created_at  DATETIME2 DEFAULT GETDATE(),
                                     resolved_at DATETIME2,                         -- thêm từ patch.sql
+                                    answer      NVARCHAR(MAX),
+                                    reject_reason NVARCHAR(MAX),
+                                    version     INT,
                                     FOREIGN KEY (team_id)   REFERENCES team(id)  ON DELETE CASCADE,
                                     FOREIGN KEY (mentor_id) REFERENCES _user(id)
 );
@@ -295,6 +298,7 @@ CREATE TABLE audit_log (
     entity_id   BIGINT,
     old_value   NVARCHAR(MAX),
     new_value   NVARCHAR(MAX),
+    event_id    BIGINT,
     FOREIGN KEY (user_id) REFERENCES _user(id)
 );
 GO
@@ -539,3 +543,11 @@ INSERT INTO audit_log (user_id, action, details) VALUES
                                                      (8, 'TEAM_CREATED',         N'Student1 tạo Team Alpha cho event FPT Hackathon 2026'),
                                                      (4, 'SCORE_SUBMITTED',      N'Judge1 đã chấm điểm submission Team Alpha – Vòng Ý tưởng');
 
+CREATE TABLE support_tickets (
+                                 id BIGINT IDENTITY(1,1) PRIMARY KEY,
+                                 full_name NVARCHAR(255) NOT NULL,
+                                 email VARCHAR(255) NOT NULL,
+                                 message NVARCHAR(MAX) NOT NULL,
+                                 status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+                                 created_at DATETIME2 NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

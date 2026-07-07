@@ -4,7 +4,7 @@ import NotificationBell from './NotificationBell';
 import Input from './ui/Input';
 import { 
     LayoutDashboard, Users, Trophy, Layers, MapPin, Bell, Settings,
-    LogOut, HelpCircle, User as UserIcon, Menu, X, Search
+    LogOut, HelpCircle, User as UserIcon, Menu, X, Search, MessageSquare
 } from 'lucide-react';
 import { Role, getUserRole } from '../services/authUtils';
 
@@ -83,6 +83,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                                 <SidebarItem to="/hackathon-events" icon={<Trophy size={18} />} label="Hackathons" onClick={closeSidebar} />
                                 <SidebarItem to="/teams" icon={<Users size={18} />} label="All Teams" onClick={closeSidebar} />
                                 <SidebarItem to="/admin/audit-logs" icon={<Layers size={18} />} label="Audit Logs" onClick={closeSidebar} />
+                                <SidebarItem to="/support-tickets" icon={<MessageSquare size={18} />} label="Support Tickets" onClick={closeSidebar} />
                                 <SidebarItem to="/admin/preferences" icon={<Settings size={18} />} label="System Settings" onClick={closeSidebar} />
                             </>
                         )}
@@ -94,7 +95,6 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                                 <SidebarItem to="/events" icon={<Trophy size={18} />} label="Hackathons" onClick={closeSidebar} />
                                 <SidebarItem to="/invitations" icon={<Bell size={18} />} label="Invitations" onClick={closeSidebar} />
                                 <SidebarItem to="/my-mentorship-requests" icon={<HelpCircle size={18} />} label="Mentorship Sessions" onClick={closeSidebar} />
-                                <SidebarItem to="/mentors" icon={<MapPin size={18} />} label="Mentors" onClick={closeSidebar} />
                             </>
                         )}
 

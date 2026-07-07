@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     Trophy, Rocket, ArrowRight, Brain, Gavel, 
@@ -9,6 +9,7 @@ import {
 import { isAuthenticated } from '../services/authUtils';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
+import { SupportTicketService } from '../services/SupportTicketService';
 
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
@@ -17,6 +18,40 @@ const LandingPage: React.FC = () => {
     const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
     const [isJudgeModalOpen, setIsJudgeModalOpen] = useState(false);
     const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
+
+    // Support Ticket Form State
+    const [supportName, setSupportName] = useState('');
+    const [supportEmail, setSupportEmail] = useState('');
+    const [supportMessage, setSupportMessage] = useState('');
+    const [supportLoading, setSupportLoading] = useState(false);
+    const [supportSuccess, setSupportSuccess] = useState(false);
+    const [supportError, setSupportError] = useState('');
+
+    const handleSupportSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSupportLoading(true);
+        setSupportError('');
+        setSupportSuccess(false);
+
+        try {
+            await SupportTicketService.createTicket({
+                fullName: supportName,
+                email: supportEmail,
+                message: supportMessage
+            });
+            setSupportSuccess(true);
+            setSupportName('');
+            setSupportEmail('');
+            setSupportMessage('');
+            
+            // Auto hide success message after 5 seconds
+            setTimeout(() => setSupportSuccess(false), 5000);
+        } catch (err: any) {
+            setSupportError(err.response?.data?.error?.message || 'Failed to send message. Please try again.');
+        } finally {
+            setSupportLoading(false);
+        }
+    };
 
     // Mentor mock form state
     const [mentorForm, setMentorForm] = useState({ name: '', email: '', specialty: 'Web Development', availability: '2 hours/day' });
@@ -318,20 +353,64 @@ const LandingPage: React.FC = () => {
                                 Our support team is available 24/7 during the event to assist with registration, technical issues, or general inquiries.
                             </p>
                         </div>
-                        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                        <form className="space-y-4" onSubmit={handleSupportSubmit}>
+                            {supportSuccess && (
+                                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-medium flex items-center gap-2">
+                                    <span>✅</span> Thank you! Your message has been sent. We will get back to you soon.
+                                </div>
+                            )}
+                            {supportError && (
+                                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium">
+                                    {supportError}
+                                </div>
+                            )}
                             <div>
                                 <label className="block font-label-lg text-label-lg text-brand-navy mb-1.5">Full Name</label>
-                                <input className="w-full bg-white border border-outline-variant rounded-lg p-3 focus:ring-4 focus:ring-primary-container/10 focus:border-primary-container outline-none transition-all text-body-sm" placeholder="Enter your name" type="text" />
+                                <input 
+                                    className="w-full bg-white border border-outline-variant rounded-lg p-3 focus:ring-4 focus:ring-primary-container/10 focus:border-primary-container outline-none transition-all text-body-sm" 
+                                    placeholder="Enter your name" 
+                                    type="text" 
+                                    required
+                                    value={supportName}
+                                    onChange={(e) => setSupportName(e.target.value)}
+                                    disabled={supportLoading}
+                                />
                             </div>
                             <div>
                                 <label className="block font-label-lg text-label-lg text-brand-navy mb-1.5">Email Address</label>
-                                <input className="w-full bg-white border border-outline-variant rounded-lg p-3 focus:ring-4 focus:ring-primary-container/10 focus:border-primary-container outline-none transition-all text-body-sm" placeholder="student@fpt.edu.vn" type="email" />
+                                <input 
+                                    className="w-full bg-white border border-outline-variant rounded-lg p-3 focus:ring-4 focus:ring-primary-container/10 focus:border-primary-container outline-none transition-all text-body-sm" 
+                                    placeholder="student@fpt.edu.vn" 
+                                    type="email" 
+                                    required
+                                    value={supportEmail}
+                                    onChange={(e) => setSupportEmail(e.target.value)}
+                                    disabled={supportLoading}
+                                />
                             </div>
                             <div>
                                 <label className="block font-label-lg text-label-lg text-brand-navy mb-1.5">Message</label>
-                                <textarea className="w-full bg-white border border-outline-variant rounded-lg p-3 focus:ring-4 focus:ring-primary-container/10 focus:border-primary-container outline-none transition-all text-body-sm" placeholder="How can we help you?" rows={4}></textarea>
+                                <textarea 
+                                    className="w-full bg-white border border-outline-variant rounded-lg p-3 focus:ring-4 focus:ring-primary-container/10 focus:border-primary-container outline-none transition-all text-body-sm" 
+                                    placeholder="How can we help you?" 
+                                    rows={4}
+                                    required
+                                    value={supportMessage}
+                                    onChange={(e) => setSupportMessage(e.target.value)}
+                                    disabled={supportLoading}
+                                ></textarea>
                             </div>
-                            <button className="w-full bg-primary-container text-on-primary py-3.5 rounded-lg font-headline-sm text-headline-sm hover:opacity-90 transition-all shadow-md shadow-primary/20 cursor-pointer font-semibold">Send Message</button>
+                            <button 
+                                type="submit" 
+                                disabled={supportLoading}
+                                className={`w-full bg-primary-container text-on-primary py-3.5 rounded-lg font-headline-sm text-headline-sm hover:opacity-90 transition-all shadow-md shadow-primary/20 font-semibold flex items-center justify-center gap-2 ${supportLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+                            >
+                                {supportLoading ? 'Sending...' : (
+                                    <>
+                                        Send Message <span className="text-xl leading-none">✈️</span>
+                                    </>
+                                )}
+                            </button>
                         </form>
                     </div>
                 </div>

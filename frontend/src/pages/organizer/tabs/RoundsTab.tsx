@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import { Clock, Plus, Trash2, Loader2, CalendarDays, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../../components/Modal';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 // trigger re-check
 
@@ -13,6 +14,7 @@ interface Round {
     description: string;
     startTime: string;
     endTime: string;
+    advancementSlots?: number;
 }
 
 interface RoundForm {
@@ -20,9 +22,11 @@ interface RoundForm {
     description: string;
     startTime: string;
     endTime: string;
+    gradingEndTime: string;
+    advancementSlots: number;
 }
 
-const emptyForm: RoundForm = { name: '', description: '', startTime: '', endTime: '' };
+const emptyForm: RoundForm = { name: '', description: '', startTime: '', endTime: '', gradingEndTime: '', advancementSlots: 2 };
 
 const RoundsTab: React.FC = () => {
     const { eventId } = useParams<{ eventId: string }>();
@@ -34,6 +38,14 @@ const RoundsTab: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingRound, setEditingRound] = useState<Round | null>(null);
     const [eventDetails, setEventDetails] = useState<any>(null);
+
+    // Confirm Modal State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmTitle, setConfirmTitle] = useState('');
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
+    const [confirmText, setConfirmText] = useState('Delete');
+    const [confirmIsDanger, setConfirmIsDanger] = useState(true);
 
     const fetchRounds = async () => {
         if (!eventId) return;
@@ -67,8 +79,9 @@ const RoundsTab: React.FC = () => {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.name.trim()) { toast.error('Round name cannot be empty.'); return; }
-        if (!form.startTime || !form.endTime) { toast.error('Start and end times are required.'); return; }
+        if (!form.startTime || !form.endTime || !form.gradingEndTime) { toast.error('Start, end, and grading end times are required.'); return; }
         if (form.startTime >= form.endTime) { toast.error('End time must be after start time.'); return; }
+        if (form.gradingEndTime <= form.endTime) { toast.error('Grading end time must be after round end time.'); return; }
 
         setSaving(true);
         try {
@@ -84,19 +97,26 @@ const RoundsTab: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this round? This action will also delete all submissions and scores in this round.')) return;
-        try {
-            await api.delete(`/rounds/${id}`);
-            toast.success('Round deleted successfully.');
-            setRounds(prev => prev.filter(r => r.id !== id));
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete round.');
-        }
+    const handleDelete = (id: number) => {
+        setConfirmTitle('Delete Round');
+        setConfirmMessage('Are you sure you want to delete this round? This will also delete all submissions and scores in this round.');
+        setConfirmText('Delete');
+        setConfirmIsDanger(true);
+        setConfirmAction(() => async () => {
+            try {
+                await api.delete(`/rounds/${id}`);
+                toast.success('Round deleted successfully.');
+                setRounds(prev => prev.filter(r => r.id !== id));
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete round.');
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
     };
 
     const openEditModal = (round: Round) => {
-        setEditingRound({ ...round });
+        setEditingRound({ ...round, advancementSlots: round.advancementSlots || 2 });
         setIsEditModalOpen(true);
     };
 
@@ -106,12 +126,16 @@ const RoundsTab: React.FC = () => {
             toast.error('Round name is required.');
             return;
         }
-        if (!editingRound.startTime || !editingRound.endTime) {
-            toast.error('Start and end times are required.');
+        if (!editingRound.startTime || !editingRound.endTime || !editingRound.gradingEndTime) {
+            toast.error('Start, end, and grading end times are required.');
             return;
         }
         if (editingRound.startTime >= editingRound.endTime) {
             toast.error('End time must be after start time.');
+            return;
+        }
+        if (editingRound.gradingEndTime <= editingRound.endTime) {
+            toast.error('Grading end time must be after round end time.');
             return;
         }
         const loadingToast = toast.loading('Updating round...');
@@ -121,7 +145,9 @@ const RoundsTab: React.FC = () => {
                 description: editingRound.description,
                 startTime: editingRound.startTime,
                 endTime: editingRound.endTime,
+                gradingEndTime: editingRound.gradingEndTime,
                 hackathonEventId: Number(eventId),
+                advancementSlots: Number(editingRound.advancementSlots || 2)
             });
             toast.success('Round updated successfully!', { id: loadingToast });
             setIsEditModalOpen(false);
@@ -132,12 +158,51 @@ const RoundsTab: React.FC = () => {
         }
     };
 
+    const handleEndGradingEarly = (id: number) => {
+        setConfirmTitle('Kết thúc sớm vòng thi');
+        setConfirmMessage('Bạn có chắc chắn muốn kết thúc sớm thời gian nộp bài / chấm điểm cho vòng thi này? Bảng xếp hạng sẽ hiển thị ngay lập tức.');
+        setConfirmText('End');
+        setConfirmIsDanger(false);
+        setConfirmAction(() => async () => {
+            const loadingToast = toast.loading('Đang kết thúc sớm...');
+            try {
+                await api.post(`/rounds/${id}/end-grading`);
+                toast.success('Đã kết thúc sớm thành công!', { id: loadingToast });
+                fetchRounds();
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || 'Không thể kết thúc sớm.', { id: loadingToast });
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
+    };
+
+    const handleAdvanceTeams = (id: number) => {
+        setConfirmTitle('Advance Teams / Complete Event');
+        setConfirmMessage('Are you sure you want to proceed? This will calculate rankings and advance teams (or complete the event if this is the final round).');
+        setConfirmText('Confirm');
+        setConfirmIsDanger(false);
+        setConfirmAction(() => async () => {
+            const loadingToast = toast.loading('Processing...');
+            try {
+                const res = await api.post(`/rounds/${id}/advance`);
+                toast.success(res.data.message || 'Processed successfully!', { id: loadingToast });
+                fetchRounds();
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to process.', { id: loadingToast });
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
+    };
+
     if (loading) return (
         <div className="flex justify-center py-10"><Loader2 className="animate-spin text-blue-500" size={28} /></div>
     );
 
     return (
-        <div>
+        <>
+            <div>
             <div className="flex items-center gap-2 mb-4">
                 <CalendarDays size={20} className="text-gray-600" />
                 <div className="flex-1">
@@ -206,6 +271,27 @@ const RoundsTab: React.FC = () => {
                                 required
                             />
                         </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Grading End Time *</label>
+                            <input
+                                type="datetime-local"
+                                value={form.gradingEndTime}
+                                onChange={e => setForm(f => ({ ...f, gradingEndTime: e.target.value }))}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Advancement Slots (For non-final rounds) *</label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={form.advancementSlots}
+                                onChange={e => setForm(f => ({ ...f, advancementSlots: Number(e.target.value) }))}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
                     </div>
                     <div className="flex gap-2 justify-end">
                         <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
@@ -231,12 +317,63 @@ const RoundsTab: React.FC = () => {
                             <div className="flex-1">
                                 <p className="font-semibold text-gray-900">{round.name}</p>
                                 {round.description && <p className="text-xs text-gray-500 mt-0.5">{round.description}</p>}
-                                <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
-                                    <Clock size={12} />
-                                    {new Date(round.startTime).toLocaleString()} → {new Date(round.endTime).toLocaleString()}
+                                <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                                        <Clock size={12} />
+                                        {new Date(round.startTime).toLocaleString()} → {new Date(round.endTime).toLocaleString()}
+                                    </div>
+                                    {idx < rounds.length - 1 ? (
+                                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-full">
+                                            Advancement: {round.advancementSlots || 2} teams (per Track)
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 rounded-full">
+                                            Final Round
+                                        </span>
+                                    )}
                                 </div>
+                                {round.gradingEndTime && (
+                                    <div className="text-[11px] text-gray-500 font-medium mt-1">
+                                        Grading Period: <span className="text-amber-700 font-semibold">{new Date(round.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(round.gradingEndTime).toLocaleString()}</span>
+                                        {round.gradingEnded ? (
+                                            <span className="ml-2 px-1.5 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded text-[9px] font-bold">Ended Early</span>
+                                        ) : new Date() >= new Date(round.gradingEndTime) ? (
+                                            <span className="ml-2 px-1.5 py-0.5 bg-green-100 text-green-700 border border-green-200 rounded text-[9px] font-bold">Finished</span>
+                                        ) : new Date() >= new Date(round.endTime) ? (
+                                            <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded text-[9px] font-bold animate-pulse">Grading...</span>
+                                        ) : null}
+                                    </div>
+                                )}
                             </div>
-                            <div className="flex items-center gap-1">                                 <button
+                            <div className="flex items-center gap-2">
+                                {(round.gradingEnded || new Date() >= new Date(round.gradingEndTime)) && idx < rounds.length - 1 && (
+                                     <button
+                                         onClick={() => handleAdvanceTeams(round.id)}
+                                         className="text-[10px] bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
+                                         title="Advance top teams to the next round"
+                                     >
+                                         Advance Teams
+                                     </button>
+                                )}
+                                {(round.gradingEnded || new Date() >= new Date(round.gradingEndTime)) && idx === rounds.length - 1 && (
+                                     <button
+                                         onClick={() => handleAdvanceTeams(round.id)}
+                                         className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
+                                         title="Complete hackathon and generate final scores"
+                                     >
+                                         Complete Event
+                                     </button>
+                                )}
+                                {round.gradingEndTime && !round.gradingEnded && new Date() < new Date(round.gradingEndTime) && (
+                                     <button
+                                         onClick={() => handleEndGradingEarly(round.id)}
+                                         className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
+                                         title="Kết thúc sớm vòng thi hoặc thời gian chấm điểm"
+                                     >
+                                         End Early
+                                     </button>
+                                )}
+                                <button
                                     onClick={() => openEditModal(round)}
                                     className="text-blue-400 hover:text-blue-600 transition-colors p-1 cursor-pointer"
                                     title="Edit round"
@@ -310,6 +447,27 @@ const RoundsTab: React.FC = () => {
                                 />
                             </div>
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Grading End Time *</label>
+                            <input
+                                type="datetime-local"
+                                value={editingRound.gradingEndTime ? editingRound.gradingEndTime.slice(0, 16) : ''}
+                                onChange={e => setEditingRound({ ...editingRound, gradingEndTime: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Advancement Slots (For non-final rounds) *</label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={editingRound.advancementSlots || 2}
+                                onChange={e => setEditingRound({ ...editingRound, advancementSlots: Number(e.target.value) })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                                required
+                            />
+                        </div>
                         <div className="flex justify-end gap-3 pt-2">
                             <button
                                 type="button"
@@ -329,6 +487,16 @@ const RoundsTab: React.FC = () => {
                 </Modal>
             )}
         </div>
+        <ConfirmModal
+            isOpen={confirmOpen}
+            title={confirmTitle}
+            message={confirmMessage}
+            isDanger={confirmIsDanger}
+            confirmText={confirmText}
+            onConfirm={confirmAction}
+            onCancel={() => setConfirmOpen(false)}
+        />
+        </>
     );
 };
 

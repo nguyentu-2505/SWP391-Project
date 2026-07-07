@@ -5,6 +5,7 @@ import RegisterPage from './pages/RegisterPage';
 import VerifyOtpPage from './pages/VerifyOtpPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import SupportTicketsPage from './pages/SupportTicketsPage';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
@@ -12,6 +13,7 @@ import CertificatesPage from './pages/CertificatesPage';
 import NotificationsPage from './pages/NotificationsPage';
 import MentorDirectoryPage from './pages/MentorDirectoryPage';
 import MentorDetailPage from './pages/MentorDetailPage';
+import TeamDetailPage from './pages/TeamDetailPage';
 import AdminMentorProfilePage from './pages/admin/AdminMentorProfilePage';
 import SystemPreferencesPage from './pages/admin/SystemPreferencesPage';
 import PrivateRoute from './components/PrivateRoute';
@@ -47,6 +49,8 @@ import RoundsTab from './pages/organizer/tabs/RoundsTab';
 import CriteriaTab from './pages/organizer/tabs/CriteriaTab';
 import TracksTab from './pages/organizer/tabs/TracksTab';
 import PrizesTab from './pages/organizer/tabs/PrizesTab';
+import AnalyticsTab from './pages/organizer/tabs/AnalyticsTab';
+import ActivityLogTab from './pages/organizer/tabs/ActivityLogTab';
 // Generic Pages
 import TeamsPage from './pages/TeamsPage';
 import RoundsPage from './pages/RoundsPage';
@@ -87,7 +91,7 @@ function App() {
             <Route path="/events/:slug" element={<EventDetailPage />} />
             <Route path="/leaderboard/round/:roundId" element={<PublicLeaderboardPage />} />
           </Route>
-          
+
           {/* Protected Routes with main app Layout */}
           <Route element={<PrivateRoute />}>
             <Route element={<Layout />}>
@@ -97,8 +101,8 @@ function App() {
               <Route path="/certificates" element={<CertificatesPage />} />
               <Route path="/mentors" element={<MentorDirectoryPage />} />
               <Route path="/mentors/:mentorId" element={<MentorDetailPage />} />
+              <Route path="/teams/:teamId" element={<TeamDetailPage />} />
 
-              
               {/* Participant Routes */}
               <Route element={<PrivateRoute allowedRoles={[Role.PARTICIPANT]} />}>
                 <Route path="/my-team" element={<MyTeamPage />} />
@@ -133,12 +137,15 @@ function App() {
                   <Route path="criteria" element={<CriteriaTab />} />
                   <Route path="tracks" element={<TracksTab />} />
                   <Route path="prizes" element={<PrizesTab />} />
+                  <Route path="analytics" element={<AnalyticsTab />} />
+                  <Route path="activity-log" element={<ActivityLogTab />} />
                   {/* Add other tabs here */}
                 </Route>
               </Route>
 
               {/* Generic/Admin Routes (for now) */}
               <Route element={<PrivateRoute allowedRoles={[Role.ADMIN]} />}>
+                <Route path="/support-tickets" element={<SupportTicketsPage />} />
                 <Route path="/teams" element={<TeamsPage />} />
                 <Route path="/rounds" element={<RoundsPage />} />
                 <Route path="/submissions" element={<SubmissionsPage />} />
@@ -150,7 +157,7 @@ function App() {
                 <Route path="/criterion" element={<CriterionPage />} />
                 <Route path="/team-members" element={<TeamMemberPage />} />
               </Route>
-              
+
               {/* Admin Only Routes */}
               <Route element={<PrivateRoute allowedRoles={[Role.ADMIN]} />}>
                 <Route path="/admin/users" element={<UsersPage />} />

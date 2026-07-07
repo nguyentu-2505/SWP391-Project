@@ -7,24 +7,47 @@ import { ExportService } from '../services/ExportService';
 import Authorizable from '../components/Authorizable';
 import { Role } from '../services/authUtils';
 import api from '../services/api';
+import { HackathonEventService } from '../services/HackathonEventService';
 
 const TeamsPage: React.FC = () => {
     const [teams, setTeams] = useState<Team[]>([]);
     const [loading, setLoading] = useState(true);
+    const [events, setEvents] = useState<any[]>([]);
+    const [selectedEventId, setSelectedEventId] = useState<number | 'all'>('all');
     
     const [disqualifyTeamId, setDisqualifyTeamId] = useState<number | null>(null);
     const [disqualifyReason, setDisqualifyReason] = useState('');
     const [isDisqualifying, setIsDisqualifying] = useState(false);
 
     useEffect(() => {
-        fetchTeams();
+        fetchEvents();
     }, []);
+
+    useEffect(() => {
+        fetchTeams();
+    }, [selectedEventId]);
+
+    const fetchEvents = async () => {
+        try {
+            const data = await HackathonEventService.getAllEventsForAdmin(0, 100);
+            setEvents(data || []);
+        } catch (err) {
+            console.error('Failed to fetch events:', err);
+        }
+    };
 
     const fetchTeams = async () => {
         setLoading(true);
         try {
-            const allTeams = await TeamService.getAllTeams();
-            setTeams(allTeams);
+            let fetchedTeams: Team[] = [];
+            if (selectedEventId === 'all') {
+                const response = await api.get('/teams');
+                fetchedTeams = response.data.data || [];
+            } else {
+                const response = await api.get(`/teams/event/${selectedEventId}`);
+                fetchedTeams = response.data.data || [];
+            }
+            setTeams(fetchedTeams);
         } catch (err: any) {
             console.error('Failed to fetch teams:', err);
             toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to fetch teams.');
@@ -84,6 +107,22 @@ const TeamsPage: React.FC = () => {
                         </button>
                     </Authorizable>
 
+                </div>
+            </div>
+
+            <div className="bg-white p-4 border border-outline-variant rounded-xl shadow-sm flex flex-wrap items-center gap-4">
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Filter by Hackathon Event</label>
+                    <select
+                        value={selectedEventId}
+                        onChange={e => setSelectedEventId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[280px]"
+                    >
+                        <option value="all">All Events</option>
+                        {events.map(ev => (
+                            <option key={ev.id} value={ev.id}>{ev.name}</option>
+                        ))}
+                    </select>
                 </div>
             </div>
 

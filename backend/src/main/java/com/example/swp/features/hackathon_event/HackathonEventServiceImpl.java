@@ -16,6 +16,8 @@ import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.criterion.Criterion;
 import com.example.swp.features.criterion.CriterionRepository;
 import com.example.swp.features.prize.PrizeRepository;
+import com.example.swp.features.submission.SubmissionRepository;
+import com.example.swp.features.hackathon_event.dto.response.HackathonEventAnalyticsResponse;
 import com.github.slugify.Slugify;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final com.example.swp.features.team_member.TeamMemberRepository teamMemberRepository;
     private final com.example.swp.features.track.TrackRepository trackRepository;
     private final PrizeRepository prizeRepository;
+    private final SubmissionRepository submissionRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     // ==================== CREATE ====================
@@ -102,23 +105,8 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .build();
 
         HackathonEvent savedEvent = hackathonEventRepository.save(event);
-        // Auto-seed default criteria
-        List<Criterion> defaultCriteria = criterionRepository.findByHackathonEventIsNull();
-        if (!defaultCriteria.isEmpty()) {
-            List<Criterion> clonedCriteria = defaultCriteria.stream()
-                    .map(c -> Criterion.builder()
-                            .name(c.getName())
-                            .description(c.getDescription())
-                            .maxScore(c.getMaxScore())
-                            .weight(c.getWeight())
-                            .hackathonEvent(savedEvent)
-                            .build())
-                    .collect(Collectors.toList());
-            criterionRepository.saveAll(clonedCriteria);
-            log.info("Auto-seeded {} default criteria for new event id={}", clonedCriteria.size(), savedEvent.getId());
-        }
 
-        auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent", savedEvent.getId(), null, "Created event: " + savedEvent.getName());
+        auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent", savedEvent.getId(), null, "Created event: " + savedEvent.getName(), savedEvent.getId());
         log.info("Hackathon event created successfully: id={}, name={} by organizer={}", savedEvent.getId(), savedEvent.getName(), organizer.getUsername());
         return mapToResponse(savedEvent);
     }
@@ -179,6 +167,18 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                     "Cannot edit event in status: " + event.getStatus() + ". Only DRAFT and PUBLISHED events can be edited.");
         }
 
+        java.util.Map<String, Object> oldMap = new java.util.HashMap<>();
+        oldMap.put("name", event.getName());
+        oldMap.put("description", event.getDescription());
+        oldMap.put("startTime", event.getStartTime() != null ? event.getStartTime().toString() : null);
+        oldMap.put("endTime", event.getEndTime() != null ? event.getEndTime().toString() : null);
+        oldMap.put("registrationStart", event.getRegistrationStart() != null ? event.getRegistrationStart().toString() : null);
+        oldMap.put("registrationEnd", event.getRegistrationEnd() != null ? event.getRegistrationEnd().toString() : null);
+        oldMap.put("minTeamSize", event.getMinTeamSize());
+        oldMap.put("maxTeamSize", event.getMaxTeamSize());
+        oldMap.put("rules", event.getRules());
+        oldMap.put("imageUrl", event.getImageUrl());
+
         // Partial update — chỉ update field non-null
         if (request.getName() != null) {
             event.setName(request.getName());
@@ -238,9 +238,31 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             throw new IllegalArgumentException("Minimum team size cannot be greater than maximum team size.");
         }
 
+        java.util.Map<String, Object> newMap = new java.util.HashMap<>();
+        newMap.put("name", event.getName());
+        newMap.put("description", event.getDescription());
+        newMap.put("startTime", event.getStartTime() != null ? event.getStartTime().toString() : null);
+        newMap.put("endTime", event.getEndTime() != null ? event.getEndTime().toString() : null);
+        newMap.put("registrationStart", event.getRegistrationStart() != null ? event.getRegistrationStart().toString() : null);
+        newMap.put("registrationEnd", event.getRegistrationEnd() != null ? event.getRegistrationEnd().toString() : null);
+        newMap.put("minTeamSize", event.getMinTeamSize());
+        newMap.put("maxTeamSize", event.getMaxTeamSize());
+        newMap.put("rules", event.getRules());
+        newMap.put("imageUrl", event.getImageUrl());
+
+        String oldValueJson = null;
+        String newValueJson = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            oldValueJson = mapper.writeValueAsString(oldMap);
+            newValueJson = mapper.writeValueAsString(newMap);
+        } catch (Exception e) {
+            // ignore
+        }
+
         HackathonEvent updatedEvent = hackathonEventRepository.save(event);
         auditLogService.logAction("UPDATE_HACKATHON_EVENT", "HackathonEvent",
-                updatedEvent.getId(), null, "Updated event: " + updatedEvent.getName());
+                updatedEvent.getId(), oldValueJson, newValueJson, updatedEvent.getId());
         log.info("Hackathon event updated: id={}, name='{}'", updatedEvent.getId(), updatedEvent.getName());
 
         return mapToResponse(updatedEvent);
@@ -307,6 +329,34 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             }
         }
 
+        if (newStatus == HackathonStatus.IN_PROGRESS) {
+            long teamCount = teamRepository.findByEventId(event.getId()).size();
+            int requiredTeams = event.getMinTeamSize() != null ? event.getMinTeamSize() : 2;
+            if (teamCount < requiredTeams) {
+                throw new IllegalStateException("Cannot start event: At least " + requiredTeams + " teams are required to start the hackathon (currently " + teamCount + ").");
+            }
+
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            // Automatically adjust timeline dates to match the manual start
+            if (event.getRegistrationEnd() == null || event.getRegistrationEnd().isAfter(now)) {
+                event.setRegistrationEnd(now);
+            }
+            event.setStartTime(now);
+
+            // Adjust first round start time to now so submissions can begin immediately
+            List<com.example.swp.features.round.Round> rounds = roundRepository.findByHackathonEventId(event.getId());
+            if (rounds != null) {
+                for (com.example.swp.features.round.Round round : rounds) {
+                    if (round.getRoundOrder() == 1) {
+                        if (round.getStartTime() == null || round.getStartTime().isAfter(now)) {
+                            round.setStartTime(now);
+                            roundRepository.save(round);
+                        }
+                    }
+                }
+            }
+        }
+
         event.setStatus(newStatus);
         HackathonEvent updatedEvent = hackathonEventRepository.save(event);
 
@@ -368,7 +418,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
 
         auditLogService.logAction("UPDATE_HACKATHON_EVENT_STATUS", "HackathonEvent",
-                updatedEvent.getId(), "status: " + currentStatus.name(), "status: " + newStatus.name());
+                updatedEvent.getId(), "status: " + currentStatus.name(), "status: " + newStatus.name(), updatedEvent.getId());
         log.info("Hackathon event status changed: id={}, {} → {}", id, currentStatus, newStatus);
 
         return mapToResponse(updatedEvent);
@@ -400,7 +450,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         hackathonEventRepository.save(event);
 
         auditLogService.logAction("DELETE_HACKATHON_EVENT", "HackathonEvent",
-                event.getId(), "isDeleted: false", "isDeleted: true");
+                event.getId(), "isDeleted: false", "isDeleted: true", event.getId());
         log.info("Hackathon event soft-deleted: id={}, name='{}'", event.getId(), event.getName());
     }
 
@@ -444,7 +494,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private String generateUniqueSlug(String baseSlug) {
         String slug = baseSlug;
         int counter = 1;
-        while (hackathonEventRepository.findBySlugAndIsDeletedFalse(slug).isPresent()) {
+        while (hackathonEventRepository.existsBySlug(slug)) {
             slug = baseSlug + "-" + counter;
             counter++;
         }
@@ -483,7 +533,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         String baseName = "Copy of " + original.getName();
         String candidateSlug = slugify.slugify(baseName);
         int counter = 1;
-        while (hackathonEventRepository.findBySlugAndIsDeletedFalse(candidateSlug).isPresent()) {
+        while (hackathonEventRepository.existsBySlug(candidateSlug)) {
             candidateSlug = slugify.slugify(baseName + "-" + counter);
             counter++;
         }
@@ -558,7 +608,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             prizeRepository.save(cp);
         }
 
-        auditLogService.logAction("CLONE_EVENT", "HACKATHON_EVENT", savedEvent.getId(), savedEvent.getName(), "Cloned from event ID: " + original.getId());
+        auditLogService.logAction("CLONE_EVENT", "HACKATHON_EVENT", savedEvent.getId(), savedEvent.getName(), "Cloned from event ID: " + original.getId(), savedEvent.getId());
 
         return mapToResponse(savedEvent);
     }
@@ -588,5 +638,32 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
         return String.format("Luồng hợp lệ: DRAFT → PUBLISHED → IN_PROGRESS → COMPLETED. Từ %s chỉ có thể chuyển sang: %s.",
                 from, from.getAllowedTransitions());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public HackathonEventAnalyticsResponse getEventAnalytics(Long eventId) {
+        hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
+
+        List<com.example.swp.features.team.Team> teams = teamRepository.findByEventId(eventId);
+        long totalTeams = teams.size();
+        long totalParticipants = teams.stream()
+                .filter(t -> t.getTeamMembers() != null)
+                .mapToInt(t -> t.getTeamMembers().size())
+                .sum();
+
+        long totalSubmissions = submissionRepository.findByEventId(eventId).size();
+
+        java.util.Map<String, Long> teamsPerTrack = teams.stream()
+                .filter(t -> t.getTrack() != null)
+                .collect(Collectors.groupingBy(t -> t.getTrack().getName(), Collectors.counting()));
+
+        return HackathonEventAnalyticsResponse.builder()
+                .totalTeams(totalTeams)
+                .totalParticipants(totalParticipants)
+                .totalSubmissions(totalSubmissions)
+                .teamsPerTrack(teamsPerTrack)
+                .build();
     }
 }

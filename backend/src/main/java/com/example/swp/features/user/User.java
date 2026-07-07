@@ -105,6 +105,9 @@ public class User {
     public void setTemporary(boolean temporary) { this.temporary = temporary; }
     
     public boolean isProfileComplete() {
-        return fptStudentId != null && !fptStudentId.trim().isEmpty();
+        return fptStudentId != null && !fptStudentId.trim().isEmpty()
+                && fullName != null && !fullName.trim().isEmpty()
+                && phone != null && !phone.trim().isEmpty()
+                && schoolName != null && !schoolName.trim().isEmpty();
     }
 }

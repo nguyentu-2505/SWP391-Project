@@ -42,7 +42,9 @@ public class RoundAdvancementService {
         Round fromRound = roundRepository.findById(fromRoundId)
                 .orElseThrow(() -> new ResourceNotFoundException("Round not found: " + fromRoundId));
 
-        if (LocalDateTime.now().isBefore(fromRound.getEndTime())) {
+        boolean hasEnded = Boolean.TRUE.equals(fromRound.getGradingEnded()) 
+                || !LocalDateTime.now().isBefore(fromRound.getEndTime());
+        if (!hasEnded) {
             throw new IllegalStateException("Cannot advance teams before the round has ended.");
         }
 

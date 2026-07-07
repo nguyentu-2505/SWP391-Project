@@ -11,6 +11,7 @@ import com.example.swp.features.track.TrackMentorRepository;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.user.Role;
+import com.example.swp.features.audit_log.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class JudgeAssignmentService {
     private final RoundRepository roundRepository;
     private final TrackRepository trackRepository;
     private final TrackMentorRepository trackMentorRepository;
+    private final AuditLogService auditLogService;
 
     public JudgeAssignmentResponse assignJudge(AssignJudgeRequest request) {
         User judge = userRepository.findById(request.getJudgeId())
@@ -77,6 +79,14 @@ public class JudgeAssignmentService {
                 .build();
         
         JudgeAssignment savedAssignment = assignmentRepository.save(assignment);
+        auditLogService.logAction(
+            "ASSIGN_JUDGE",
+            "JUDGE_ASSIGNMENT",
+            savedAssignment.getId(),
+            null,
+            "Assigned judge " + judge.getUsername() + " to round " + round.getName(),
+            round.getHackathonEvent().getId()
+        );
         return mapToResponse(savedAssignment);
     }
 
@@ -108,6 +118,14 @@ public class JudgeAssignmentService {
         JudgeAssignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found"));
         assignmentRepository.delete(assignment);
+        auditLogService.logAction(
+            "UNASSIGN_JUDGE",
+            "JUDGE_ASSIGNMENT",
+            assignmentId,
+            "Judge " + assignment.getJudge().getUsername(),
+            null,
+            assignment.getRound().getHackathonEvent().getId()
+        );
     }
 
     private User getCurrentUser() {
