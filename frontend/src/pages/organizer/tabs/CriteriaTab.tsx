@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import { Target, Plus, Trash2, Loader2, Edit2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../../components/Modal';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 interface Criterion {
     id: number;
@@ -31,6 +32,12 @@ const CriteriaTab: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingCriterion, setEditingCriterion] = useState<Criterion | null>(null);
+
+    // Confirm Modal State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmTitle, setConfirmTitle] = useState('');
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
 
     const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
 
@@ -70,15 +77,20 @@ const CriteriaTab: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this criterion? Existing scores for this criterion will be affected.')) return;
-        try {
-            await api.delete(`/criteria/${id}?eventId=${eventId}`);
-            toast.success('Criterion deleted successfully.');
-            setCriteria(prev => prev.filter(c => c.id !== id));
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete criterion.');
-        }
+    const handleDelete = (id: number) => {
+        setConfirmTitle('Delete Criterion');
+        setConfirmMessage('Are you sure you want to delete this criterion? Existing scores for this criterion will be affected.');
+        setConfirmAction(() => async () => {
+            try {
+                await api.delete(`/criteria/${id}?eventId=${eventId}`);
+                toast.success('Criterion deleted successfully.');
+                setCriteria(prev => prev.filter(c => c.id !== id));
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to delete criterion.');
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
     };
 
     const handleApplyTemplate = async (templateType: 'standard' | 'tech' | 'business') => {
@@ -165,7 +177,8 @@ const CriteriaTab: React.FC = () => {
     );
 
     return (
-        <div>
+        <>
+            <div>
             <div className="flex items-center gap-2 mb-4">
                 <Target size={20} className="text-gray-600" />
                 <h2 className="text-xl font-semibold text-gray-800">Scoring Criteria</h2>
@@ -417,6 +430,16 @@ const CriteriaTab: React.FC = () => {
                 </Modal>
             )}
         </div>
+        <ConfirmModal
+            isOpen={confirmOpen}
+            title={confirmTitle}
+            message={confirmMessage}
+            isDanger={true}
+            confirmText="Delete"
+            onConfirm={confirmAction}
+            onCancel={() => setConfirmOpen(false)}
+        />
+        </>
     );
 };
 

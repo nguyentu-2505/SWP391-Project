@@ -46,4 +46,11 @@ public class RoundController {
         RoundResponse response = roundService.updateRound(id, request);
         return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response, "Round updated successfully."));
     }
+
+    @PostMapping("/{id}/end-grading")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<RoundResponse>> endGrading(@PathVariable Long id) {
+        RoundResponse response = roundService.endGrading(id);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response, "Grading period ended early successfully."));
+    }
 }

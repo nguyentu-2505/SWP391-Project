@@ -50,6 +50,10 @@ public class EventRegistrationService {
         HackathonEvent event = hackathonEventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
 
+        if (event.isDeleted()) {
+            throw new ResourceNotFoundException("Hackathon event not found");
+        }
+
         // Event phải ở trạng thái PUBLISHED mới cho phép đăng ký
         if (event.getStatus() != HackathonStatus.PUBLISHED) {
             throw new IllegalStateException(

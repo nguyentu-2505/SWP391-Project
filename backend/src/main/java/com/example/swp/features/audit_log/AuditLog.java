@@ -42,6 +42,9 @@ public class AuditLog {
     @Column(name = "details")
     private String details;
 
+    @Column(name = "event_id")
+    private Long eventId;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

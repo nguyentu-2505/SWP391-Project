@@ -37,6 +37,11 @@ public class PrizeServiceImpl implements PrizeService {
         HackathonEvent event = hackathonEventRepository.findById(request.getHackathonEventId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
 
+        if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT 
+                && event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot create prize: Configurations can only be added to events in DRAFT or PUBLISHED status.");
+        }
+
         Track track = null;
         if (request.getTrackId() != null) {
             track = trackRepository.findById(request.getTrackId())
@@ -51,10 +56,16 @@ public class PrizeServiceImpl implements PrizeService {
                 .hackathonEvent(event)
                 .track(track)
                 .rank(request.getRank())
+                .cash(request.getCash())
+                .hasCup(request.getHasCup())
+                .hasCertificate(request.getHasCertificate())
+                .cup(request.getCup())
+                .certificate(request.getCertificate())
+                .currency(request.getCurrency() != null ? request.getCurrency() : "VND")
                 .build();
 
         Prize savedPrize = prizeRepository.save(newPrize);
-        auditLogService.logAction("CREATE_PRIZE", "PRIZE", savedPrize.getId(), null, "Created prize " + savedPrize.getName());
+        auditLogService.logAction("CREATE_PRIZE", "PRIZE", savedPrize.getId(), null, "Created prize " + savedPrize.getName(), savedPrize.getHackathonEvent().getId());
         return mapToResponse(savedPrize);
     }
 
@@ -93,11 +104,12 @@ public class PrizeServiceImpl implements PrizeService {
                 .collect(Collectors.toList());
         if (!duplicates.isEmpty()) {
             prizeRepository.deleteAll(duplicates);
-            auditLogService.logAction("DELETE_DUPLICATE_PRIZES", "PRIZE", prize.getId(), null, "Deleted " + duplicates.size() + " duplicate prizes upon manual assignment");
+            auditLogService.logAction("DELETE_DUPLICATE_PRIZES", "PRIZE", prize.getId(), null, "Deleted " + duplicates.size() + " duplicate prizes upon manual assignment", prize.getHackathonEvent().getId());
         }
 
         prize.setWinningTeam(team);
         Prize updatedPrize = prizeRepository.save(prize);
+        auditLogService.logAction("ASSIGN_PRIZE", "PRIZE", prizeId, null, "Assigned prize " + prize.getName() + " to team " + team.getName(), prize.getHackathonEvent().getId());
         return mapToResponse(updatedPrize);
     }
 
@@ -138,7 +150,7 @@ public class PrizeServiceImpl implements PrizeService {
             if (group.size() > 1) {
                 List<Prize> toDelete = group.subList(1, group.size());
                 prizeRepository.deleteAll(toDelete);
-                auditLogService.logAction("DELETE_DUPLICATE_PRIZES", "PRIZE", group.get(0).getId(), null, "Deleted " + toDelete.size() + " duplicate prizes during auto-assign");
+                auditLogService.logAction("DELETE_DUPLICATE_PRIZES", "PRIZE", group.get(0).getId(), null, "Deleted " + toDelete.size() + " duplicate prizes during auto-assign", hackathonEventId);
             }
         }
 
@@ -205,14 +217,48 @@ public class PrizeServiceImpl implements PrizeService {
 
         validateUniqueRank(request.getHackathonEventId(), request.getTrackId(), request.getRank(), prizeId);
 
+        java.util.Map<String, Object> oldMap = new java.util.HashMap<>();
+        oldMap.put("name", prize.getName());
+        oldMap.put("description", prize.getDescription());
+        oldMap.put("rank", prize.getRank());
+        oldMap.put("cash", prize.getCash());
+        oldMap.put("currency", prize.getCurrency());
+        oldMap.put("cup", prize.getCup());
+        oldMap.put("certificate", prize.getCertificate());
+
+        java.util.Map<String, Object> newMap = new java.util.HashMap<>();
+        newMap.put("name", request.getName());
+        newMap.put("description", request.getDescription());
+        newMap.put("rank", request.getRank());
+        newMap.put("cash", request.getCash());
+        newMap.put("currency", request.getCurrency() != null ? request.getCurrency() : "VND");
+        newMap.put("cup", request.getCup());
+        newMap.put("certificate", request.getCertificate());
+
+        String oldValueJson = null;
+        String newValueJson = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            oldValueJson = mapper.writeValueAsString(oldMap);
+            newValueJson = mapper.writeValueAsString(newMap);
+        } catch (Exception e) {
+            // ignore
+        }
+
         prize.setName(request.getName());
         prize.setDescription(request.getDescription());
         prize.setRank(request.getRank());
         prize.setHackathonEvent(event);
         prize.setTrack(track);
+        prize.setCash(request.getCash());
+        prize.setHasCup(request.getHasCup());
+        prize.setHasCertificate(request.getHasCertificate());
+        prize.setCup(request.getCup());
+        prize.setCertificate(request.getCertificate());
+        prize.setCurrency(request.getCurrency() != null ? request.getCurrency() : "VND");
         
         Prize updatedPrize = prizeRepository.save(prize);
-        auditLogService.logAction("UPDATE_PRIZE", "PRIZE", prizeId, null, "Updated prize " + updatedPrize.getName());
+        auditLogService.logAction("UPDATE_PRIZE", "PRIZE", prizeId, oldValueJson, newValueJson, updatedPrize.getHackathonEvent().getId());
         return mapToResponse(updatedPrize);
     }
 
@@ -221,7 +267,7 @@ public class PrizeServiceImpl implements PrizeService {
         Prize prize = prizeRepository.findById(prizeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Prize not found"));
         prizeRepository.delete(prize);
-        auditLogService.logAction("DELETE_PRIZE", "PRIZE", prizeId, null, "Deleted prize " + prize.getName());
+        auditLogService.logAction("DELETE_PRIZE", "PRIZE", prizeId, null, "Deleted prize " + prize.getName(), prize.getHackathonEvent().getId());
     }
 
     @Override
@@ -252,9 +298,16 @@ public class PrizeServiceImpl implements PrizeService {
                 .description(prize.getDescription())
                 .hackathonEventId(prize.getHackathonEvent().getId())
                 .trackId(prize.getTrack() != null ? prize.getTrack().getId() : null)
+                .trackName(prize.getTrack() != null ? prize.getTrack().getName() : null)
                 .winningTeamId(prize.getWinningTeam() != null ? prize.getWinningTeam().getId() : null)
                 .winningTeamName(prize.getWinningTeam() != null ? prize.getWinningTeam().getName() : null)
                 .rank(prize.getRank())
+                .cash(prize.getCash())
+                .hasCup(prize.getHasCup())
+                .hasCertificate(prize.getHasCertificate())
+                .cup(prize.getCup())
+                .certificate(prize.getCertificate())
+                .currency(prize.getCurrency())
                 .build();
     }
 }

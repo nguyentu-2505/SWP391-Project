@@ -45,7 +45,22 @@ const HackathonEventPage: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await HackathonEventService.getAllEventsForAdmin();
-      setEvents(data);
+      const sorted = (data || []).sort((a: any, b: any) => {
+          const order: { [key: string]: number } = {
+              'IN_PROGRESS': 1,
+              'PUBLISHED': 2,
+              'DRAFT': 3,
+              'COMPLETED': 4,
+              'CANCELLED': 5
+          };
+          const aOrder = order[a.status] || 99;
+          const bOrder = order[b.status] || 99;
+          if (aOrder !== bOrder) {
+              return aOrder - bOrder;
+          }
+          return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+      });
+      setEvents(sorted);
     } catch (error) {
       console.error('Failed to fetch hackathon events:', error);
       toast.error('Failed to load hackathon events.');

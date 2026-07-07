@@ -4,6 +4,7 @@ import com.example.swp.common.ApiResponse;
 import com.example.swp.features.hackathon_event.dto.request.CreateHackathonEventRequest;
 import com.example.swp.features.hackathon_event.dto.request.UpdateHackathonEventRequest;
 import com.example.swp.features.hackathon_event.dto.response.HackathonEventResponse;
+import com.example.swp.features.hackathon_event.dto.response.HackathonEventAnalyticsResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -87,5 +88,12 @@ public class HackathonEventController {
     public ResponseEntity<ApiResponse<HackathonEventResponse>> cloneEvent(@PathVariable Long id) {
         HackathonEventResponse response = hackathonEventService.cloneEvent(id);
         return new ResponseEntity<>(ApiResponse.success(response, "Hackathon event cloned successfully."), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}/analytics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<HackathonEventAnalyticsResponse>> getEventAnalytics(@PathVariable Long id) {
+        HackathonEventAnalyticsResponse response = hackathonEventService.getEventAnalytics(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

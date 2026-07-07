@@ -37,6 +37,7 @@ public class ScoreServiceImpl implements ScoreService {
     private final JudgeAssignmentRepository judgeAssignmentRepository;
     private final TeamRoundAdvancementRepository advancementRepository;
     private final AuditLogService auditLogService;
+    private final com.example.swp.features.round.RoundRepository roundRepository;
 
     @Override
     @Transactional
@@ -44,6 +45,12 @@ public class ScoreServiceImpl implements ScoreService {
         User judge = getCurrentUser();
         Submission submission = submissionRepository.findById(request.getSubmissionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Submission not found"));
+
+        com.example.swp.features.hackathon_event.HackathonStatus eventStatus = submission.getRound().getHackathonEvent().getStatus();
+        if (eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED || 
+            eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot score or edit scores when the event is completed or cancelled.");
+        }
 
         if (submission.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
             throw new IllegalStateException("Cannot score submissions from disqualified teams.");
@@ -97,6 +104,10 @@ public class ScoreServiceImpl implements ScoreService {
             log.error("Failed to update judge assignment status: {}", e.getMessage());
         }
 
+        if (!savedScores.isEmpty()) {
+            auditLogService.logAction("SAVE_SCORES", "SCORE", submission.getId(), null, "Scores saved by judge " + judge.getUsername() + " for submission " + submission.getId(), submission.getRound().getHackathonEvent().getId());
+        }
+
         return savedScores.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
@@ -144,7 +155,15 @@ public class ScoreServiceImpl implements ScoreService {
     @Override
     @Transactional
     public void finalizeScores(Long roundId) {
-        auditLogService.logAction("FINALIZE_SCORES", "Round", roundId, null, "All scores for round " + roundId + " finalized.");
+        com.example.swp.features.round.Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Round not found"));
+        com.example.swp.features.hackathon_event.HackathonStatus eventStatus = round.getHackathonEvent().getStatus();
+        if (eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED || 
+            eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot finalize scores when the event is completed or cancelled.");
+        }
+
+        auditLogService.logAction("FINALIZE_SCORES", "Round", roundId, null, "All scores for round " + roundId + " finalized.", round.getHackathonEvent().getId());
         scoreRepository.finalizeScoresByRound(roundId);
         log.info("Scores finalized successfully for round: {}", roundId);
     }
@@ -179,6 +198,12 @@ public class ScoreServiceImpl implements ScoreService {
         Score score = scoreRepository.findById(scoreId)
                 .orElseThrow(() -> new ResourceNotFoundException("Score not found"));
 
+        com.example.swp.features.hackathon_event.HackathonStatus eventStatus = score.getSubmission().getRound().getHackathonEvent().getStatus();
+        if (eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED || 
+            eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot score or edit scores when the event is completed or cancelled.");
+        }
+
         if (!score.getJudge().getId().equals(judge.getId())) {
             boolean isAdmin = judge.getRole() == com.example.swp.features.user.Role.ADMIN || judge.getRole() == com.example.swp.features.user.Role.ORGANIZER;
             if (!isAdmin) {
@@ -207,7 +232,7 @@ public class ScoreServiceImpl implements ScoreService {
         score.setScoredAt(LocalDateTime.now());
         Score updatedScore = scoreRepository.save(score);
 
-        auditLogService.logAction("UPDATE_SCORE", "SCORE", score.getId(), null, "Score updated by " + judge.getUsername());
+        auditLogService.logAction("UPDATE_SCORE", "SCORE", score.getId(), null, "Score updated by " + judge.getUsername(), score.getSubmission().getRound().getHackathonEvent().getId());
 
         return mapToResponse(updatedScore);
     }

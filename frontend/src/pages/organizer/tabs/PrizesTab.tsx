@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
 import { Trophy, Plus, Loader2, Gift, CheckCircle, Edit2, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 interface Prize {
     id: number;
@@ -13,11 +14,17 @@ interface Prize {
     winningTeamName?: string;
     trackId?: number;
     trackName?: string;
+    cash?: number;
+    cup?: string;
+    certificate?: string;
+    currency?: string;
 }
 
 interface Team {
     id: number;
     name: string;
+    trackId?: number;
+    trackName?: string;
 }
 
 interface Track {
@@ -30,6 +37,10 @@ interface PrizeForm {
     description: string;
     rank: number;
     trackId: number | '';
+    cash: number | '';
+    cup: string;
+    certificate: string;
+    currency: string;
 }
 
 const PrizesTab: React.FC = () => {
@@ -42,7 +53,7 @@ const PrizesTab: React.FC = () => {
     // Form states
     const [showForm, setShowForm] = useState(false);
     const [isEditing, setIsEditing] = useState<number | null>(null);
-    const [form, setForm] = useState<PrizeForm>({ name: '', description: '', rank: 1, trackId: '' });
+    const [form, setForm] = useState<PrizeForm>({ name: '', description: '', rank: 1, trackId: '', cash: '', cup: '', certificate: '', currency: 'VND' });
     const [saving, setSaving] = useState(false);
 
     // Assign states
@@ -50,6 +61,13 @@ const PrizesTab: React.FC = () => {
     const [assignTeamId, setAssignTeamId] = useState<number | ''>('');
 
     const [autoAssigning, setAutoAssigning] = useState(false);
+
+    // Confirm Modal State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmTitle, setConfirmTitle] = useState('');
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
+    const [confirmIsDanger, setConfirmIsDanger] = useState(false);
 
     // Filter states
     const [selectedTrackId, setSelectedTrackId] = useState<number | ''>('');
@@ -94,7 +112,11 @@ const PrizesTab: React.FC = () => {
                 description: form.description,
                 rank: form.rank,
                 trackId: form.trackId ? Number(form.trackId) : null,
-                hackathonEventId: Number(eventId)
+                hackathonEventId: Number(eventId),
+                cash: form.cash !== '' ? Number(form.cash) : null,
+                cup: form.cup.trim() || null,
+                certificate: form.certificate.trim() || null,
+                currency: form.currency
             };
 
             if (isEditing) {
@@ -110,7 +132,7 @@ const PrizesTab: React.FC = () => {
                 toast.success('Prize created successfully!');
             }
 
-            setForm({ name: '', description: '', rank: 1, trackId: '' });
+            setForm({ name: '', description: '', rank: 1, trackId: '', cash: '', cup: '', certificate: '', currency: 'VND' });
             setShowForm(false);
             setIsEditing(null);
             fetchData();
@@ -126,21 +148,31 @@ const PrizesTab: React.FC = () => {
             name: prize.name,
             description: prize.description || '',
             rank: prize.rank || 1,
-            trackId: prize.trackId || ''
+            trackId: prize.trackId || '',
+            cash: prize.cash !== undefined && prize.cash !== null ? prize.cash : '',
+            cup: prize.cup || '',
+            certificate: prize.certificate || '',
+            currency: prize.currency || 'VND'
         });
         setIsEditing(prize.id);
         setShowForm(true);
     };
 
-    const handleDelete = async (prizeId: number) => {
-        if (!confirm('Are you sure you want to delete this prize?')) return;
-        try {
-            await api.delete(`/prizes/${prizeId}`);
-            toast.success('Prize deleted successfully!');
-            fetchData();
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || 'Failed to delete prize.');
-        }
+    const handleDelete = (prizeId: number) => {
+        setConfirmTitle('Delete Prize');
+        setConfirmMessage('Are you sure you want to delete this prize?');
+        setConfirmIsDanger(true);
+        setConfirmAction(() => async () => {
+            try {
+                await api.delete(`/prizes/${prizeId}`);
+                toast.success('Prize deleted successfully!');
+                fetchData();
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || 'Failed to delete prize.');
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
     };
 
     const handleAssign = async (prizeId: number) => {
@@ -156,22 +188,29 @@ const PrizesTab: React.FC = () => {
         }
     };
 
-    const handleAutoAssign = async () => {
-        if (!confirm('Auto-assign will evaluate all completed submissions and award prizes based on score rank. Continue?')) return;
-        setAutoAssigning(true);
-        try {
-            await api.post(`/prizes/event/${eventId}/auto-assign`);
-            toast.success('Prizes auto-assigned successfully!');
-            fetchData();
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || 'Failed to auto-assign prizes.');
-        } finally {
-            setAutoAssigning(false);
-        }
+    const handleAutoAssign = () => {
+        setConfirmTitle('Auto-Assign Prizes');
+        setConfirmMessage('Auto-assign will evaluate all completed submissions and award prizes based on score rank. Continue?');
+        setConfirmIsDanger(false);
+        setConfirmAction(() => async () => {
+            setAutoAssigning(true);
+            setConfirmOpen(false);
+            try {
+                await api.post(`/prizes/event/${eventId}/auto-assign`);
+                toast.success('Prizes auto-assigned successfully!');
+                fetchData();
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || 'Failed to auto-assign prizes.');
+            } finally {
+                setAutoAssigning(false);
+            }
+        });
+        setConfirmOpen(true);
     };
 
     return (
-        <div>
+        <>
+            <div>
             <div className="flex flex-wrap items-center gap-4 mb-6">
                 <div className="flex items-center gap-2">
                     <Trophy size={20} className="text-yellow-500" />
@@ -267,7 +306,55 @@ const PrizesTab: React.FC = () => {
                             <input
                                 value={form.description}
                                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                                placeholder="e.g. $5,000 cash prize + mentorship package"
+                                placeholder="e.g. 1st Place Grand Prize + mentorship package"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+                            />
+                        </div>
+                        <div className="md:col-span-1">
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="col-span-2">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Cash Value</label>
+                                    <input
+                                        type="number" min="0" step="0.01"
+                                        value={form.cash}
+                                        onChange={e => setForm(f => ({ ...f, cash: e.target.value !== '' ? Number(e.target.value) : '' }))}
+                                        placeholder="e.g. 5000000"
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Currency</label>
+                                    <select
+                                        value={form.currency}
+                                        onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+                                    >
+                                        <option value="VND">VNĐ</option>
+                                        <option value="USD">USD ($)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            {form.cash !== '' && (
+                                <div className="text-[10px] text-emerald-700 font-semibold italic mt-1">
+                                    Preview: {form.currency === 'USD' ? '$' : ''}{Number(form.cash).toLocaleString()} {form.currency === 'USD' ? 'USD' : 'VNĐ'}
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Cup (e.g. Gold Cup)</label>
+                            <input
+                                value={form.cup}
+                                onChange={e => setForm(f => ({ ...f, cup: e.target.value }))}
+                                placeholder="e.g. Gold Cup"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Certificate (e.g. Certificate of Excellence)</label>
+                            <input
+                                value={form.certificate}
+                                onChange={e => setForm(f => ({ ...f, certificate: e.target.value }))}
+                                placeholder="e.g. Certificate of Excellence"
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
                             />
                         </div>
@@ -343,8 +430,40 @@ const PrizesTab: React.FC = () => {
                             </div>
 
                             {prize.description && (
-                                <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-grow">{prize.description}</p>
+                                <p className="text-sm text-gray-600 mb-3 line-clamp-3 flex-grow">{prize.description}</p>
                             )}
+
+                            {/* Reward section */}
+                            <div className="mt-2 mb-4 p-3 rounded-lg bg-slate-50 border border-slate-100 space-y-1.5">
+                                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Rewards</span>
+                                <div className="flex flex-col gap-1.5">
+                                    {prize.cash !== undefined && prize.cash !== null && (
+                                        <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
+                                            <span>💵</span>
+                                            <span>
+                                                {prize.currency === 'USD' ? '$' : ''}
+                                                {prize.cash.toLocaleString()}
+                                                {prize.currency === 'USD' ? ' USD' : ' VNĐ'}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {prize.cup && (
+                                        <div className="flex items-center gap-2 text-xs font-semibold text-yellow-700">
+                                            <span>🏆</span>
+                                            <span>{prize.cup}</span>
+                                        </div>
+                                    )}
+                                    {prize.certificate && (
+                                        <div className="flex items-center gap-2 text-xs font-semibold text-blue-700">
+                                            <span>📜</span>
+                                            <span>{prize.certificate}</span>
+                                        </div>
+                                    )}
+                                    {!prize.cash && !prize.cup && !prize.certificate && (
+                                        <span className="text-xs text-slate-400 italic">No specific rewards defined</span>
+                                    )}
+                                </div>
+                            </div>
 
                             <div className="pt-4 border-t border-gray-100 mt-auto">
                                 {prize.winningTeamId ? (
@@ -365,9 +484,14 @@ const PrizesTab: React.FC = () => {
                                                     className="w-full text-sm px-2.5 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-yellow-500"
                                                 >
                                                     <option value="">-- Select team --</option>
-                                                    {teams.map(t => (
-                                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                                    ))}
+                                                    {teams
+                                                        .filter(t => !prize.trackId || t.trackId === prize.trackId)
+                                                        .map(t => (
+                                                            <option key={t.id} value={t.id}>
+                                                                {t.name} {t.trackName ? `(${t.trackName})` : ''}
+                                                            </option>
+                                                        ))
+                                                    }
                                                 </select>
                                                 <div className="flex justify-end gap-2 mt-1">
                                                     <button
@@ -403,6 +527,16 @@ const PrizesTab: React.FC = () => {
 
 
         </div>
+        <ConfirmModal
+            isOpen={confirmOpen}
+            title={confirmTitle}
+            message={confirmMessage}
+            isDanger={confirmIsDanger}
+            confirmText={confirmIsDanger ? 'Delete' : 'Continue'}
+            onConfirm={confirmAction}
+            onCancel={() => setConfirmOpen(false)}
+        />
+        </>
     );
 };
 

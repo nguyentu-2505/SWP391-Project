@@ -18,6 +18,7 @@ public interface HackathonEventRepository extends JpaRepository<HackathonEvent, 
 
     @EntityGraph(attributePaths = {"organizer"})
     Optional<HackathonEvent> findBySlugAndIsDeletedFalse(String slug);
+    boolean existsBySlug(String slug);
 
     @EntityGraph(attributePaths = {"organizer"})
     Page<HackathonEvent> findByIsDeletedFalse(Pageable pageable);
