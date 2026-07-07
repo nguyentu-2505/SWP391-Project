@@ -13,6 +13,7 @@ import CertificatesPage from './pages/CertificatesPage';
 import NotificationsPage from './pages/NotificationsPage';
 import MentorDirectoryPage from './pages/MentorDirectoryPage';
 import MentorDetailPage from './pages/MentorDetailPage';
+import TeamDetailPage from './pages/TeamDetailPage';
 import AdminMentorProfilePage from './pages/admin/AdminMentorProfilePage';
 import SystemPreferencesPage from './pages/admin/SystemPreferencesPage';
 import PrivateRoute from './components/PrivateRoute';
@@ -88,7 +89,7 @@ function App() {
             <Route path="/events/:slug" element={<EventDetailPage />} />
             <Route path="/leaderboard/round/:roundId" element={<PublicLeaderboardPage />} />
           </Route>
-          
+
           {/* Protected Routes with main app Layout */}
           <Route element={<PrivateRoute />}>
             <Route element={<Layout />}>
@@ -98,8 +99,8 @@ function App() {
               <Route path="/certificates" element={<CertificatesPage />} />
               <Route path="/mentors" element={<MentorDirectoryPage />} />
               <Route path="/mentors/:mentorId" element={<MentorDetailPage />} />
+              <Route path="/teams/:teamId" element={<TeamDetailPage />} />
 
-              
               {/* Participant Routes */}
               <Route element={<PrivateRoute allowedRoles={[Role.PARTICIPANT]} />}>
                 <Route path="/my-team" element={<MyTeamPage />} />
@@ -152,7 +153,7 @@ function App() {
                 <Route path="/criterion" element={<CriterionPage />} />
                 <Route path="/team-members" element={<TeamMemberPage />} />
               </Route>
-              
+
               {/* Admin Only Routes */}
               <Route element={<PrivateRoute allowedRoles={[Role.ADMIN]} />}>
                 <Route path="/admin/users" element={<UsersPage />} />
