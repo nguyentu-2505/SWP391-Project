@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from './api';
 
 const API_URL = '/rankings';
 
@@ -10,11 +10,7 @@ export interface Ranking {
 }
 
 const getRankingForRound = async (roundId: number): Promise<Ranking[]> => {
-    const response = await axios.get(`${API_URL}/round/${roundId}`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
+    const response = await api.get(`${API_URL}/round/${roundId}`);
     return response.data;
 };
 

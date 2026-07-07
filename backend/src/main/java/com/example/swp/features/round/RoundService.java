@@ -10,4 +10,5 @@ public interface RoundService {
     List<RoundResponse> getRoundsByHackathonEvent(Long hackathonEventId);
     void deleteRound(Long id);
     RoundResponse updateRound(Long id, com.example.swp.features.round.dto.request.CreateRoundRequest request);
+    RoundResponse endGrading(Long id);
 }

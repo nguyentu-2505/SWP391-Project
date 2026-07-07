@@ -2,56 +2,78 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
 import toast from 'react-hot-toast';
+import { JudgeAssignmentService } from '../../../services/JudgeAssignmentService';
 import { Trash2 } from 'lucide-react';
+import ConfirmModal from '../../../components/ConfirmModal';
+
+interface Round {
+    id: number;
+    name: string;
+    description: string;
+}
 
 interface Judge {
     id: number;
     username: string;
 }
 
-interface JudgeAssignment {
+interface Track {
     id: number;
-    judgeName: string;
-    roundName: string;
-    trackName: string;
-    status: string;
+    name: string;
 }
 
 const JudgesTab: React.FC = () => {
     const { eventId } = useParams<{ eventId: string }>();
-    const [rounds, setRounds] = useState<any[]>([]);
-    const [tracks, setTracks] = useState<any[]>([]);
+    const [rounds, setRounds] = useState<Round[]>([]);
     const [judges, setJudges] = useState<Judge[]>([]);
-    const [assignments, setAssignments] = useState<JudgeAssignment[]>([]);
-    
-    const [selectedRound, setSelectedRound] = useState<number | ''>('');
-    const [selectedTrack, setSelectedTrack] = useState<number | ''>('');
+    const [tracks, setTracks] = useState<Track[]>([]);
+    const [selectedRound, setSelectedRound] = useState<number | null>(null);
+    const [selectedTrack, setSelectedTrack] = useState<number | null>(null);
     const [selectedJudge, setSelectedJudge] = useState<number | ''>('');
     const [loading, setLoading] = useState(true);
+    const [assignments, setAssignments] = useState<any[]>([]);
 
-    const fetchData = async () => {
-        if (!eventId) return;
-        try {
-            const [roundRes, trackRes, judgeRes, assignmentRes] = await Promise.all([
-                api.get(`/rounds/hackathon/${eventId}`),
-                api.get(`/tracks/hackathon/${eventId}`),
-                api.get(`/users/role/JUDGE`),
-                api.get(`/judge-assignments/event/${eventId}`)
-            ]);
-            setRounds(roundRes.data.data || []);
-            setTracks(trackRes.data.data || []);
-            setJudges(judgeRes.data.data || []);
-            setAssignments(assignmentRes.data.data || []);
-        } catch (err) {
-            toast.error("Failed to load data for judge assignment.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Confirm Modal State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
 
     useEffect(() => {
+        const fetchData = async () => {
+            if (!eventId) return;
+            try {
+                const [roundRes, judgeRes, trackRes, assignmentRes] = await Promise.all([
+                    api.get(`/rounds/hackathon/${eventId}`),
+                    api.get(`/users/role/JUDGE`),
+                    api.get(`/tracks/hackathon/${eventId}`),
+                    api.get(`/judge-assignments/event/${eventId}`)
+                ]);
+                setRounds(roundRes.data.data);
+                setJudges(judgeRes.data.data);
+                setTracks(trackRes.data.data);
+                setAssignments(assignmentRes.data.data);
+            } catch (err) {
+                toast.error("Failed to load data for judge assignment.");
+            } finally {
+                setLoading(false);
+            }
+        };
         fetchData();
     }, [eventId]);
+
+    const handleUnassign = (assignmentId: number) => {
+        setConfirmAction(() => async () => {
+            try {
+                await api.delete(`/judge-assignments/${assignmentId}`);
+                toast.success("Judge unassigned successfully!");
+                const res = await api.get(`/judge-assignments/event/${eventId}`);
+                setAssignments(res.data.data);
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || "Failed to unassign judge.");
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
+    };
 
     const handleAssignJudge = async () => {
         if (!selectedRound || !selectedJudge) {
@@ -59,42 +81,29 @@ const JudgesTab: React.FC = () => {
             return;
         }
         try {
-            await api.post('/judge-assignments', {
+            await JudgeAssignmentService.assignJudge({
                 roundId: selectedRound,
-                trackId: selectedTrack || null,
-                judgeId: selectedJudge
+                judgeId: selectedJudge,
+                trackId: selectedTrack || undefined
             });
             toast.success("Judge assigned successfully!");
-            setSelectedRound('');
-            setSelectedTrack('');
-            setSelectedJudge('');
-            fetchData();
+            const res = await api.get(`/judge-assignments/event/${eventId}`);
+            setAssignments(res.data.data);
         } catch (err: any) {
             toast.error(err.response?.data?.error?.message || "Failed to assign judge.");
-        }
-    };
-
-    const handleUnassign = async (id: number) => {
-        if (!confirm('Are you sure you want to unassign this judge?')) return;
-        try {
-            await api.delete(`/judge-assignments/${id}`);
-            toast.success("Judge unassigned successfully.");
-            fetchData();
-        } catch (err: any) {
-            toast.error(err.response?.data?.error?.message || "Failed to unassign judge.");
         }
     };
 
     if (loading) return <div>Loading judge assignment data...</div>;
 
     return (
-        <div>
+        <>
+            <div>
             <h2 className="text-2xl font-semibold mb-4">Assign Judges</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-gray-50 p-4 rounded-lg items-end">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
                 <div>
                     <label className="block text-sm font-medium text-gray-700">1. Select Round</label>
-                    <select 
-                        value={selectedRound}
+                    <select
                         onChange={(e) => setSelectedRound(Number(e.target.value))}
                         className="w-full mt-1 input-style"
                     >
@@ -106,9 +115,8 @@ const JudgesTab: React.FC = () => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">2. Select Track (Optional)</label>
-                    <select 
-                        value={selectedTrack}
-                        onChange={(e) => setSelectedTrack(Number(e.target.value) || '')}
+                    <select
+                        onChange={(e) => setSelectedTrack(e.target.value ? Number(e.target.value) : null)}
                         className="w-full mt-1 input-style"
                     >
                         <option value="">-- All Tracks --</option>
@@ -130,8 +138,8 @@ const JudgesTab: React.FC = () => {
                         ))}
                     </select>
                 </div>
-                <div>
-                    <button onClick={handleAssignJudge} className="w-full btn-primary py-2">
+                <div className="self-end">
+                    <button onClick={handleAssignJudge} className="w-full btn-primary">
                         Assign Judge
                     </button>
                 </div>
@@ -159,16 +167,15 @@ const JudgesTab: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.roundName}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.trackName}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                                a.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border border-green-200' :
-                                                a.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border border-red-200' :
-                                                'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                                            }`}>
+                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${a.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border border-green-200' :
+                                                    a.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border border-red-200' :
+                                                        'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                                }`}>
                                                 {a.status || 'ASSIGNED'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button 
+                                            <button
                                                 onClick={() => handleUnassign(a.id)}
                                                 className="text-red-600 hover:text-red-900"
                                                 title="Unassign"
@@ -182,8 +189,19 @@ const JudgesTab: React.FC = () => {
                         </table>
                     </div>
                 )}
+
             </div>
         </div>
+        <ConfirmModal
+            isOpen={confirmOpen}
+            title="Unassign Judge"
+            message="Are you sure you want to unassign this judge? They will lose access to grade submissions for this round."
+            isDanger={false}
+            confirmText="Unassign"
+            onConfirm={confirmAction}
+            onCancel={() => setConfirmOpen(false)}
+        />
+        </>
     );
 };
 

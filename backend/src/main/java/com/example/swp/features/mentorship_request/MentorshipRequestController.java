@@ -56,15 +56,21 @@ public class MentorshipRequestController {
 
     @PatchMapping("/{id}/resolve")
     @PreAuthorize("hasAnyRole('MENTOR', 'PARTICIPANT')")
-    public ResponseEntity<ApiResponse<MentorshipRequestResponse>> resolveRequest(@PathVariable Long id) {
-        MentorshipRequestResponse response = requestService.resolveRequest(id);
+    public ResponseEntity<ApiResponse<MentorshipRequestResponse>> resolveRequest(
+            @PathVariable Long id,
+            @Valid @RequestBody com.example.swp.features.mentorship_request.dto.request.ResolveMentorshipRequest payload
+    ) {
+        MentorshipRequestResponse response = requestService.resolveRequest(id, payload);
         return ResponseEntity.ok(ApiResponse.success(response, "Request marked as resolved."));
     }
 
     @PatchMapping("/{id}/reject")
     @PreAuthorize("hasRole('MENTOR')")
-    public ResponseEntity<ApiResponse<MentorshipRequestResponse>> rejectRequest(@PathVariable Long id) {
-        MentorshipRequestResponse response = requestService.rejectRequest(id);
+    public ResponseEntity<ApiResponse<MentorshipRequestResponse>> rejectRequest(
+            @PathVariable Long id,
+            @Valid @RequestBody com.example.swp.features.mentorship_request.dto.request.RejectMentorshipRequest payload
+    ) {
+        MentorshipRequestResponse response = requestService.rejectRequest(id, payload);
         return ResponseEntity.ok(ApiResponse.success(response, "Request rejected and is open again."));
     }
 

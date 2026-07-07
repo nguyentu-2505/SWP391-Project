@@ -22,12 +22,14 @@ public class EventRegistrationController {
     @PreAuthorize("hasRole('PARTICIPANT')")
     public ResponseEntity<ApiResponse<EventRegistrationResponse>> registerForEvent(@RequestParam Long eventId) {
         EventRegistrationResponse response = eventRegistrationService.registerForEvent(eventId);
-        return new ResponseEntity<>(ApiResponse.success(response, "Successfully registered for the event."), HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success(response, "Successfully registered for the event."),
+                HttpStatus.CREATED);
     }
 
     @GetMapping("/event/{eventId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<ApiResponse<List<EventRegistrationResponse>>> getRegistrationsForEvent(@PathVariable Long eventId) {
+    public ResponseEntity<ApiResponse<List<EventRegistrationResponse>>> getRegistrationsForEvent(
+            @PathVariable Long eventId) {
         List<EventRegistrationResponse> responses = eventRegistrationService.getRegistrationsForEvent(eventId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }

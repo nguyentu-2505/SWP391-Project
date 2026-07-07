@@ -35,7 +35,18 @@ public class TrackServiceImpl implements TrackService {
     @Override
     public TrackResponse createTrack(CreateTrackRequest request) {
         HackathonEvent hackathonEvent = hackathonEventRepository.findById(request.getHackathonEventId())
-                .orElseThrow(() -> new RuntimeException("Hackathon event not found")); // Replace with custom exception
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found with id: " + request.getHackathonEventId()));
+
+        if (hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT 
+                && hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot create track: Configurations can only be added to events in DRAFT or PUBLISHED status.");
+        }
+
+        boolean nameExists = trackRepository.findByHackathonEventId(hackathonEvent.getId()).stream()
+                .anyMatch(t -> t.getName().equalsIgnoreCase(request.getName().trim()));
+        if (nameExists) {
+            throw new com.example.swp.exception.BadRequestException("Bảng đấu với tên này đã tồn tại trong cuộc thi.");
+        }
 
         Track newTrack = Track.builder()
                 .name(request.getName())
@@ -44,6 +55,7 @@ public class TrackServiceImpl implements TrackService {
                 .build();
 
         Track savedTrack = trackRepository.save(newTrack);
+        auditLogService.logAction("CREATE_TRACK", "TRACK", savedTrack.getId(), null, "Created track " + savedTrack.getName(), hackathonEvent.getId());
         return mapToResponse(savedTrack);
     }
 
@@ -111,7 +123,8 @@ public class TrackServiceImpl implements TrackService {
             "TRACK",
             trackId,
             null,
-            "Assigned mentor " + mentor.getUsername()
+            "Assigned mentor " + mentor.getUsername(),
+            track.getHackathonEvent().getId()
         );
 
         return mapToMentorResponse(saved);
@@ -134,7 +147,8 @@ public class TrackServiceImpl implements TrackService {
             "TRACK",
             trackId,
             "Mentor " + assignment.getMentor().getUsername(),
-            null
+            null,
+            assignment.getEvent().getId()
         );
     }
 
@@ -179,7 +193,7 @@ public class TrackServiceImpl implements TrackService {
         trackMentorRepository.deleteByTrackId(id);
         trackRepository.delete(track);
 
-        auditLogService.logAction("DELETE_TRACK", "Track", id, "Track name: " + track.getName(), null);
+        auditLogService.logAction("DELETE_TRACK", "Track", id, "Track name: " + track.getName(), null, event.getId());
     }
 
     @Override
@@ -205,10 +219,35 @@ public class TrackServiceImpl implements TrackService {
             throw new IllegalStateException("Không thể chỉnh sửa bảng đấu: Chỉ sự kiện ở trạng thái DRAFT mới được phép chỉnh sửa bảng đấu.");
         }
 
+        boolean nameExists = trackRepository.findByHackathonEventId(event.getId()).stream()
+                .anyMatch(t -> !t.getId().equals(id) && t.getName().equalsIgnoreCase(request.getName().trim()));
+        if (nameExists) {
+            throw new com.example.swp.exception.BadRequestException("Bảng đấu với tên này đã tồn tại trong cuộc thi.");
+        }
+
+        java.util.Map<String, Object> oldMap = new java.util.HashMap<>();
+        oldMap.put("name", track.getName());
+        oldMap.put("description", track.getDescription());
+
+        java.util.Map<String, Object> newMap = new java.util.HashMap<>();
+        newMap.put("name", request.getName());
+        newMap.put("description", request.getDescription());
+
+        String oldValueJson = null;
+        String newValueJson = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            oldValueJson = mapper.writeValueAsString(oldMap);
+            newValueJson = mapper.writeValueAsString(newMap);
+        } catch (Exception e) {
+            // ignore
+        }
+
         track.setName(request.getName());
         track.setDescription(request.getDescription());
 
         Track updatedTrack = trackRepository.save(track);
+        auditLogService.logAction("UPDATE_TRACK", "TRACK", updatedTrack.getId(), oldValueJson, newValueJson, event.getId());
         return mapToResponse(updatedTrack);
     }
 

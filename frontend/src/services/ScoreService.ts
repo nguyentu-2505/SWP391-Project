@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from './api';
 
 const API_URL = '/scores';
 
@@ -22,29 +22,17 @@ export interface CreateScoreRequest {
 }
 
 const saveScores = async (request: CreateScoreRequest): Promise<Score[]> => {
-    const response = await axios.post(API_URL, request, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
+    const response = await api.post(API_URL, request);
     return response.data;
 };
 
 const getScoresForSubmission = async (submissionId: number): Promise<Score[]> => {
-    const response = await axios.get(`${API_URL}/submission/${submissionId}`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
+    const response = await api.get(`${API_URL}/submission/${submissionId}`);
     return response.data;
 };
 
 const getScoresForSubmissionByJudge = async (submissionId: number, judgeId: number): Promise<Score[]> => {
-    const response = await axios.get(`${API_URL}/submission/${submissionId}/judge/${judgeId}`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
+    const response = await api.get(`${API_URL}/submission/${submissionId}/judge/${judgeId}`);
     return response.data;
 };
 

@@ -31,7 +31,7 @@ public class ExportController {
     }
 
     @GetMapping("/rounds/{roundId}/scoring")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'JUDGE')")
     public ResponseEntity<byte[]> exportScoringCsv(@PathVariable Long roundId) {
         byte[] csvData = exportService.exportAnonymizedScoringCsv(roundId);
         

@@ -219,7 +219,7 @@ if event_id:
     _, rounds_payload, _ = add_result(
         "ALL_AUTHENTICATED",
         "GET",
-        f"/rounds/hackathon/{event_id}",
+        f"/api/v1/rounds/hackathon/{event_id}",
         "Xem danh sach vong thi cua event",
         "student1",
         [200],
@@ -228,7 +228,7 @@ if event_id:
     if isinstance(rounds_data, list) and rounds_data:
         round_id = rounds_data[0].get("id") or round_id
 else:
-    add_result("ALL_AUTHENTICATED", "GET", "/rounds/hackathon/1", "Xem danh sach vong thi cua event", "student1", [200], path_note="Fallback do khong co event_id.")
+    add_result("ALL_AUTHENTICATED", "GET", "/api/v1/rounds/hackathon/1", "Xem danh sach vong thi cua event", "student1", [200], path_note="Fallback do khong co event_id.")
 
 add_result(
     "PUBLIC",
@@ -248,7 +248,7 @@ if event_id:
     _, tracks_payload, _ = add_result(
         "ALL_AUTHENTICATED",
         "GET",
-        f"/tracks/hackathon/{event_id}",
+        f"/api/v1/tracks/hackathon/{event_id}",
         "Xem danh sach track cua event",
         "student1",
         [200],
@@ -256,7 +256,7 @@ if event_id:
     _, prizes_payload, _ = add_result(
         "ALL_AUTHENTICATED",
         "GET",
-        f"/prizes/event/{event_id}",
+        f"/api/v1/prizes/event/{event_id}",
         "Xem danh sach giai thuong cua event",
         "student1",
         [200],
@@ -264,7 +264,7 @@ if event_id:
     _, criteria_payload, _ = add_result(
         "ALL_AUTHENTICATED",
         "GET",
-        f"/criteria/event/{event_id}",
+        f"/api/v1/criteria/event/{event_id}",
         "Xem tieu chi cham diem cua event",
         "student1",
         [200],
@@ -281,15 +281,15 @@ if event_id:
     if isinstance(teams_data, list) and teams_data:
         team_id = teams_data[0].get("id") or team_id
 else:
-    add_result("ALL_AUTHENTICATED", "GET", "/tracks/hackathon/1", "Xem danh sach track cua event", "student1", [200], path_note="Fallback do khong co event_id.")
-    add_result("ALL_AUTHENTICATED", "GET", "/prizes/event/1", "Xem danh sach giai thuong cua event", "student1", [200], path_note="Fallback do khong co event_id.")
-    add_result("ALL_AUTHENTICATED", "GET", "/criteria/event/1", "Xem tieu chi cham diem cua event", "student1", [200], path_note="Fallback do khong co event_id.")
+    add_result("ALL_AUTHENTICATED", "GET", "/api/v1/tracks/hackathon/1", "Xem danh sach track cua event", "student1", [200], path_note="Fallback do khong co event_id.")
+    add_result("ALL_AUTHENTICATED", "GET", "/api/v1/prizes/event/1", "Xem danh sach giai thuong cua event", "student1", [200], path_note="Fallback do khong co event_id.")
+    add_result("ALL_AUTHENTICATED", "GET", "/api/v1/criteria/event/1", "Xem tieu chi cham diem cua event", "student1", [200], path_note="Fallback do khong co event_id.")
     add_result("ALL_AUTHENTICATED", "GET", "/api/v1/teams/event/1", "Xem danh sach team cua event", "student1", [200], path_note="Fallback do khong co event_id.")
 
 add_result(
     "ALL_AUTHENTICATED",
     "GET",
-    "/criteria/default",
+    "/api/v1/criteria/default",
     "Xem tieu chi mac dinh",
     "student1",
     [200],
@@ -368,14 +368,14 @@ _, team_payload, _ = add_result(
     path_note=f"teamId su dung: {team_id}; fallback 1 neu danh sach team rong.",
 )
 add_result(
-    "ALL_AUTHENTICATED",
-    "GET",
-    f"/team-members/team/{team_id}",
-    "Xem danh sach thanh vien team",
-    "student1",
-    [200],
-    path_note=f"teamId su dung: {team_id}; fallback 1 neu danh sach team rong.",
-)
+        "ALL_AUTHENTICATED",
+        "GET",
+        f"/api/v1/team-members/team/{team_id}",
+        "Xem danh sach thanh vien team",
+        "student1",
+        [200],
+        path_note=f"teamId su dung: {team_id}; fallback 1 neu danh sach team rong.",
+    )
 
 _, submissions_payload, _ = add_result(
     "ALL_AUTHENTICATED",

@@ -37,8 +37,13 @@ const acceptRequest = async (id: number): Promise<MentorshipRequest> => {
     return response.data.data;
 };
 
-const resolveRequest = async (id: number): Promise<MentorshipRequest> => {
-    const response = await api.patch(`/mentorship-requests/${id}/resolve`);
+const resolveRequest = async (id: number, payload: { answer: string }): Promise<MentorshipRequest> => {
+    const response = await api.patch(`/mentorship-requests/${id}/resolve`, payload);
+    return response.data.data;
+};
+
+const rejectRequest = async (id: number, payload: { reason: string }): Promise<MentorshipRequest> => {
+    const response = await api.patch(`/mentorship-requests/${id}/reject`, payload);
     return response.data.data;
 };
 
@@ -48,4 +53,5 @@ export const MentorshipRequestService = {
     getMyRequests,
     acceptRequest,
     resolveRequest,
+    rejectRequest,
 };

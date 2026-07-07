@@ -36,7 +36,22 @@ const OrganizerEventsPage: React.FC = () => {
     const fetchMyEvents = async () => {
         try {
             const response = await api.get('/hackathon-events/my-events');
-            setEvents(response.data.data);
+            const sorted = (response.data.data || []).sort((a: any, b: any) => {
+                const order: { [key: string]: number } = {
+                    'IN_PROGRESS': 1,
+                    'PUBLISHED': 2,
+                    'DRAFT': 3,
+                    'COMPLETED': 4,
+                    'CANCELLED': 5
+                };
+                const aOrder = order[a.status] || 99;
+                const bOrder = order[b.status] || 99;
+                if (aOrder !== bOrder) {
+                    return aOrder - bOrder;
+                }
+                return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+            });
+            setEvents(sorted);
         } catch (err) {
             setError('Failed to fetch your events.');
             toast.error('Failed to fetch events.');

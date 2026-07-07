@@ -43,15 +43,21 @@ public class EventRegistrationService {
         }
 
         if (!currentUser.isProfileComplete()) {
-            throw new com.example.swp.exception.BadRequestException("Please complete your profile before registering for this event.");
+            throw new com.example.swp.exception.BadRequestException(
+                    "Please complete your profile before registering for this event.");
         }
 
         HackathonEvent event = hackathonEventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
 
+        if (event.isDeleted()) {
+            throw new ResourceNotFoundException("Hackathon event not found");
+        }
+
         // Event phải ở trạng thái PUBLISHED mới cho phép đăng ký
         if (event.getStatus() != HackathonStatus.PUBLISHED) {
-            throw new IllegalStateException("Registration for this event is not open. Current status: " + event.getStatus());
+            throw new IllegalStateException(
+                    "Registration for this event is not open. Current status: " + event.getStatus());
         }
 
         // Check registration window
@@ -88,7 +94,10 @@ public class EventRegistrationService {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        return eventRegistrationRepository.existsByEventIdAndUserId(eventId, currentUser.getId());
+        HackathonEvent event = hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
+
+        return eventRegistrationRepository.findByEventAndUser(event, currentUser).isPresent();
     }
 
     private EventRegistrationResponse mapToResponse(EventRegistration registration) {

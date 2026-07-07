@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Users, Crown, X, Plus, Mail, Info, CheckCircle, Lock, Send } from 'lucide-react';
+import { Users, Crown, X, Plus, Mail, Info, CheckCircle, Lock, Send, Trash2, LogOut, ArrowUpCircle, Edit2, Clock } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Skeleton from '../../components/Skeleton';
@@ -20,6 +20,15 @@ interface TeamDetails {
     trackName: string;
     status: string;
     members: TeamMemberInfo[];
+}
+
+interface Invitation {
+    id: number;
+    teamId: number;
+    teamName: string;
+    inviteeId: number;
+    inviteeEmail: string;
+    status: string;
 }
 
 interface HackathonEvent {
@@ -44,6 +53,14 @@ const MyTeamPage: React.FC = () => {
     const [inviteEmail, setInviteEmail] = useState('');
     const [isInviting, setIsInviting] = useState(false);
     const [isFinalizing, setIsFinalizing] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    
+    const [isEditModalOpen, setEditModalOpen] = useState(false);
+    const [editProjectName, setEditProjectName] = useState('');
+    const [editProjectDescription, setEditProjectDescription] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    
+    const [sentInvitations, setSentInvitations] = useState<Invitation[]>([]);
 
     // Step 1: Fetch all events
     useEffect(() => {
@@ -77,7 +94,15 @@ const MyTeamPage: React.FC = () => {
         
         try {
             const response = await api.get(`/teams/my-team/event/${selectedEventId}`);
-            setTeam(response.data.data);
+            const teamData = response.data.data;
+            setTeam(teamData);
+            
+            const username = getDecodedToken()?.sub;
+            const isLeader = teamData.members.some((m: any) => m.username === username && m.isLeader);
+            if (isLeader) {
+                const invRes = await api.get(`/team-invitations/team/${teamData.id}/sent`);
+                setSentInvitations(invRes.data.data.filter((inv: Invitation) => inv.status === 'PENDING'));
+            }
         } catch (err: any) {
             if (err.response?.status === 404) {
                 setError("You are not part of a team for this event yet.");
@@ -112,6 +137,10 @@ const MyTeamPage: React.FC = () => {
             toast.success(`Invitation sent to ${inviteEmail}`);
             setInviteEmail('');
             setInviteModalOpen(false);
+            
+            // Refresh sent invitations
+            const invRes = await api.get(`/team-invitations/team/${team.id}/sent`);
+            setSentInvitations(invRes.data.data.filter((inv: Invitation) => inv.status === 'PENDING'));
         } catch (err: any) {
             toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to send invitation.');
         } finally {
@@ -134,6 +163,92 @@ const MyTeamPage: React.FC = () => {
             toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to finalize team.');
         } finally {
             setIsFinalizing(false);
+        }
+    };
+
+    const handleKick = async (userId: number) => {
+        if (!team) return;
+        if (!window.confirm("Are you sure you want to remove this member from the team?")) return;
+        
+        setIsProcessing(true);
+        try {
+            await api.delete(`/team-members/${userId}/kick/${team.id}`);
+            toast.success("Member removed successfully.");
+            await fetchMyTeam();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to remove member.');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleTransferLeadership = async (userId: number) => {
+        if (!team) return;
+        if (!window.confirm("Are you sure you want to transfer leadership to this member? You will become a regular member.")) return;
+        
+        setIsProcessing(true);
+        try {
+            await api.put(`/team-members/transfer-leadership`, {
+                newLeaderUserId: userId,
+                teamId: team.id
+            });
+            toast.success("Leadership transferred successfully.");
+            await fetchMyTeam();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to transfer leadership.');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleLeave = async () => {
+        if (!team) return;
+        if (!window.confirm("Are you sure you want to leave this team?")) return;
+        
+        setIsProcessing(true);
+        try {
+            await api.post(`/team-members/leave/${team.id}`);
+            toast.success("You have left the team.");
+            await fetchMyTeam();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to leave team.');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleUpdateTeam = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!team) return;
+        
+        setIsEditing(true);
+        try {
+            await api.put(`/teams/${team.id}`, {
+                projectName: editProjectName,
+                projectDescription: editProjectDescription,
+            });
+            toast.success("Project details updated.");
+            setEditModalOpen(false);
+            await fetchMyTeam();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update team.');
+        } finally {
+            setIsEditing(false);
+        }
+    };
+
+    const handleRevokeInvitation = async (invitationId: number) => {
+        if (!window.confirm("Are you sure you want to revoke this invitation?")) return;
+        
+        setIsProcessing(true);
+        try {
+            await api.delete(`/team-invitations/${invitationId}/revoke`);
+            toast.success("Invitation revoked.");
+            setSentInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to revoke invitation.');
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -236,12 +351,26 @@ const MyTeamPage: React.FC = () => {
                             </div>
 
                             <div className="space-y-4">
-                                <h3 className="text-sm font-semibold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                                    <Info size={16} /> Project Details
-                                </h3>
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-semibold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                                        <Info size={16} /> Project Details
+                                    </h3>
+                                    {isActive && isCurrentUserLeader && (
+                                        <button
+                                            onClick={() => {
+                                                setEditProjectName(team.projectName || '');
+                                                setEditProjectDescription(team.projectDescription || '');
+                                                setEditModalOpen(true);
+                                            }}
+                                            className="text-primary-container hover:text-[#d9611b] text-sm font-semibold flex items-center gap-1 transition-colors"
+                                        >
+                                            <Edit2 size={14} /> Edit Details
+                                        </button>
+                                    )}
+                                </div>
                                 <div className="bg-slate-50 p-5 rounded-lg border border-slate-100 space-y-2">
                                     <p className="font-bold text-base md:text-lg text-on-surface">{team.projectName || 'Project Name Not Defined'}</p>
-                                    <p className="text-sm text-on-surface-variant leading-relaxed">
+                                    <p className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-line">
                                         {team.projectDescription || 'No project description provided yet. Ask your team leader to define the project details.'}
                                     </p>
                                 </div>
@@ -286,7 +415,7 @@ const MyTeamPage: React.FC = () => {
                         </div>
                         <ul className="space-y-3">
                             {team.members.map(member => (
-                                <li key={member.userId} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-lg hover:bg-slate-100/50 transition-colors">
+                                <li key={member.userId} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-lg hover:bg-slate-100/50 transition-colors group">
                                     <div className="w-9 h-9 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-sm shrink-0 uppercase">
                                         {member.username?.[0] || 'U'}
                                     </div>
@@ -295,9 +424,43 @@ const MyTeamPage: React.FC = () => {
                                         <p className="text-xs text-on-surface-variant">{member.isLeader ? 'Leader' : 'Member'}</p>
                                     </div>
                                     {member.isLeader && <Crown size={16} className="text-yellow-500 fill-yellow-500 shrink-0" />}
+                                    
+                                    {isActive && isCurrentUserLeader && !member.isLeader && (
+                                        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => handleTransferLeadership(member.userId)}
+                                                disabled={isProcessing}
+                                                className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
+                                                title="Make Leader"
+                                            >
+                                                <ArrowUpCircle size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleKick(member.userId)}
+                                                disabled={isProcessing}
+                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                                                title="Kick Member"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    )}
                                 </li>
                             ))}
                         </ul>
+
+                        {isActive && !isCurrentUserLeader && (
+                            <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end">
+                                <button
+                                    onClick={handleLeave}
+                                    disabled={isProcessing}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 shadow-sm"
+                                >
+                                    <LogOut size={16} />
+                                    Leave Team
+                                </button>
+                            </div>
+                        )}
 
                         {/* Invitation trigger for team leaders */}
                         {isActive && isCurrentUserLeader && (
@@ -309,6 +472,99 @@ const MyTeamPage: React.FC = () => {
                                 Invite Members
                             </button>
                         )}
+
+                        {/* Sent Invitations List */}
+                        {isActive && isCurrentUserLeader && sentInvitations.length > 0 && (
+                            <div className="mt-6 pt-6 border-t border-slate-100">
+                                <h3 className="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
+                                    <Clock size={16} className="text-slate-400" />
+                                    Pending Invitations ({sentInvitations.length})
+                                </h3>
+                                <ul className="space-y-2">
+                                    {sentInvitations.map(inv => (
+                                        <li key={inv.id} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-lg text-sm group">
+                                            <div className="truncate pr-2">
+                                                <p className="font-semibold text-on-surface truncate">{inv.inviteeEmail}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleRevokeInvitation(inv.id)}
+                                                disabled={isProcessing}
+                                                className="text-xs font-semibold text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 shrink-0"
+                                            >
+                                                Revoke
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Details Modal */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className="bg-white border border-outline-variant rounded-xl p-6 md:p-8 shadow-xl w-full max-w-lg relative">
+                        <button 
+                            onClick={() => setEditModalOpen(false)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-on-surface transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+                        
+                        <div className="flex items-center gap-2.5 mb-5">
+                            <div className="p-2 bg-primary-container/10 rounded-lg text-primary-container">
+                                <Edit2 size={20} />
+                            </div>
+                            <h2 className="text-xl font-bold text-on-surface">Edit Project Details</h2>
+                        </div>
+                        
+                        <form onSubmit={handleUpdateTeam} className="space-y-5">
+                            <div>
+                                <label htmlFor="projectName" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                                    Project Name
+                                </label>
+                                <input
+                                    type="text"
+                                    id="projectName"
+                                    value={editProjectName}
+                                    onChange={(e) => setEditProjectName(e.target.value)}
+                                    className="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all placeholder-slate-400"
+                                    placeholder="Enter project name..."
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="projectDescription" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                                    Project Description
+                                </label>
+                                <textarea
+                                    id="projectDescription"
+                                    value={editProjectDescription}
+                                    onChange={(e) => setEditProjectDescription(e.target.value)}
+                                    rows={4}
+                                    className="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all placeholder-slate-400 resize-none"
+                                    placeholder="Describe your project..."
+                                />
+                            </div>
+                            
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditModalOpen(false)}
+                                    className="px-4 py-2 border border-outline-variant hover:bg-slate-50 rounded-lg text-sm font-semibold text-on-surface transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-5 py-2 text-white bg-primary-container hover:bg-[#d9611b] rounded-lg text-sm font-semibold shadow-sm transition-colors disabled:opacity-50"
+                                    disabled={isEditing}
+                                >
+                                    {isEditing ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

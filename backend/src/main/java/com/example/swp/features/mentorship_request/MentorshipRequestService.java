@@ -42,6 +42,11 @@ public class MentorshipRequestService {
                 .filter(tm -> tm.isLeader())
                 .orElseThrow(() -> new AccessDeniedException("Only the team leader can request mentorship."));
 
+        if (team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot request mentorship when the event is completed or cancelled.");
+        }
+
         MentorshipRequest newRequest = MentorshipRequest.builder()
                 .team(team)
                 .title(request.getTitle())
@@ -83,6 +88,11 @@ public class MentorshipRequestService {
         MentorshipRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mentorship request not found"));
 
+        if (request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot accept mentorship request when the event is completed or cancelled.");
+        }
+
         if (request.getStatus() != MentorshipRequestStatus.OPEN) {
             throw new IllegalStateException("This request is no longer open.");
         }
@@ -109,7 +119,7 @@ public class MentorshipRequestService {
     }
     
     @Transactional
-    public MentorshipRequestResponse resolveRequest(Long requestId) {
+    public MentorshipRequestResponse resolveRequest(Long requestId, com.example.swp.features.mentorship_request.dto.request.ResolveMentorshipRequest payload) {
         User currentUser = getCurrentUser();
         MentorshipRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mentorship request not found"));
@@ -121,30 +131,51 @@ public class MentorshipRequestService {
             throw new AccessDeniedException("Only the assigned mentor or team leader can resolve this request.");
         }
 
+        if (request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot resolve mentorship request when the event is completed or cancelled.");
+        }
+
         request.setStatus(MentorshipRequestStatus.RESOLVED);
         request.setResolvedAt(LocalDateTime.now());
+        request.setAnswer(payload.getAnswer());
         
         MentorshipRequest updatedRequest = requestRepository.save(request);
+
+        User teamLeader = findTeamLeader(request.getTeam());
+        if (teamLeader != null && isMentorOfRequest) {
+            notificationService.createNotification(
+                teamLeader,
+                "Mentorship Request Resolved",
+                "Mentor " + currentUser.getUsername() + " has sent an answer: " + payload.getAnswer(),
+                "MENTORSHIP_RESOLVED",
+                "MentorshipRequest",
+                updatedRequest.getId()
+            );
+        }
+
         return mapToResponse(updatedRequest);
     }
 
     @Transactional
-    public MentorshipRequestResponse rejectRequest(Long requestId) {
+    public MentorshipRequestResponse rejectRequest(Long requestId, com.example.swp.features.mentorship_request.dto.request.RejectMentorshipRequest payload) {
         User mentor = getCurrentUser();
 
         MentorshipRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Mentorship request not found"));
 
-        if (!request.getMentor().getId().equals(mentor.getId())) {
-            throw new AccessDeniedException("You are not the mentor assigned to this request.");
+        if (request.getStatus() != MentorshipRequestStatus.OPEN) {
+            throw new IllegalStateException("Only open requests can be declined.");
         }
 
-        if (request.getStatus() != MentorshipRequestStatus.IN_PROGRESS) {
-            throw new IllegalStateException("Only in-progress requests can be rejected.");
+        if (request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot decline mentorship request when the event is completed or cancelled.");
         }
 
-        request.setStatus(MentorshipRequestStatus.OPEN);
-        request.setMentor(null);
+        request.setStatus(MentorshipRequestStatus.REJECTED);
+        request.setMentor(mentor); // Record who rejected it
+        request.setRejectReason(payload.getReason());
         
         MentorshipRequest updatedRequest = requestRepository.save(request);
 
@@ -152,8 +183,8 @@ public class MentorshipRequestService {
         if (teamLeader != null) {
             notificationService.createNotification(
                 teamLeader,
-                "Mentorship Rejected",
-                "Mentor " + mentor.getUsername() + " has backed out of your request. It is now open again.",
+                "Mentorship Request Declined",
+                "Mentor " + mentor.getUsername() + " has declined your request. Reason: " + payload.getReason(),
                 "MENTORSHIP_REJECTED",
                 "MentorshipRequest",
                 updatedRequest.getId()
@@ -172,6 +203,11 @@ public class MentorshipRequestService {
         boolean isLeaderOfTeam = findTeamLeader(request.getTeam()).getId().equals(currentUser.getId());
         if (!isLeaderOfTeam && currentUser.getRole() != Role.ADMIN && currentUser.getRole() != Role.ORGANIZER) {
             throw new AccessDeniedException("Only the team leader or an admin can cancel this request.");
+        }
+
+        if (request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+            request.getTeam().getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot cancel mentorship request when the event is completed or cancelled.");
         }
 
         requestRepository.delete(request);
@@ -231,6 +267,8 @@ public class MentorshipRequestService {
                 .status(request.getStatus())
                 .createdAt(request.getCreatedAt())
                 .resolvedAt(request.getResolvedAt())
+                .answer(request.getAnswer())
+                .rejectReason(request.getRejectReason())
                 .build();
     }
 }

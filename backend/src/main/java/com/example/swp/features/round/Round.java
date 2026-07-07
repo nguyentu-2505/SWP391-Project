@@ -45,6 +45,14 @@ public class Round {
     @Column(name = "round_order", nullable = false)
     @Builder.Default
     private Integer roundOrder = 1;
+
+    @Column(name = "grading_end_time")
+    private LocalDateTime gradingEndTime;
+
+    @Column(name = "grading_ended", nullable = false)
+    @Builder.Default
+    private Boolean gradingEnded = false;
+
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getDescription() { return description; }
@@ -54,6 +62,10 @@ public class Round {
     public Integer getAdvancementSlots() { return advancementSlots; }
     public LocalDateTime getSubmissionDeadline() { return submissionDeadline; }
     public Integer getRoundOrder() { return roundOrder; }
+    public LocalDateTime getGradingEndTime() { return gradingEndTime; }
+    public Boolean getGradingEnded() { return gradingEnded; }
+    public void setGradingEndTime(LocalDateTime gradingEndTime) { this.gradingEndTime = gradingEndTime; }
+    public void setGradingEnded(Boolean gradingEnded) { this.gradingEnded = gradingEnded; }
 
     public static RoundBuilder builder() { return new RoundBuilder(); }
     public static class RoundBuilder {
@@ -66,6 +78,8 @@ public class Round {
         private Integer advancementSlots;
         private LocalDateTime submissionDeadline;
         private Integer roundOrder;
+        private LocalDateTime gradingEndTime;
+        private Boolean gradingEnded;
 
         public RoundBuilder id(Long id) { this.id = id; return this; }
         public RoundBuilder name(String name) { this.name = name; return this; }
@@ -76,12 +90,16 @@ public class Round {
         public RoundBuilder advancementSlots(Integer advancementSlots) { this.advancementSlots = advancementSlots; return this; }
         public RoundBuilder submissionDeadline(LocalDateTime submissionDeadline) { this.submissionDeadline = submissionDeadline; return this; }
         public RoundBuilder roundOrder(Integer roundOrder) { this.roundOrder = roundOrder; return this; }
+        public RoundBuilder gradingEndTime(LocalDateTime gradingEndTime) { this.gradingEndTime = gradingEndTime; return this; }
+        public RoundBuilder gradingEnded(Boolean gradingEnded) { this.gradingEnded = gradingEnded; return this; }
         public Round build() {
             Round r = new Round();
             r.id = this.id; r.name = this.name; r.description = this.description;
             r.startTime = this.startTime; r.endTime = this.endTime; r.hackathonEvent = this.hackathonEvent;
             r.advancementSlots = this.advancementSlots; r.submissionDeadline = this.submissionDeadline;
             r.roundOrder = this.roundOrder != null ? this.roundOrder : 1;
+            r.gradingEndTime = this.gradingEndTime;
+            r.gradingEnded = this.gradingEnded != null ? this.gradingEnded : false;
             return r;
         }
     }

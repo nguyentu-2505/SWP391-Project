@@ -1,29 +1,53 @@
 import React, { useEffect, useState } from 'react';
 import { TeamService } from '../services/TeamService';
 import type { Team } from '../services/TeamService';
-import { Users, Loader2, Plus, Edit2, Trash2, Ban, X } from 'lucide-react';
+import { Users, Loader2, Trash2, Ban, X, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ExportService } from '../services/ExportService';
 import Authorizable from '../components/Authorizable';
 import { Role } from '../services/authUtils';
 import api from '../services/api';
+import { HackathonEventService } from '../services/HackathonEventService';
 
 const TeamsPage: React.FC = () => {
     const [teams, setTeams] = useState<Team[]>([]);
     const [loading, setLoading] = useState(true);
+    const [events, setEvents] = useState<any[]>([]);
+    const [selectedEventId, setSelectedEventId] = useState<number | 'all'>('all');
     
     const [disqualifyTeamId, setDisqualifyTeamId] = useState<number | null>(null);
     const [disqualifyReason, setDisqualifyReason] = useState('');
     const [isDisqualifying, setIsDisqualifying] = useState(false);
 
     useEffect(() => {
-        fetchTeams();
+        fetchEvents();
     }, []);
+
+    useEffect(() => {
+        fetchTeams();
+    }, [selectedEventId]);
+
+    const fetchEvents = async () => {
+        try {
+            const data = await HackathonEventService.getAllEventsForAdmin(0, 100);
+            setEvents(data || []);
+        } catch (err) {
+            console.error('Failed to fetch events:', err);
+        }
+    };
 
     const fetchTeams = async () => {
         setLoading(true);
         try {
-            const allTeams = await TeamService.getTeamsByTrack(1);
-            setTeams(allTeams);
+            let fetchedTeams: Team[] = [];
+            if (selectedEventId === 'all') {
+                const response = await api.get('/teams');
+                fetchedTeams = response.data.data || [];
+            } else {
+                const response = await api.get(`/teams/event/${selectedEventId}`);
+                fetchedTeams = response.data.data || [];
+            }
+            setTeams(fetchedTeams);
         } catch (err: any) {
             console.error('Failed to fetch teams:', err);
             toast.error(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to fetch teams.');
@@ -72,15 +96,34 @@ const TeamsPage: React.FC = () => {
                     <p className="text-sm text-on-surface-variant mt-1">Manage competing teams and their members.</p>
                 </div>
                 
-                <Authorizable allowedRoles={[Role.PARTICIPANT]}>
-                    <button
-                        onClick={() => toast('Create functionality coming soon!', { icon: '🚧' })}
-                        className="bg-primary-container hover:bg-[#d9611b] text-white font-semibold py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors cursor-pointer text-sm"
+                <div className="flex gap-2">
+                    <Authorizable allowedRoles={[Role.ADMIN, Role.ORGANIZER]}>
+                        <button
+                            onClick={() => ExportService.exportTeamsCsv()}
+                            className="bg-white border border-outline-variant hover:bg-slate-50 text-on-surface font-semibold py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors cursor-pointer text-sm"
+                        >
+                            <Download size={16} />
+                            Export CSV
+                        </button>
+                    </Authorizable>
+
+                </div>
+            </div>
+
+            <div className="bg-white p-4 border border-outline-variant rounded-xl shadow-sm flex flex-wrap items-center gap-4">
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Filter by Hackathon Event</label>
+                    <select
+                        value={selectedEventId}
+                        onChange={e => setSelectedEventId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[280px]"
                     >
-                        <Plus size={16} />
-                        Create Team
-                    </button>
-                </Authorizable>
+                        <option value="all">All Events</option>
+                        {events.map(ev => (
+                            <option key={ev.id} value={ev.id}>{ev.name}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {loading ? (
@@ -133,13 +176,7 @@ const TeamsPage: React.FC = () => {
                                                     fallback={<span className="text-slate-400 text-xs italic">View Only</span>}
                                                 >
                                                     <div className="flex space-x-3 items-center">
-                                                        <button
-                                                            onClick={() => toast('Edit functionality coming soon!', { icon: '🚧' })}
-                                                            className="text-primary-container hover:text-primary transition-colors cursor-pointer"
-                                                            title="Edit"
-                                                        >
-                                                            <Edit2 size={16} />
-                                                        </button>
+
                                                         
                                                         {status !== 'DISQUALIFIED' && (
                                                             <button
