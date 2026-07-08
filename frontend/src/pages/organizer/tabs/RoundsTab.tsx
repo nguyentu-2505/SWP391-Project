@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
-import { Clock, Plus, Trash2, Loader2, CalendarDays, Edit2 } from 'lucide-react';
+import { Clock, Plus, Trash2, Loader2, CalendarDays, Edit2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../../components/Modal';
 import ConfirmModal from '../../../components/ConfirmModal';
@@ -46,6 +46,20 @@ const RoundsTab: React.FC = () => {
     const [confirmAction, setConfirmAction] = useState<() => void>(() => {});
     const [confirmText, setConfirmText] = useState('Delete');
     const [confirmIsDanger, setConfirmIsDanger] = useState(true);
+
+    const [advancementPreview, setAdvancementPreview] = useState<{
+        roundId: number;
+        show: boolean;
+        loading: boolean;
+        proposedTeamsByTrack: { [trackName: string]: any[] };
+        tiesByTrack: { [trackName: string]: string[] };
+    }>({
+        roundId: 0,
+        show: false,
+        loading: false,
+        proposedTeamsByTrack: {},
+        tiesByTrack: {},
+    });
 
     const fetchRounds = async () => {
         if (!eventId) return;
@@ -177,23 +191,63 @@ const RoundsTab: React.FC = () => {
         setConfirmOpen(true);
     };
 
-    const handleAdvanceTeams = (id: number) => {
-        setConfirmTitle('Advance Teams / Complete Event');
-        setConfirmMessage('Are you sure you want to proceed? This will calculate rankings and advance teams (or complete the event if this is the final round).');
-        setConfirmText('Confirm');
-        setConfirmIsDanger(false);
-        setConfirmAction(() => async () => {
-            const loadingToast = toast.loading('Processing...');
-            try {
-                const res = await api.post(`/rounds/${id}/advance`);
-                toast.success(res.data.message || 'Processed successfully!', { id: loadingToast });
-                fetchRounds();
-            } catch (err: any) {
-                toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to process.', { id: loadingToast });
-            }
-            setConfirmOpen(false);
+    const handleAdvanceTeams = async (roundId: number) => {
+        const round = rounds.find(r => r.id === roundId);
+        if (!round) return;
+
+        setAdvancementPreview({
+            roundId,
+            show: true,
+            loading: true,
+            proposedTeamsByTrack: {},
+            tiesByTrack: {},
         });
-        setConfirmOpen(true);
+
+        try {
+            const res = await api.get(`/rankings/round/${roundId}`);
+            const rankings = res.data.data || [];
+            
+            // Group rankings by track
+            const grouped: { [trackName: string]: any[] } = {};
+            rankings.forEach((r: any) => {
+                const track = r.trackName || 'General Track';
+                if (!grouped[track]) grouped[track] = [];
+                grouped[track].push(r);
+            });
+
+            const slots = round.advancementSlots || 2;
+            const proposed: { [trackName: string]: any[] } = {};
+            const ties: { [trackName: string]: string[] } = {};
+
+            Object.entries(grouped).forEach(([trackName, list]) => {
+                // Take top `slots` teams
+                const topTeams = list.slice(0, slots);
+                proposed[trackName] = topTeams;
+
+                // Check if there is a tie at the boundary
+                if (list.length > slots) {
+                    const lastAdvanced = list[slots - 1];
+                    const firstExcluded = list[slots];
+                    if (lastAdvanced && firstExcluded && lastAdvanced.finalScore === firstExcluded.finalScore) {
+                        ties[trackName] = [
+                            `${lastAdvanced.teamName} (Hạng ${lastAdvanced.rank}, ${lastAdvanced.finalScore} điểm)`,
+                            `${firstExcluded.teamName} (Hạng ${firstExcluded.rank}, ${firstExcluded.finalScore} điểm)`
+                        ];
+                    }
+                }
+            });
+
+            setAdvancementPreview({
+                roundId,
+                show: true,
+                loading: false,
+                proposedTeamsByTrack: proposed,
+                tiesByTrack: ties,
+            });
+        } catch (err: any) {
+            toast.error('Không thể tải bản xem trước thăng hạng.');
+            setAdvancementPreview(prev => ({ ...prev, show: false, loading: false }));
+        }
     };
 
     if (loading) return (
@@ -487,6 +541,101 @@ const RoundsTab: React.FC = () => {
                 </Modal>
             )}
         </div>
+        {advancementPreview.show && (
+            <Modal isOpen={advancementPreview.show} onClose={() => setAdvancementPreview(prev => ({ ...prev, show: false }))}>
+                <div className="p-6 max-w-xl space-y-4">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <Clock size={20} className="text-blue-600" />
+                        {rounds.findIndex(r => r.id === advancementPreview.roundId) === rounds.length - 1 
+                            ? 'Xác nhận Hoàn thành Sự kiện (Complete Event)' 
+                            : 'Xác nhận thăng hạng đội thi (Round Advancement)'}
+                    </h3>
+                    {advancementPreview.loading ? (
+                        <div className="flex items-center justify-center py-6">
+                            <Loader2 className="animate-spin text-blue-500 mr-2" size={20} />
+                            <span className="text-sm text-gray-500">Đang tải danh sách xếp hạng...</span>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <p className="text-sm text-gray-600">
+                                {rounds.findIndex(r => r.id === advancementPreview.roundId) === rounds.length - 1
+                                    ? 'Dưới đây là danh sách xếp hạng chung cuộc của các đội thi ở từng Track:'
+                                    : 'Dưới đây là danh sách các đội có điểm số cao nhất của mỗi Track dự kiến sẽ được thăng hạng lên vòng tiếp theo:'}
+                            </p>
+                            
+                            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                                {Object.keys(advancementPreview.proposedTeamsByTrack).length === 0 ? (
+                                    <p className="text-xs text-gray-400 italic text-center py-4">Chưa có bảng điểm xếp hạng nào được ghi nhận cho vòng thi này.</p>
+                                ) : (
+                                    Object.entries(advancementPreview.proposedTeamsByTrack).map(([trackName, teams]) => {
+                                        const tieWarning = advancementPreview.tiesByTrack[trackName];
+                                        return (
+                                            <div key={trackName} className="border border-slate-100 bg-slate-50 p-3 rounded-lg space-y-2">
+                                                <h4 className="font-bold text-sm text-blue-800">{trackName}</h4>
+                                                <ul className="space-y-1 text-xs">
+                                                    {teams.map((t, idx) => (
+                                                        <li key={t.teamId} className="flex justify-between items-center text-gray-700 bg-white px-2.5 py-1.5 rounded border border-gray-100">
+                                                            <span>Rank {t.rank}: <strong>{t.teamName}</strong></span>
+                                                            <span className="font-semibold text-blue-600">{t.finalScore} điểm</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                                {tieWarning && (
+                                                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 space-y-1">
+                                                        <div className="flex items-center gap-1.5 font-bold">
+                                                            <AlertCircle size={14} className="text-amber-600" />
+                                                            Cảnh báo bằng điểm!
+                                                        </div>
+                                                        <p className="text-gray-600">Có hiện tượng bằng điểm tại ranh giới thăng hạng giữa:</p>
+                                                        <ul className="list-disc pl-4 space-y-0.5 text-gray-500">
+                                                            {tieWarning.map((info, idx) => (
+                                                                <li key={idx}>{info}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+
+                            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg text-xs text-blue-800">
+                                <strong>Lưu ý:</strong> Hành động này sẽ khóa điểm số của vòng thi hiện tại và thực hiện thăng hạng chính thức (hoặc chốt điểm chung cuộc). Hãy đảm bảo các Giám khảo đã hoàn thành tất cả các lượt chấm điểm.
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setAdvancementPreview(prev => ({ ...prev, show: false }))}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-700 transition-colors"
+                                >
+                                    Hủy bỏ
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        const roundId = advancementPreview.roundId;
+                                        setAdvancementPreview(prev => ({ ...prev, show: false }));
+                                        const loadingToast = toast.loading('Đang xử lý...');
+                                        try {
+                                            const res = await api.post(`/rounds/${roundId}/advance`);
+                                            toast.success(res.data.message || 'Xử lý thành công!', { id: loadingToast });
+                                            fetchRounds();
+                                        } catch (err: any) {
+                                            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Xử lý thất bại.', { id: loadingToast });
+                                        }
+                                    }}
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                                >
+                                    Xác nhận
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </Modal>
+        )}
         <ConfirmModal
             isOpen={confirmOpen}
             title={confirmTitle}
