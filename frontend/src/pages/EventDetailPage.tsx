@@ -5,6 +5,7 @@ import { Calendar, Clock, Info, Trophy, ChevronLeft, CalendarRange, Tag, Target 
 import toast from 'react-hot-toast';
 import StatusBadge from '../components/StatusBadge';
 import Skeleton from '../components/Skeleton';
+import LeaderboardSection from '../components/LeaderboardSection';
 
 interface EventDetails {
     id: number;
@@ -386,29 +387,22 @@ const EventDetailPage: React.FC = () => {
                                     </div>
                                 )}
 
-                                {rounds.length > 0 && (
+                                {rounds.length > 0 && rounds.some(r => r.gradingEnded) && (
                                     <div className="pt-4 border-t border-slate-100 mt-4">
                                         <h4 className="text-sm font-bold uppercase tracking-wider text-on-surface flex items-center gap-2 mb-3">
                                             <Trophy size={16} className="text-primary-container" />
                                             Leaderboards
                                         </h4>
-                                        <div className="space-y-2">
-                                            {rounds.map(round => (
-                                                <Link
-                                                    key={round.id}
-                                                    to={`/leaderboard/round/${round.id}`}
-                                                    className="w-full flex items-center justify-center py-2 text-sm font-bold text-primary-container bg-primary-container/10 hover:bg-primary-container/20 rounded-lg transition-colors border border-primary-container/20"
-                                                >
-                                                    <Trophy size={14} className="mr-2" />
-                                                    {round.name} Leaderboard
-                                                </Link>
-                                            ))}
-                                        </div>
+                                        <p className="text-xs text-on-surface-variant">View the rankings for the completed rounds in the main section.</p>
                                     </div>
                                 )}
                             </div>
                         </div>
                     </div>
+                    
+                    {rounds.length > 0 && rounds.some(r => r.gradingEnded) && (
+                        <LeaderboardSection rounds={rounds} tracks={tracks} />
+                    )}
                 </div>
             </div>
         </div>

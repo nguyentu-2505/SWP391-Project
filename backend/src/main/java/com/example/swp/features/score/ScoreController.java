@@ -54,13 +54,16 @@ public class ScoreController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
-    @GetMapping(value = "/my-scores/export", produces = "text/csv")
+    @GetMapping(value = "/my-scores/export")
     @PreAuthorize("hasAnyRole('JUDGE', 'GUEST_JUDGE')")
     public ResponseEntity<byte[]> exportMyScores() {
         byte[] csvData = scoreService.exportMyScoresCsv();
-        return ResponseEntity.ok()
-            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"my_scores.csv\"")
-            .body(csvData);
+        
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "my_scores.csv");
+        
+        return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
     }
     
     @PostMapping("/finalize/round/{roundId}")

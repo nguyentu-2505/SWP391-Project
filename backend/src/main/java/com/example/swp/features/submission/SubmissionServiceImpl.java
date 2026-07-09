@@ -35,6 +35,7 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings("null")
+@Transactional(readOnly = true)
 public class SubmissionServiceImpl implements SubmissionService {
 
     private final SubmissionRepository submissionRepository;
@@ -60,6 +61,11 @@ public class SubmissionServiceImpl implements SubmissionService {
         
         if (team.getEvent().getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.IN_PROGRESS) {
             throw new IllegalStateException("Submitting projects is only allowed when the event is in progress (IN_PROGRESS).");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (team.getEvent().getEndTime() != null && now.isAfter(team.getEvent().getEndTime())) {
+            throw new IllegalStateException("The event has ended. No further submissions are allowed.");
         }
         
         if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
@@ -97,7 +103,6 @@ public class SubmissionServiceImpl implements SubmissionService {
             throw new com.example.swp.exception.BadRequestException("Team size does not meet the minimum requirement to submit.");
         }
 
-        LocalDateTime now = LocalDateTime.now();
         if (round.getStartTime() != null && now.isBefore(round.getStartTime())) {
             throw new IllegalStateException("The submission period for this round has not started yet.");
         }

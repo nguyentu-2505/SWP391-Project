@@ -56,6 +56,17 @@ public class ScoreServiceImpl implements ScoreService {
             throw new IllegalStateException("Cannot score submissions from disqualified teams.");
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        if (submission.getRound().getEndTime() != null && now.isBefore(submission.getRound().getEndTime())) {
+            throw new IllegalStateException("Grading has not started yet. The round has not ended.");
+        }
+        if (submission.getRound().getGradingEndTime() != null && now.isAfter(submission.getRound().getGradingEndTime())) {
+            throw new IllegalStateException("Grading period has ended for this round.");
+        }
+        if (submission.getRound().getGradingEnded() != null && submission.getRound().getGradingEnded()) {
+            throw new IllegalStateException("Grading is already marked as ended for this round.");
+        }
+
         Long roundId = submission.getRound().getId();
         Long trackId = submission.getTeam().getTrack() != null ? submission.getTeam().getTrack().getId() : null;
 
@@ -66,10 +77,7 @@ public class ScoreServiceImpl implements ScoreService {
             throw new AccessDeniedException("You are not assigned to score submissions in this round/track.");
         }
 
-        if (advancementRepository.existsByFromRoundId(submission.getRound().getId())) {
-            throw new IllegalStateException("Scoring is frozen. Teams have already advanced from this round.");
-        }
-        
+        // Removed the check for team advancement so judges can update their drafts        
         List<Score> savedScores = new ArrayList<>();
         for (CreateScoreRequest.ScoreCriterion sc : request.getScores()) {
             Criterion criterion = criterionRepository.findById(sc.getCriterionId())
@@ -263,6 +271,17 @@ public class ScoreServiceImpl implements ScoreService {
 
         if (score.isFinalized()) {
             throw new IllegalStateException("Round is finalized. Cannot edit score.");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (score.getSubmission().getRound().getEndTime() != null && now.isBefore(score.getSubmission().getRound().getEndTime())) {
+            throw new IllegalStateException("Grading has not started yet. The round has not ended.");
+        }
+        if (score.getSubmission().getRound().getGradingEndTime() != null && now.isAfter(score.getSubmission().getRound().getGradingEndTime())) {
+            throw new IllegalStateException("Grading period has ended for this round.");
+        }
+        if (score.getSubmission().getRound().getGradingEnded() != null && score.getSubmission().getRound().getGradingEnded()) {
+            throw new IllegalStateException("Grading is already marked as ended for this round.");
         }
 
         Criterion criterion = score.getCriterion();

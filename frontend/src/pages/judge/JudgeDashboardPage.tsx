@@ -11,6 +11,7 @@ const JudgeDashboardPage: React.FC = () => {
     const [error, setError] = useState('');
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [submissions, setSubmissions] = useState<any[]>([]);
+    const [currentRoundData, setCurrentRoundData] = useState<any>(null);
     const [loadingSubmissions, setLoadingSubmissions] = useState(false);
 
     useEffect(() => {
@@ -36,12 +37,16 @@ const JudgeDashboardPage: React.FC = () => {
         setExpandedRowId(rowId);
         setLoadingSubmissions(true);
         try {
-            const response = await api.get(`/submissions/round/${roundId}`);
+            const [response, roundRes] = await Promise.all([
+                api.get(`/submissions/round/${roundId}`),
+                api.get(`/rounds/${roundId}`)
+            ]);
             let allSubs = response.data.data || [];
             if (trackId) {
                 allSubs = allSubs.filter((s: any) => s.trackId === trackId);
             }
             setSubmissions(allSubs);
+            setCurrentRoundData(roundRes.data.data);
         } catch (err) {
             console.error("Failed to fetch submissions for round", err);
         } finally {
@@ -122,18 +127,49 @@ const JudgeDashboardPage: React.FC = () => {
                                                 ) : (
                                                     <div className="space-y-3">
                                                         <h4 className="font-semibold text-gray-700">Submissions to evaluate:</h4>
+                                                        {currentRoundData && (() => {
+                                                            const now = new Date();
+                                                            const roundEnd = currentRoundData.endTime ? new Date(currentRoundData.endTime) : null;
+                                                            const gradEnd = currentRoundData.gradingEndTime ? new Date(currentRoundData.gradingEndTime) : null;
+                                                            
+                                                            const isBeforeGrading = roundEnd && now < roundEnd;
+                                                            const isAfterGrading = (gradEnd && now > gradEnd) || currentRoundData.gradingEnded;
+                                                            
+                                                            if (isBeforeGrading) {
+                                                                return <div className="text-sm text-yellow-600 bg-yellow-50 p-2 rounded border border-yellow-200">The round is still active. Grading will open after {roundEnd.toLocaleString()}.</div>;
+                                                            } else if (isAfterGrading) {
+                                                                return <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">The grading period has ended for this round.</div>;
+                                                            }
+                                                            return null;
+                                                        })()}
                                                         <ul className="space-y-2">
-                                                            {submissions.map(sub => (
-                                                                <li key={sub.id} className="flex items-center justify-between bg-white p-3 rounded border border-gray-200">
-                                                                    <span className="font-medium text-gray-800">{sub.teamName}</span>
-                                                                    <Link
-                                                                        to={`/judge/score/${sub.id}`}
-                                                                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
-                                                                    >
-                                                                        Score Now
-                                                                    </Link>
-                                                                </li>
-                                                            ))}
+                                                            {submissions.map(sub => {
+                                                                const now = new Date();
+                                                                const roundEnd = currentRoundData?.endTime ? new Date(currentRoundData.endTime) : null;
+                                                                const gradEnd = currentRoundData?.gradingEndTime ? new Date(currentRoundData.gradingEndTime) : null;
+                                                                const canScore = (!roundEnd || now >= roundEnd) && (!gradEnd || now <= gradEnd) && !currentRoundData?.gradingEnded;
+
+                                                                return (
+                                                                    <li key={sub.id} className="flex items-center justify-between bg-white p-3 rounded border border-gray-200">
+                                                                        <span className="font-medium text-gray-800">{sub.teamName}</span>
+                                                                        {canScore ? (
+                                                                            <Link
+                                                                                to={`/judge/score/${sub.id}`}
+                                                                                className="px-3 py-1 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
+                                                                            >
+                                                                                Score Now
+                                                                            </Link>
+                                                                        ) : (
+                                                                            <span
+                                                                                className="px-3 py-1 bg-gray-300 text-gray-500 rounded text-sm font-medium cursor-not-allowed"
+                                                                                title="Grading is not currently available"
+                                                                            >
+                                                                                Score Now
+                                                                            </span>
+                                                                        )}
+                                                                    </li>
+                                                                );
+                                                            })}
                                                         </ul>
                                                     </div>
                                                 )}

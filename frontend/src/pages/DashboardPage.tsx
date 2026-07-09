@@ -85,7 +85,6 @@ const DashboardPage: React.FC = () => {
                             <div className="p-2 bg-brand-orange/10 rounded-lg">
                                 <Users className="text-brand-orange" size={24} />
                             </div>
-                            <span className="text-xs text-on-surface-variant px-2 py-1 bg-surface-container-lowest border border-outline-variant rounded-full font-semibold">+12% this week</span>
                         </div>
                         <div>
                             <p className="text-[10px] text-on-surface-variant mb-1 uppercase tracking-widest font-bold">Active Teams</p>
