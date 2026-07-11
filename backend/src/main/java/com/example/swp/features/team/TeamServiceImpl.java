@@ -59,6 +59,10 @@ public class TeamServiceImpl implements TeamService {
         if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
             throw new IllegalStateException("Teams can only be created when the hackathon is PUBLISHED (registration is open).");
         }
+
+        if (event.getEndTime() != null && LocalDateTime.now().isAfter(event.getEndTime())) {
+            throw new IllegalStateException("The event has ended. You can no longer create teams.");
+        }
                 
         Track track = trackRepository.findById(request.getTrackId())
                 .orElseThrow(() -> new ResourceNotFoundException("Track not found"));
@@ -203,6 +207,11 @@ public class TeamServiceImpl implements TeamService {
         }
 
         boolean isCurrentUserAdmin = currentUser.getRole() == com.example.swp.features.user.Role.ADMIN || currentUser.getRole() == com.example.swp.features.user.Role.ORGANIZER;
+
+        if (team.getEvent().getEndTime() != null && LocalDateTime.now().isAfter(team.getEvent().getEndTime()) && !isCurrentUserAdmin) {
+            throw new IllegalStateException("The event has ended. You can no longer update team details.");
+        }
+
         boolean isCurrentUserLeader = teamMemberRepository.existsByTeamIdAndUserIdAndIsLeaderTrue(teamId, currentUser.getId());
 
         if (!isCurrentUserAdmin && !isCurrentUserLeader) {
@@ -253,6 +262,15 @@ public class TeamServiceImpl implements TeamService {
         if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
             throw new com.example.swp.exception.BadRequestException("Finalized teams cannot be deleted. Please use disqualify instead.");
         }
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean isCurrentUserAdmin = currentUser.getRole() == com.example.swp.features.user.Role.ADMIN || currentUser.getRole() == com.example.swp.features.user.Role.ORGANIZER;
+
+        if (team.getEvent().getEndTime() != null && LocalDateTime.now().isAfter(team.getEvent().getEndTime()) && !isCurrentUserAdmin) {
+            throw new IllegalStateException("The event has ended. You can no longer delete teams.");
+        }
         
         List<com.example.swp.features.mentorship_request.MentorshipRequest> requests = mentorshipRequestRepository.findByTeamId(teamId);
         mentorshipRequestRepository.deleteAll(requests);
@@ -265,7 +283,6 @@ public class TeamServiceImpl implements TeamService {
         
         teamRepository.delete(team);
 
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         auditLogService.logAction("DELETE_TEAM", "TEAM", teamId, "DELETED", "Team '" + team.getName() + "' deleted by " + currentUsername, team.getEvent().getId());
     }
 
@@ -282,6 +299,10 @@ public class TeamServiceImpl implements TeamService {
         if (team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
             team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
             throw new IllegalStateException("Cannot finalize team when the event is completed or cancelled.");
+        }
+
+        if (team.getEvent().getEndTime() != null && LocalDateTime.now().isAfter(team.getEvent().getEndTime())) {
+            throw new IllegalStateException("The event has ended. You can no longer finalize teams.");
         }
 
         boolean isCurrentUserLeader = teamMemberRepository.existsByTeamIdAndUserIdAndIsLeaderTrue(teamId, currentUser.getId());

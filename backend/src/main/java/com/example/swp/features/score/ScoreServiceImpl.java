@@ -56,6 +56,17 @@ public class ScoreServiceImpl implements ScoreService {
             throw new IllegalStateException("Cannot score submissions from disqualified teams.");
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        if (submission.getRound().getEndTime() != null && now.isBefore(submission.getRound().getEndTime())) {
+            throw new IllegalStateException("Grading has not started yet. The round has not ended.");
+        }
+        if (submission.getRound().getGradingEndTime() != null && now.isAfter(submission.getRound().getGradingEndTime())) {
+            throw new IllegalStateException("Grading period has ended for this round.");
+        }
+        if (submission.getRound().getGradingEnded() != null && submission.getRound().getGradingEnded()) {
+            throw new IllegalStateException("Grading is already marked as ended for this round.");
+        }
+
         Long roundId = submission.getRound().getId();
         Long trackId = submission.getTeam().getTrack() != null ? submission.getTeam().getTrack().getId() : null;
 
@@ -66,10 +77,7 @@ public class ScoreServiceImpl implements ScoreService {
             throw new AccessDeniedException("You are not assigned to score submissions in this round/track.");
         }
 
-        if (advancementRepository.existsByFromRoundId(submission.getRound().getId())) {
-            throw new IllegalStateException("Scoring is frozen. Teams have already advanced from this round.");
-        }
-        
+        // Removed the check for team advancement so judges can update their drafts        
         List<Score> savedScores = new ArrayList<>();
         for (CreateScoreRequest.ScoreCriterion sc : request.getScores()) {
             Criterion criterion = criterionRepository.findById(sc.getCriterionId())
@@ -94,6 +102,7 @@ public class ScoreServiceImpl implements ScoreService {
             score.setScoreValue(sc.getScoreValue());
             score.setComment(sc.getComment());
             score.setScoredAt(LocalDateTime.now());
+            score.setFinalized(Boolean.TRUE.equals(request.getIsFinalized()));
             
             savedScores.add(scoreRepository.save(score));
         }
@@ -130,23 +139,30 @@ public class ScoreServiceImpl implements ScoreService {
             List<Criterion> criteria = criterionRepository.findByHackathonEventId(eventId);
             if (criteria.isEmpty()) continue;
 
-            boolean allScored = true;
+            boolean allScoredAndFinalized = true;
+            boolean hasAnyScore = false;
             for (Submission sub : submissions) {
                 if (sub.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
                     continue;
                 }
                 for (Criterion crit : criteria) {
-                    boolean hasScore = scoreRepository.findBySubmissionIdAndJudgeIdAndCriterionId(sub.getId(), judge.getId(), crit.getId()).isPresent();
-                    if (!hasScore) {
-                        allScored = false;
-                        break;
+                    var scoreOpt = scoreRepository.findBySubmissionIdAndJudgeIdAndCriterionId(sub.getId(), judge.getId(), crit.getId());
+                    if (scoreOpt.isEmpty()) {
+                        allScoredAndFinalized = false;
+                    } else {
+                        hasAnyScore = true;
+                        if (!scoreOpt.get().isFinalized()) {
+                            allScoredAndFinalized = false;
+                        }
                     }
                 }
-                if (!allScored) break;
             }
 
-            if (allScored) {
+            if (allScoredAndFinalized) {
                 assignment.setStatus(com.example.swp.features.judge_assignment.JudgeAssignmentStatus.COMPLETED);
+                judgeAssignmentRepository.save(assignment);
+            } else if (hasAnyScore) {
+                assignment.setStatus(com.example.swp.features.judge_assignment.JudgeAssignmentStatus.DRAFT);
                 judgeAssignmentRepository.save(assignment);
             }
         }
@@ -191,6 +207,48 @@ public class ScoreServiceImpl implements ScoreService {
     }
 
     @Override
+    public List<ScoreResponse> getMyScoresForSubmission(Long submissionId) {
+        User judge = getCurrentUser();
+        return scoreRepository.findBySubmissionIdAndJudgeId(submissionId, judge.getId()).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public byte[] exportMyScoresCsv() {
+        User judge = getCurrentUser();
+        List<Score> scores = scoreRepository.findByJudgeId(judge.getId());
+
+        try (java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+            out.write(com.example.swp.common.CsvExportUtils.UTF8_BOM);
+            
+            StringBuilder csv = new StringBuilder();
+            csv.append("Team Name,Round Name,Criterion,Score,Max Score,Comment,Status,Scored At\n");
+
+            for (Score score : scores) {
+                String teamName = score.getSubmission().getTeam().getName();
+                String roundName = score.getSubmission().getRound().getName();
+                String critName = score.getCriterion().getName();
+                String comment = score.getComment() != null ? score.getComment() : "";
+
+                csv.append("\"").append(teamName.replace("\"", "\"\"")).append("\",");
+                csv.append("\"").append(roundName.replace("\"", "\"\"")).append("\",");
+                csv.append("\"").append(critName.replace("\"", "\"\"")).append("\",");
+                csv.append(score.getScoreValue()).append(",");
+                csv.append(score.getCriterion().getMaxScore()).append(",");
+                csv.append("\"").append(comment.replace("\"", "\"\"")).append("\",");
+                csv.append(score.isFinalized() ? "FINAL" : "DRAFT").append(",");
+                csv.append(score.getScoredAt()).append("\n");
+            }
+
+            out.write(csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return out.toByteArray();
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Failed to generate CSV", e);
+        }
+    }
+
+    @Override
     @Transactional
     public ScoreResponse updateScore(Long scoreId, com.example.swp.features.score.dto.request.UpdateScoreRequest request) {
         User judge = getCurrentUser();
@@ -213,6 +271,17 @@ public class ScoreServiceImpl implements ScoreService {
 
         if (score.isFinalized()) {
             throw new IllegalStateException("Round is finalized. Cannot edit score.");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (score.getSubmission().getRound().getEndTime() != null && now.isBefore(score.getSubmission().getRound().getEndTime())) {
+            throw new IllegalStateException("Grading has not started yet. The round has not ended.");
+        }
+        if (score.getSubmission().getRound().getGradingEndTime() != null && now.isAfter(score.getSubmission().getRound().getGradingEndTime())) {
+            throw new IllegalStateException("Grading period has ended for this round.");
+        }
+        if (score.getSubmission().getRound().getGradingEnded() != null && score.getSubmission().getRound().getGradingEnded()) {
+            throw new IllegalStateException("Grading is already marked as ended for this round.");
         }
 
         Criterion criterion = score.getCriterion();

@@ -65,6 +65,13 @@ public class RoundServiceImpl implements RoundService {
     }
 
     @Override
+    public RoundResponse getRoundById(Long id) {
+        Round round = roundRepository.findById(id)
+                .orElseThrow(() -> new com.example.swp.exception.ResourceNotFoundException("Round not found: " + id));
+        return mapToResponse(round);
+    }
+
+    @Override
     @org.springframework.transaction.annotation.Transactional
     public void deleteRound(Long id) {
         Round round = roundRepository.findById(id)
@@ -242,6 +249,7 @@ public class RoundServiceImpl implements RoundService {
                 .gradingEnded(round.getGradingEnded())
                 .hackathonEventId(round.getHackathonEvent().getId())
                 .advancementSlots(round.getAdvancementSlots())
+                .submissionDeadline(round.getSubmissionDeadline())
                 .build();
     }
 

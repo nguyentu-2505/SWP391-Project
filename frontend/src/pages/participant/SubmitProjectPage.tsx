@@ -34,6 +34,7 @@ const SubmitProjectPage: React.FC = () => {
     const [loadingData, setLoadingData] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [eventData, setEventData] = useState<any>(null);
     
     // Validation states
     const [repoError, setRepoError] = useState('');
@@ -43,11 +44,13 @@ const SubmitProjectPage: React.FC = () => {
         const fetchData = async () => {
             if (!eventId) return;
             try {
-                const [teamRes, roundsRes] = await Promise.all([
+                const [teamRes, roundsRes, eventRes] = await Promise.all([
                     api.get(`/teams/my-team/event/${eventId}`),
-                    api.get(`/rounds/hackathon/${eventId}`)
+                    api.get(`/rounds/hackathon/${eventId}`),
+                    api.get(`/events/${eventId}`)
                 ]);
                 setMyTeam(teamRes.data.data);
+                setEventData(eventRes.data.data);
                 
                 const roundsData = roundsRes.data.data ?? roundsRes.data;
                 const fetchedRounds = Array.isArray(roundsData) ? roundsData : [];
@@ -207,6 +210,14 @@ const SubmitProjectPage: React.FC = () => {
                         <div>
                             <p className="font-bold">Team must be finalized before submission.</p>
                             <p className="text-sm mt-1">Please return to your team dashboard and finalize your team first.</p>
+                        </div>
+                    </div>
+                ) : eventData && new Date() > new Date(eventData.endTime) ? (
+                    <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
+                        <AlertCircle className="shrink-0 mt-0.5" size={20} />
+                        <div>
+                            <p className="font-bold text-base">Sự kiện đã kết thúc</p>
+                            <p className="text-sm mt-1 text-gray-600">Bạn không thể nộp dự án sau khi sự kiện đã kết thúc.</p>
                         </div>
                     </div>
                 ) : !activeRound ? (

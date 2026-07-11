@@ -35,28 +35,28 @@ public class JudgeAssignmentController {
     
     @GetMapping("/judge/{judgeId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getAssignmentsForJudge(@PathVariable Long judgeId) {
+    public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getAssignmentsForJudge(@PathVariable("judgeId") Long judgeId) {
         List<JudgeAssignmentResponse> responses = assignmentService.getAssignmentsForJudge(judgeId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
     @GetMapping("/round/{roundId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getAssignmentsForRound(@PathVariable Long roundId) {
+    public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getAssignmentsForRound(@PathVariable("roundId") Long roundId) {
         List<JudgeAssignmentResponse> responses = assignmentService.getAssignmentsForRound(roundId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
     @GetMapping("/event/{eventId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getAssignmentsForEvent(@PathVariable Long eventId) {
+    public ResponseEntity<ApiResponse<List<JudgeAssignmentResponse>>> getAssignmentsForEvent(@PathVariable("eventId") Long eventId) {
         List<JudgeAssignmentResponse> responses = assignmentService.getAssignmentsForEvent(eventId);
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
     @DeleteMapping("/{assignmentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
-    public ResponseEntity<ApiResponse<Void>> unassignJudge(@PathVariable Long assignmentId) {
+    public ResponseEntity<ApiResponse<Void>> unassignJudge(@PathVariable("assignmentId") Long assignmentId) {
         assignmentService.unassignJudge(assignmentId);
         return ResponseEntity.ok(ApiResponse.success(null, "Judge unassigned successfully."));
     }

@@ -3,12 +3,14 @@ import {
     Users, FileText, Calendar, Trophy, CheckCircle, 
     UserPlus, Megaphone, ArrowRight, CalendarRange, Upload
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getUserRole, Role } from '../services/authUtils';
 import { DashboardService, DashboardStats } from '../services/DashboardService';
 import Skeleton from '../components/Skeleton';
 import Button from '../components/ui/Button';
 
 const DashboardPage: React.FC = () => {
+    const navigate = useNavigate();
     const role = getUserRole();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
@@ -50,25 +52,23 @@ const DashboardPage: React.FC = () => {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                    <Button 
-                        variant="secondary" 
-                        leftIcon={<CalendarRange size={16} />}
-                    >
-                        Schedule Session
-                    </Button>
+                    {role === Role.PARTICIPANT && (
+                        <Button 
+                            variant="secondary" 
+                            leftIcon={<CalendarRange size={16} />}
+                            onClick={() => navigate('/mentors')}
+                        >
+                            Schedule Session
+                        </Button>
+                    )}
                     <Button 
                         variant="secondary" 
                         leftIcon={<Trophy size={16} />}
+                        onClick={() => navigate('/events')}
                     >
                         View Leaderboard
                     </Button>
-                    {role === Role.PARTICIPANT && (
-                        <Button 
-                            variant="primary" 
-                        >
-                            Create Team
-                        </Button>
-                    )}
+
                 </div>
             </div>
 
@@ -85,7 +85,6 @@ const DashboardPage: React.FC = () => {
                             <div className="p-2 bg-brand-orange/10 rounded-lg">
                                 <Users className="text-brand-orange" size={24} />
                             </div>
-                            <span className="text-xs text-on-surface-variant px-2 py-1 bg-surface-container-lowest border border-outline-variant rounded-full font-semibold">+12% this week</span>
                         </div>
                         <div>
                             <p className="text-[10px] text-on-surface-variant mb-1 uppercase tracking-widest font-bold">Active Teams</p>
