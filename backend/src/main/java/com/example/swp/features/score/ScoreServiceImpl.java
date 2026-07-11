@@ -65,9 +65,7 @@ public class ScoreServiceImpl implements ScoreService {
             throw new AccessDeniedException("You are not assigned to score submissions in this round/track.");
         }
 
-        if (advancementRepository.existsByFromRoundId(submission.getRound().getId())) {
-            throw new IllegalStateException("Scoring is frozen. Teams have already advanced from this round.");
-        }
+        validateGradingPeriod(submission.getRound());
         
         List<Score> savedScores = new ArrayList<>();
         for (CreateScoreRequest.ScoreCriterion sc : request.getScores()) {
@@ -214,6 +212,8 @@ public class ScoreServiceImpl implements ScoreService {
             throw new IllegalStateException("Round is finalized. Cannot edit score.");
         }
 
+        validateGradingPeriod(score.getSubmission().getRound());
+
         Criterion criterion = score.getCriterion();
         if (request.getScoreValue() != null) {
             if (request.getScoreValue() < 0 || request.getScoreValue() > criterion.getMaxScore()) {
@@ -236,6 +236,22 @@ public class ScoreServiceImpl implements ScoreService {
         return mapToResponse(updatedScore);
     }
     
+    private void validateGradingPeriod(com.example.swp.features.round.Round round) {
+        LocalDateTime now = LocalDateTime.now();
+        if (round.getEndTime() != null && now.isBefore(round.getEndTime())) {
+            throw new IllegalStateException("Grading has not started yet. Submission period for this round must end first.");
+        }
+        if (round.getGradingEndTime() != null && now.isAfter(round.getGradingEndTime())) {
+            throw new IllegalStateException("Grading period has ended for this round.");
+        }
+        if (Boolean.TRUE.equals(round.getGradingEnded())) {
+            throw new IllegalStateException("Grading is closed because this round's grading has already been ended by the organizer.");
+        }
+        if (advancementRepository.existsByFromRoundId(round.getId())) {
+            throw new IllegalStateException("Scoring is frozen. Teams have already advanced from this round.");
+        }
+    }
+
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByUsername(username)
