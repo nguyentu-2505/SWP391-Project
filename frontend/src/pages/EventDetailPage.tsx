@@ -32,6 +32,24 @@ const EventDetailPage: React.FC = () => {
     const [criteria, setCriteria] = useState<any[]>([]);
     const [prizes, setPrizes] = useState<any[]>([]);
 
+    const getRoundStatusBadge = (r: any) => {
+        const now = new Date();
+        const start = new Date(r.startTime);
+        const end = new Date(r.endTime);
+        const gradingEnd = r.gradingEndTime ? new Date(r.gradingEndTime) : null;
+
+        if (r.gradingEnded || (gradingEnd && now >= gradingEnd) || now > end) {
+            if (r.gradingEnded || (gradingEnd && now >= gradingEnd)) {
+                return <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded text-[9px] font-bold">Ended</span>;
+            }
+            return <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded text-[9px] font-bold">Grading</span>;
+        }
+        if (now < start) {
+            return <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[9px] font-bold">Upcoming</span>;
+        }
+        return <span className="px-1.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded text-[9px] font-bold">In Progress</span>;
+    };
+
     useEffect(() => {
         const fetchEvent = async () => {
             if (!slug) return;
@@ -205,9 +223,7 @@ const EventDetailPage: React.FC = () => {
                                                 </div>
                                                 <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
                                                     {r.name}
-                                                    {r.gradingEnded && (
-                                                        <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded text-[9px] font-bold">Ended Early</span>
-                                                    )}
+                                                    {getRoundStatusBadge(r)}
                                                 </h3>
                                                 {tracks.length > 0 && (
                                                     <div className="flex flex-wrap items-center gap-1 mt-1">

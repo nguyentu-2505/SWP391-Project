@@ -31,6 +31,7 @@ const SubmitProjectPage: React.FC = () => {
     
     const [myTeam, setMyTeam] = useState<TeamDetails | null>(null);
     const [rounds, setRounds] = useState<Round[]>([]);
+    const [event, setEvent] = useState<any>(null);
     const [loadingData, setLoadingData] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -43,11 +44,13 @@ const SubmitProjectPage: React.FC = () => {
         const fetchData = async () => {
             if (!eventId) return;
             try {
-                const [teamRes, roundsRes] = await Promise.all([
+                const [teamRes, roundsRes, eventRes] = await Promise.all([
                     api.get(`/teams/my-team/event/${eventId}`),
-                    api.get(`/rounds/hackathon/${eventId}`)
+                    api.get(`/rounds/hackathon/${eventId}`),
+                    api.get(`/hackathon-events/id/${eventId}`)
                 ]);
                 setMyTeam(teamRes.data.data);
+                setEvent(eventRes.data.data ?? eventRes.data);
                 
                 const roundsData = roundsRes.data.data ?? roundsRes.data;
                 const fetchedRounds = Array.isArray(roundsData) ? roundsData : [];
@@ -68,8 +71,13 @@ const SubmitProjectPage: React.FC = () => {
                 } else {
                     setRoundId('');
                 }
-            } catch (err) {
-                setError('Failed to load necessary data for submission. Are you in a team for this event?');
+            } catch (err: any) {
+                console.error(err);
+                if (err.response?.status === 404) {
+                    setError('Bạn chưa tham gia đội thi nào trong cuộc thi này, hoặc đội của bạn không tồn tại.');
+                } else {
+                    setError('Không thể tải dữ liệu cần thiết cho việc nộp bài. Vui lòng kiểm tra lại kết nối hoặc liên hệ BTC.');
+                }
             } finally {
                 setLoadingData(false);
             }
@@ -86,6 +94,10 @@ const SubmitProjectPage: React.FC = () => {
         if (gradingEnd && now >= gradingEnd) return false;
         return now >= start && now <= end;
     });
+
+    const nextRound = rounds.length > 0 ? [...rounds]
+        .filter(r => new Date(r.startTime) > new Date())
+        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0] : null;
 
     const isValidUrl = (url: string) => {
         if (!url) return true; // Optional fields are valid if empty
@@ -205,16 +217,43 @@ const SubmitProjectPage: React.FC = () => {
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
                         <AlertCircle className="shrink-0 mt-0.5" size={20} />
                         <div>
-                            <p className="font-bold">Team must be finalized before submission.</p>
-                            <p className="text-sm mt-1">Please return to your team dashboard and finalize your team first.</p>
+                            <p className="font-bold">Đội thi chưa được chốt (Finalized)</p>
+                            <p className="text-sm mt-1">Đội trưởng cần hoàn tất chốt đội thi (Finalize Team) trước khi có thể nộp bài.</p>
+                        </div>
+                    </div>
+                ) : event?.status !== 'IN_PROGRESS' ? (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
+                        <AlertCircle className="shrink-0 mt-0.5" size={20} />
+                        <div>
+                            <p className="font-bold">Cuộc thi chưa bắt đầu</p>
+                            <p className="text-sm mt-1">Cuộc thi chưa chuyển sang giai đoạn diễn ra (In Progress). Vui lòng quay lại sau.</p>
+                        </div>
+                    </div>
+                ) : rounds.length === 0 ? (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
+                        <AlertCircle className="shrink-0 mt-0.5" size={20} />
+                        <div>
+                            <p className="font-bold">Chưa cấu hình vòng thi</p>
+                            <p className="text-sm mt-1">BTC chưa thiết lập các vòng đấu cho cuộc thi này.</p>
                         </div>
                     </div>
                 ) : !activeRound ? (
                     <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
                         <AlertCircle className="shrink-0 mt-0.5" size={20} />
                         <div>
-                            <p className="font-bold text-base">Hiện tại không có vòng thi nào đang diễn ra</p>
-                            <p className="text-sm mt-1 text-gray-600">Hệ thống đang trong thời gian chấm bài hoặc chuẩn bị cho vòng thi tiếp theo. Vui lòng quay lại sau.</p>
+                            {nextRound ? (
+                                <>
+                                    <p className="font-bold text-base">Chưa tới thời gian nộp bài</p>
+                                    <p className="text-sm mt-1 text-gray-600">
+                                        Vòng thi tiếp theo <strong>"{nextRound.name}"</strong> sẽ mở cổng nộp bài lúc: <strong>{new Date(nextRound.startTime).toLocaleString()}</strong>.
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="font-bold text-base">Hiện tại cổng nộp bài đang đóng</p>
+                                    <p className="text-sm mt-1 text-gray-600">Hệ thống đang trong thời gian chấm điểm hoặc chuẩn bị tiến hành thăng hạng. Vui lòng quay lại sau.</p>
+                                </>
+                            )}
                         </div>
                     </div>
                 ) : (
