@@ -7,7 +7,6 @@ import com.example.swp.features.round.Round;
 import com.example.swp.features.round.RoundRepository;
 import com.example.swp.features.track.Track;
 import com.example.swp.features.track.TrackRepository;
-import com.example.swp.features.track.TrackMentorRepository;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.user.Role;
@@ -28,7 +27,6 @@ public class JudgeAssignmentService {
     private final UserRepository userRepository;
     private final RoundRepository roundRepository;
     private final TrackRepository trackRepository;
-    private final TrackMentorRepository trackMentorRepository;
     private final AuditLogService auditLogService;
 
     public JudgeAssignmentResponse assignJudge(AssignJudgeRequest request) {

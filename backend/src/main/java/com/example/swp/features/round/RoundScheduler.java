@@ -18,6 +18,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class RoundScheduler {
 
     private final RoundRepository roundRepository;
