@@ -13,7 +13,6 @@ import com.example.swp.features.user.Role;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.audit_log.AuditLogService;
-import com.example.swp.features.criterion.Criterion;
 import com.example.swp.features.criterion.CriterionRepository;
 import com.example.swp.features.prize.PrizeRepository;
 import com.example.swp.features.submission.SubmissionRepository;
