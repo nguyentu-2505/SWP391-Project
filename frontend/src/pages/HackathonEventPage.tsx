@@ -26,6 +26,7 @@ const HackathonEventPage: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 2, maxTeamSize: 5, organizerId: undefined });
   const [selectedEvent, setSelectedEvent] = useState<HackathonEvent | null>(null);
+  const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
     fetchEvents();
@@ -226,6 +227,10 @@ const HackathonEventPage: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
+  const filteredEvents = events.filter(event => {
+    return statusFilter ? event.status === statusFilter : true;
+  });
+
   return (
     <div className="container mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -237,15 +242,30 @@ const HackathonEventPage: React.FC = () => {
           <p className="text-gray-500 text-sm mt-1">Manage hackathon events, schedules and descriptions.</p>
         </div>
         
-        <Authorizable allowedRoles={[Role.ADMIN]}>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors"
+        <div className="flex items-center gap-3">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <Plus size={18} />
-            Create Event
-          </button>
-        </Authorizable>
+            <option value="">All Statuses</option>
+            <option value="DRAFT">Draft</option>
+            <option value="PUBLISHED">Published</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+
+          <Authorizable allowedRoles={[Role.ADMIN]}>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <Plus size={18} />
+              Create Event
+            </button>
+          </Authorizable>
+        </div>
       </div>
 
       {isLoading ? (
@@ -273,55 +293,63 @@ const HackathonEventPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {events.map((event) => (
-                  <tr key={event.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{event.id}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{event.name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{event.description}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{event.organizerName || 'Unassigned'}</td>
-                    <td className="px-6 py-4 text-sm font-medium">
-                        <StatusBadge status={event.status} />
-                        {renderStatusActionButtons(event.id, event.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Authorizable 
-                        allowedRoles={[Role.ADMIN, Role.ORGANIZER]} 
-                        fallback={<span className="text-gray-400 text-xs italic">View Only</span>}
-                      >
-                        <div className="flex space-x-3 items-center">
-                          <button
-                            onClick={() => openEditModal(event)}
-                            className="text-blue-600 hover:text-blue-900 transition-colors cursor-pointer"
-                            title="Edit"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleCloneEvent(event.id)}
-                            className="text-purple-600 hover:text-purple-900 transition-colors cursor-pointer"
-                            title="Clone"
-                          >
-                            <Copy size={18} />
-                          </button>
-                          <Link
-                            to={`/organizer/events/${event.id}/dashboard`}
-                            className="text-green-600 hover:text-green-900 transition-colors"
-                            title="Dashboard"
-                          >
-                            <Eye size={18} />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteEvent(event.id)}
-                            className="text-red-600 hover:text-red-900 transition-colors cursor-pointer"
-                            title="Delete"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </Authorizable>
+                {filteredEvents.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500 font-medium">
+                      No events found matching the selected status.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredEvents.map((event) => (
+                    <tr key={event.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{event.id}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{event.name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{event.description}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{event.organizerName || 'Unassigned'}</td>
+                      <td className="px-6 py-4 text-sm font-medium">
+                          <StatusBadge status={event.status} />
+                          {renderStatusActionButtons(event.id, event.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <Authorizable 
+                          allowedRoles={[Role.ADMIN, Role.ORGANIZER]} 
+                          fallback={<span className="text-gray-400 text-xs italic">View Only</span>}
+                        >
+                          <div className="flex space-x-3 items-center">
+                            <button
+                              onClick={() => openEditModal(event)}
+                              className="text-blue-600 hover:text-blue-900 transition-colors cursor-pointer"
+                              title="Edit"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleCloneEvent(event.id)}
+                              className="text-purple-600 hover:text-purple-900 transition-colors cursor-pointer"
+                              title="Clone"
+                            >
+                              <Copy size={18} />
+                            </button>
+                            <Link
+                              to={`/organizer/events/${event.id}/dashboard`}
+                              className="text-green-600 hover:text-green-900 transition-colors"
+                              title="Dashboard"
+                            >
+                              <Eye size={18} />
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteEvent(event.id)}
+                              className="text-red-600 hover:text-red-900 transition-colors cursor-pointer"
+                              title="Delete"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </Authorizable>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

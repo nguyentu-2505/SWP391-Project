@@ -22,6 +22,7 @@ const OrganizerEventsPage: React.FC = () => {
     const [error, setError] = useState('');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<HackathonEvent | null>(null);
+    const [statusFilter, setStatusFilter] = useState('');
     const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
     const [checklistEventId, setChecklistEventId] = useState<number | null>(null);
     const [checklistStatus, setChecklistStatus] = useState<{
@@ -249,6 +250,10 @@ const OrganizerEventsPage: React.FC = () => {
         <div className="text-center p-8 text-red-500">{error}</div>
     );
 
+    const filteredEvents = events.filter(event => {
+        return statusFilter ? event.status === statusFilter : true;
+    });
+
     return (
         <div>
             <div className="flex items-center justify-between mb-6">
@@ -256,6 +261,19 @@ const OrganizerEventsPage: React.FC = () => {
                     <h1 className="text-2xl font-bold text-gray-900">Your Hackathon Events</h1>
                     <p className="text-gray-500 text-sm mt-1">Manage and monitor events you organize.</p>
                 </div>
+
+                <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="">All Statuses</option>
+                    <option value="DRAFT">Draft</option>
+                    <option value="PUBLISHED">Published</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                </select>
             </div>
 
             {events.length === 0 ? (
@@ -278,53 +296,61 @@ const OrganizerEventsPage: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {events.map(event => (
-                                    <tr key={event.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm font-semibold text-gray-900">{event.name}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <StatusBadge status={event.status} />
-                                            {renderStatusActionButtons(event.id, event.status)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(event.startTime).toLocaleDateString()} — {new Date(event.endTime).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {event.registrationStart
-                                                ? `${new Date(event.registrationStart).toLocaleDateString()} — ${new Date(event.registrationEnd || '').toLocaleDateString()}`
-                                                : '—'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <div className="flex space-x-3 items-center justify-end">
-                                                <button
-                                                    onClick={() => handleCloneEvent(event.id)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-                                                    title="Clone Event"
-                                                >
-                                                    <Copy size={14} />
-                                                    Clone
-                                                </button>
-                                                <button
-                                                    onClick={() => openEditModal(event)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                                                    title="Edit Event"
-                                                >
-                                                    <Edit2 size={14} />
-                                                    Edit
-                                                </button>
-                                                <Link
-                                                    to={`/organizer/events/${event.id}/dashboard`}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-                                                    title="Manage Event"
-                                                >
-                                                    <Eye size={14} />
-                                                    Dashboard
-                                                </Link>
-                                            </div>
+                                {filteredEvents.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 font-medium">
+                                            No events found matching the selected status.
                                         </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    filteredEvents.map(event => (
+                                        <tr key={event.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm font-semibold text-gray-900">{event.name}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <StatusBadge status={event.status} />
+                                                {renderStatusActionButtons(event.id, event.status)}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {new Date(event.startTime).toLocaleDateString()} — {new Date(event.endTime).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {event.registrationStart
+                                                    ? `${new Date(event.registrationStart).toLocaleDateString()} — ${new Date(event.registrationEnd || '').toLocaleDateString()}`
+                                                    : '—'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                <div className="flex space-x-3 items-center justify-end">
+                                                    <button
+                                                        onClick={() => handleCloneEvent(event.id)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                                                        title="Clone Event"
+                                                    >
+                                                        <Copy size={14} />
+                                                        Clone
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openEditModal(event)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                                        title="Edit Event"
+                                                    >
+                                                        <Edit2 size={14} />
+                                                        Edit
+                                                    </button>
+                                                    <Link
+                                                        to={`/organizer/events/${event.id}/dashboard`}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                                                        title="Manage Event"
+                                                    >
+                                                        <Eye size={14} />
+                                                        Dashboard
+                                                    </Link>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>

@@ -94,6 +94,28 @@ public class RankingService {
                 if (scoreComp != 0) {
                     return scoreComp;
                 }
+
+                // Tie-breaker 1: Compare average score of criteria, from highest weight to lowest
+                List<TeamRankingResponse.CriterionScoreDto> b1 = r1.getCriterionBreakdown();
+                List<TeamRankingResponse.CriterionScoreDto> b2 = r2.getCriterionBreakdown();
+                if (b1 != null && b2 != null) {
+                    List<TeamRankingResponse.CriterionScoreDto> s1 = b1.stream()
+                            .sorted(Comparator.comparingInt(TeamRankingResponse.CriterionScoreDto::getWeight).reversed())
+                            .collect(Collectors.toList());
+                    List<TeamRankingResponse.CriterionScoreDto> s2 = b2.stream()
+                            .sorted(Comparator.comparingInt(TeamRankingResponse.CriterionScoreDto::getWeight).reversed())
+                            .collect(Collectors.toList());
+                    int size = Math.min(s1.size(), s2.size());
+                    for (int i = 0; i < size; i++) {
+                        double avg1 = s1.get(i).getAverageScore();
+                        double avg2 = s2.get(i).getAverageScore();
+                        if (Double.compare(avg2, avg1) != 0) {
+                            return Double.compare(avg2, avg1);
+                        }
+                    }
+                }
+
+                // Tie-breaker 2: Compare submission time (earlier is better)
                 if (r1.getSubmittedAt() != null && r2.getSubmittedAt() != null) {
                     return r1.getSubmittedAt().compareTo(r2.getSubmittedAt());
                 }
