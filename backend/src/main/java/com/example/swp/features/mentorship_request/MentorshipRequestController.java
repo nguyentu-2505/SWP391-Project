@@ -64,6 +64,13 @@ public class MentorshipRequestController {
         return ResponseEntity.ok(ApiResponse.success(response, "Request marked as resolved."));
     }
 
+    @PatchMapping("/{id}/release")
+    @PreAuthorize("hasRole('MENTOR')")
+    public ResponseEntity<ApiResponse<MentorshipRequestResponse>> releaseRequest(@PathVariable Long id) {
+        MentorshipRequestResponse response = requestService.releaseRequest(id);
+        return ResponseEntity.ok(ApiResponse.success(response, "Request released back to open pool."));
+    }
+
     @PatchMapping("/{id}/reject")
     @PreAuthorize("hasRole('MENTOR')")
     public ResponseEntity<ApiResponse<MentorshipRequestResponse>> rejectRequest(
