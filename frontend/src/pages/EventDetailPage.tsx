@@ -127,6 +127,24 @@ const EventDetailPage: React.FC = () => {
 
     const regStatus = getRegistrationStatus();
 
+    const getEventStatusBadge = () => {
+        if (!event) return null;
+        const now = new Date();
+        const start = new Date(event.startTime);
+        const end = new Date(event.endTime);
+
+        if (event.status === 'COMPLETED' || now > end) {
+            return <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded text-[9px] font-bold">Ended</span>;
+        }
+        if (event.status === 'CANCELLED') {
+            return <span className="px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[9px] font-bold">Cancelled</span>;
+        }
+        if (event.status === 'IN_PROGRESS' || (now >= start && now <= end)) {
+            return <span className="px-1.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded text-[9px] font-bold">Ongoing</span>;
+        }
+        return <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[9px] font-bold">Upcoming</span>;
+    };
+
     if (loading) {
         return (
             <div className="max-w-[1440px] mx-auto space-y-6">
@@ -370,7 +388,10 @@ const EventDetailPage: React.FC = () => {
                                     <div className="pt-4 flex items-start gap-3">
                                         <Calendar size={16} className="text-on-surface-variant shrink-0 mt-0.5" />
                                         <div>
-                                            <p className="text-xs font-semibold text-on-surface">Hackathon Dates</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-xs font-semibold text-on-surface">Hackathon Dates</p>
+                                                {getEventStatusBadge()}
+                                            </div>
                                             <p className="text-xs text-on-surface-variant mt-0.5">
                                                 {new Date(event.startTime).toLocaleString()} - {new Date(event.endTime).toLocaleString()}
                                             </p>
