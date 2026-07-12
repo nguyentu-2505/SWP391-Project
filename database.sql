@@ -238,6 +238,12 @@ CREATE TABLE prize (
                        track_id           BIGINT,
                        winning_team_id    BIGINT,
                        rank               INT,
+                       cash               DECIMAL(12, 2) NULL,
+                       has_cup            BIT NULL,
+                       has_certificate    BIT NULL,
+                       cup                NVARCHAR(255) NULL,
+                       certificate        NVARCHAR(255) NULL,
+                       currency           NVARCHAR(50) NOT NULL DEFAULT 'VND',
                        FOREIGN KEY (hackathon_event_id) REFERENCES hackathon_event(id),
                        FOREIGN KEY (track_id)           REFERENCES track(id),
                        FOREIGN KEY (winning_team_id)    REFERENCES team(id)
