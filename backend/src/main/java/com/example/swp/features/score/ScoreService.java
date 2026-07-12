@@ -10,6 +10,8 @@ public interface ScoreService {
     List<ScoreResponse> getScoresForSubmission(Long submissionId);
     List<ScoreResponse> getScoresForSubmissionByJudge(Long submissionId, Long judgeId);
     List<ScoreResponse> getMyScoresForRound(Long roundId);
+    List<ScoreResponse> getMyScoresForSubmission(Long submissionId);
     void finalizeScores(Long roundId);
     ScoreResponse updateScore(Long scoreId, com.example.swp.features.score.dto.request.UpdateScoreRequest request);
+    byte[] exportMyScoresCsv();
 }

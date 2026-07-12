@@ -4,5 +4,6 @@ public enum MentorshipRequestStatus {
     OPEN,
     IN_PROGRESS,
     RESOLVED,
-    REJECTED
+    REJECTED,
+    CANCELLED
 }

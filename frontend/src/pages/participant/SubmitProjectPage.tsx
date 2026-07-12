@@ -27,18 +27,20 @@ const SubmitProjectPage: React.FC = () => {
     const [roundId, setRoundId] = useState<number | ''>('');
     const [repositoryUrl, setRepositoryUrl] = useState('');
     const [demoUrl, setDemoUrl] = useState('');
-    const [reportUrl] = useState('');
-    
+    const [reportUrl, setReportUrl] = useState('');
+
     const [myTeam, setMyTeam] = useState<TeamDetails | null>(null);
     const [rounds, setRounds] = useState<Round[]>([]);
     const [event, setEvent] = useState<any>(null);
     const [loadingData, setLoadingData] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
-    
+    const [eventData, setEventData] = useState<any>(null);
+
     // Validation states
     const [repoError, setRepoError] = useState('');
     const [demoError, setDemoError] = useState('');
+    const [reportError, setReportError] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -51,7 +53,7 @@ const SubmitProjectPage: React.FC = () => {
                 ]);
                 setMyTeam(teamRes.data.data);
                 setEvent(eventRes.data.data ?? eventRes.data);
-                
+
                 const roundsData = roundsRes.data.data ?? roundsRes.data;
                 const fetchedRounds = Array.isArray(roundsData) ? roundsData : [];
                 setRounds(fetchedRounds);
@@ -101,17 +103,13 @@ const SubmitProjectPage: React.FC = () => {
 
     const isValidUrl = (url: string) => {
         if (!url) return true; // Optional fields are valid if empty
-        try {
-            new URL(url);
-            return url.startsWith('http://') || url.startsWith('https://');
-        } catch {
-            return false;
-        }
+        const regex = /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/;
+        return regex.test(url);
     };
 
     const validateForm = () => {
         let valid = true;
-        
+
         if (!repositoryUrl) {
             setRepoError('Repository URL is required');
             valid = false;
@@ -129,6 +127,13 @@ const SubmitProjectPage: React.FC = () => {
             setDemoError('');
         }
 
+        if (reportUrl && !isValidUrl(reportUrl)) {
+            setReportError('Please enter a valid URL (must start with http:// or https://)');
+            valid = false;
+        } else {
+            setReportError('');
+        }
+
         if (!roundId) {
             setError('Please select a round.');
             valid = false;
@@ -140,7 +145,7 @@ const SubmitProjectPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        
+
         if (!validateForm()) return;
         if (!myTeam) {
             setError('You must be in a team to submit a project.');
@@ -152,9 +157,9 @@ const SubmitProjectPage: React.FC = () => {
             await api.post('/submissions', {
                 teamId: myTeam.id,
                 roundId: roundId,
-                repositoryUrl,
-                demoUrl,
-                reportUrl
+                repositoryUrl: repositoryUrl.trim(),
+                demoUrl: demoUrl.trim() || undefined,
+                reportUrl: reportUrl.trim() || undefined
             });
             toast.success('Project submitted successfully!');
             navigate(`/dashboard`);
@@ -237,6 +242,14 @@ const SubmitProjectPage: React.FC = () => {
                             <p className="text-sm mt-1">BTC chưa thiết lập các vòng đấu cho cuộc thi này.</p>
                         </div>
                     </div>
+                ) : eventData && new Date() > new Date(eventData.endTime) ? (
+                    <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
+                        <AlertCircle className="shrink-0 mt-0.5" size={20} />
+                        <div>
+                            <p className="font-bold text-base">Sự kiện đã kết thúc</p>
+                            <p className="text-sm mt-1 text-gray-600">Bạn không thể nộp dự án sau khi sự kiện đã kết thúc.</p>
+                        </div>
+                    </div>
                 ) : !activeRound ? (
                     <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
                         <AlertCircle className="shrink-0 mt-0.5" size={20} />
@@ -257,110 +270,137 @@ const SubmitProjectPage: React.FC = () => {
                         </div>
                     </div>
                 ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Active Round & Track Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Active Round & Track Info */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                                    Submitting for Round
+                                </label>
+                                <div className="px-3 py-2.5 bg-slate-50 border border-outline-variant rounded-lg text-sm font-semibold text-gray-900">
+                                    {activeRound.name}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                                    Track
+                                </label>
+                                <div className="px-3 py-2.5 bg-slate-50 border border-outline-variant rounded-lg text-sm font-semibold text-gray-900">
+                                    {myTeam?.trackName || 'General Track'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Repository URL */}
                         <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
-                                Submitting for Round
+                            <label htmlFor="repoUrl" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                                Repository URL <span className="text-red-500">*</span>
                             </label>
-                            <div className="px-3 py-2.5 bg-slate-50 border border-outline-variant rounded-lg text-sm font-semibold text-gray-900">
-                                {activeRound.name}
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <LinkIcon size={16} />
+                                </div>
+                                <input
+                                    id="repoUrl"
+                                    type="text"
+                                    placeholder="https://github.com/your-username/project"
+                                    value={repositoryUrl}
+                                    onChange={(e) => {
+                                        setRepositoryUrl(e.target.value);
+                                        if (repoError) validateForm();
+                                    }}
+                                    className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all ${repoError ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
+                                        }`}
+                                />
                             </div>
+                            {repoError && <p className="mt-1.5 text-xs text-red-600 font-medium">{repoError}</p>}
                         </div>
+
+                        {/* Demo URL */}
                         <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
-                                Track
+                            <label htmlFor="demoUrl" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                                Demo URL <span className="text-slate-400 font-normal normal-case">(Optional)</span>
                             </label>
-                            <div className="px-3 py-2.5 bg-slate-50 border border-outline-variant rounded-lg text-sm font-semibold text-gray-900">
-                                {myTeam?.trackName || 'General Track'}
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <LinkIcon size={16} />
+                                </div>
+                                <input
+                                    id="demoUrl"
+                                    type="text"
+                                    placeholder="https://your-demo-site.com"
+                                    value={demoUrl}
+                                    onChange={(e) => {
+                                        setDemoUrl(e.target.value);
+                                        if (demoError) validateForm();
+                                    }}
+                                    className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all ${demoError ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
+                                        }`}
+                                />
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Repository URL */}
-                    <div>
-                        <label htmlFor="repoUrl" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
-                            Repository URL <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                <LinkIcon size={16} />
-                            </div>
-                            <input
-                                id="repoUrl"
-                                type="text"
-                                placeholder="https://github.com/your-username/project"
-                                value={repositoryUrl}
-                                onChange={(e) => {
-                                    setRepositoryUrl(e.target.value);
-                                    if (repoError) validateForm();
-                                }}
-                                className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all ${
-                                    repoError ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
-                                }`}
-                            />
-                        </div>
-                        {repoError && <p className="mt-1.5 text-xs text-red-600 font-medium">{repoError}</p>}
-                    </div>
-
-                    {/* Demo URL */}
-                    <div>
-                        <label htmlFor="demoUrl" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
-                            Demo URL <span className="text-slate-400 font-normal normal-case">(Optional)</span>
-                        </label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                <LinkIcon size={16} />
-                            </div>
-                            <input
-                                id="demoUrl"
-                                type="text"
-                                placeholder="https://your-demo-site.com"
-                                value={demoUrl}
-                                onChange={(e) => {
-                                    setDemoUrl(e.target.value);
-                                    if (demoError) validateForm();
-                                }}
-                                className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all ${
-                                    demoError ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
-                                }`}
-                            />
-                        </div>
-                        {demoError ? (
-                            <p className="mt-1.5 text-xs text-red-600 font-medium">{demoError}</p>
-                        ) : (
-                            <p className="mt-1.5 text-xs text-on-surface-variant">Provide a link to a live demo, video, or presentation if available.</p>
-                        )}
-                    </div>
-
-                    {error && !repoError && !demoError && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-600">
-                            <AlertCircle size={16} className="shrink-0" />
-                            <span>{error}</span>
-                        </div>
-                    )}
-
-                    <div className="pt-4 border-t border-slate-100 flex justify-end">
-                        <button
-                            type="submit"
-                            disabled={submitting || !myTeam || rounds.length === 0}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 px-6 rounded-lg font-bold text-sm text-white bg-primary-container hover:bg-[#d9611b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-container disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
-                        >
-                            {submitting ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    Submitting...
-                                </>
+                            {demoError ? (
+                                <p className="mt-1.5 text-xs text-red-600 font-medium">{demoError}</p>
                             ) : (
-                                <>
-                                    <Send size={16} />
-                                    Submit Project
-                                </>
+                                <p className="mt-1.5 text-xs text-on-surface-variant">Provide a link to a live demo, video, or presentation if available.</p>
                             )}
-                        </button>
-                    </div>
-                </form>
+                        </div>
+
+                        {/* Report URL */}
+                        <div>
+                            <label htmlFor="reportUrl" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                                Report URL <span className="text-slate-400 font-normal normal-case">(Optional)</span>
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <LinkIcon size={16} />
+                                </div>
+                                <input
+                                    id="reportUrl"
+                                    type="text"
+                                    placeholder="https://docs.google.com/..."
+                                    value={reportUrl}
+                                    onChange={(e) => {
+                                        setReportUrl(e.target.value);
+                                        if (reportError) validateForm();
+                                    }}
+                                    className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all ${reportError ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
+                                        }`}
+                                />
+                            </div>
+                            {reportError ? (
+                                <p className="mt-1.5 text-xs text-red-600 font-medium">{reportError}</p>
+                            ) : (
+                                <p className="mt-1.5 text-xs text-on-surface-variant">Provide a link to your project report or documentation.</p>
+                            )}
+                        </div>
+
+                        {error && !repoError && !demoError && !reportError && (
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-600">
+                                <AlertCircle size={16} className="shrink-0" />
+                                <span>{error}</span>
+                            </div>
+                        )}
+
+                        <div className="pt-4 border-t border-slate-100 flex justify-end">
+                            <button
+                                type="submit"
+                                disabled={submitting || !myTeam || rounds.length === 0}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 px-6 rounded-lg font-bold text-sm text-white bg-primary-container hover:bg-[#d9611b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-container disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
+                            >
+                                {submitting ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        Submitting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={16} />
+                                        Submit Project
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
                 )}
             </div>
         </div>

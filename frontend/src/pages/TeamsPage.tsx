@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { TeamService } from '../services/TeamService';
 import type { Team } from '../services/TeamService';
 import { Users, Loader2, Trash2, Ban, X, Download } from 'lucide-react';
 import toast from 'react-hot-toast';

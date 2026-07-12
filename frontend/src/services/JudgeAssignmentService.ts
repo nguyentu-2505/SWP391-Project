@@ -11,6 +11,8 @@ export interface JudgeAssignment {
     submissionId?: number;
     teamName?: string;
     roundName?: string;
+    trackId?: number;
+    trackName?: string;
     status?: string;
 }
 export interface JudgeAssignmentCreateRequest {
