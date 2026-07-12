@@ -41,7 +41,7 @@ public class RoundScheduler {
                 scoreService.finalizeScores(round.getId());
 
                 // 2. Get rankings
-                List<TeamRankingResponse> rankings = rankingService.getRankingForRound(round.getId());
+                List<TeamRankingResponse> rankings = new java.util.ArrayList<>(rankingService.getRankingForRound(round.getId()));
 
                 // 3. Sort globally by finalScore descending (ignoring track as requested)
                 rankings.sort(Comparator.comparing(TeamRankingResponse::getFinalScore).reversed()
@@ -89,7 +89,7 @@ public class RoundScheduler {
 
                 log.info("Successfully auto-advanced {} teams for round {}", advancedCount, round.getId());
             } catch (Exception e) {
-                log.error("Failed to auto-advance round {}: {}", round.getId(), e.getMessage());
+                log.error("Failed to auto-advance round " + round.getId(), e);
             }
         }
     }
