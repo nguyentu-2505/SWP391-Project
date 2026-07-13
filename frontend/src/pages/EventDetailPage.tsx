@@ -5,6 +5,7 @@ import { Calendar, Clock, Info, Trophy, ChevronLeft, CalendarRange, Tag, Target 
 import toast from 'react-hot-toast';
 import StatusBadge from '../components/StatusBadge';
 import Skeleton from '../components/Skeleton';
+import LeaderboardSection from '../components/LeaderboardSection';
 
 interface EventDetails {
     id: number;
@@ -58,7 +59,7 @@ const EventDetailPage: React.FC = () => {
                 const eventData = response.data.data;
                 setEvent(eventData);
                 checkRegistrationStatus(eventData.id);
-                
+
                 try {
                     const [tracksRes, roundsRes, criteriaRes, prizesRes] = await Promise.all([
                         api.get(`/tracks/hackathon/${eventData.id}`),
@@ -77,6 +78,15 @@ const EventDetailPage: React.FC = () => {
                 setError('Failed to fetch event details.');
             } finally {
                 setLoading(false);
+            }
+        };
+
+        const fetchRounds = async (eventId: number) => {
+            try {
+                const response = await api.get(`/rounds/hackathon/${eventId}`);
+                setRounds(response.data.data || []);
+            } catch (err) {
+                console.error("Failed to fetch rounds", err);
             }
         };
 
@@ -152,7 +162,7 @@ const EventDetailPage: React.FC = () => {
             </div>
         );
     }
-    
+
     if (error || !event) {
         return (
             <div className="max-w-xl mx-auto p-6 bg-red-50 border border-red-200 rounded-xl text-center text-sm text-red-600">
@@ -171,10 +181,10 @@ const EventDetailPage: React.FC = () => {
             <div className="bg-white border border-outline-variant rounded-xl overflow-hidden shadow-sm">
                 {/* Cover Image */}
                 <div className="h-80 w-full relative bg-slate-100">
-                    <img 
-                        className="w-full h-full object-cover" 
-                        src={event.imageUrl || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=1200'} 
-                        alt={event.name} 
+                    <img
+                        className="w-full h-full object-cover"
+                        src={event.imageUrl || 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=1200'}
+                        alt={event.name}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div className="absolute bottom-6 left-6 md:left-8 flex flex-col md:flex-row md:items-end justify-between right-6 gap-4">
@@ -199,14 +209,14 @@ const EventDetailPage: React.FC = () => {
                                 </p>
                             </div>
 
-                             <div className="space-y-4">
+                            <div className="space-y-4">
                                 <h2 className="text-lg font-bold text-on-surface flex items-center gap-2 border-b border-slate-100 pb-2">
                                     <Trophy size={20} className="text-primary-container" />
                                     Rules & Regulations
                                 </h2>
-                                <div 
+                                <div
                                     className="text-sm text-on-surface-variant leading-relaxed prose max-w-none"
-                                    dangerouslySetInnerHTML={{ __html: event.rules || '<p>No specific rules defined for this event.</p>' }} 
+                                    dangerouslySetInnerHTML={{ __html: event.rules || '<p>No specific rules defined for this event.</p>' }}
                                 />
                             </div>
 
@@ -262,14 +272,14 @@ const EventDetailPage: React.FC = () => {
                                                     </p>
                                                 )}
                                                 {index < rounds.length - 1 ? (
-                                                     <p className="text-xs text-blue-700 font-semibold mt-1">
-                                                         Advancement Slots: {r.advancementSlots ? `${r.advancementSlots} teams` : 'Unlimited'} (per Track)
-                                                     </p>
-                                                 ) : (
-                                                     <p className="text-xs text-green-700 font-bold mt-1">
-                                                         Final Round
-                                                     </p>
-                                                 )}
+                                                    <p className="text-xs text-blue-700 font-semibold mt-1">
+                                                        Advancement Slots: {r.advancementSlots ? `${r.advancementSlots} teams` : 'Unlimited'} (per Track)
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-xs text-green-700 font-bold mt-1">
+                                                        Final Round
+                                                    </p>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -366,7 +376,7 @@ const EventDetailPage: React.FC = () => {
                                     <CalendarRange size={16} className="text-primary-container" />
                                     Event Timeline
                                 </h3>
-                                
+
                                 <div className="space-y-4 divide-y divide-slate-100">
                                     {/* Reg Dates */}
                                     <div className="pt-0 flex items-start gap-3">
@@ -401,21 +411,35 @@ const EventDetailPage: React.FC = () => {
 
                                 {event.status === 'PUBLISHED' && (
                                     <div className="pt-2">
-                                        <button 
+                                        <button
                                             className="w-full py-2.5 text-sm font-bold text-white bg-primary-container hover:bg-[#d9611b] rounded-lg shadow-sm transition-colors disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed"
                                             onClick={handleRegister}
                                             disabled={isRegistered || isRegistering || !regStatus.canRegister}
                                         >
-                                            {isRegistered ? 'Successfully Registered' : 
-                                             isRegistering ? 'Registering...' : 
-                                             !regStatus.canRegister ? (new Date() < new Date(event.registrationStart) ? 'Registration Not Started' : 'Registration Closed') : 
-                                             'Register Now'}
+                                            {isRegistered ? 'Successfully Registered' :
+                                                isRegistering ? 'Registering...' :
+                                                    !regStatus.canRegister ? (new Date() < new Date(event.registrationStart) ? 'Registration Not Started' : 'Registration Closed') :
+                                                        'Register Now'}
                                         </button>
+                                    </div>
+                                )}
+
+                                {rounds.length > 0 && rounds.some(r => r.gradingEnded) && (
+                                    <div className="pt-4 border-t border-slate-100 mt-4">
+                                        <h4 className="text-sm font-bold uppercase tracking-wider text-on-surface flex items-center gap-2 mb-3">
+                                            <Trophy size={16} className="text-primary-container" />
+                                            Leaderboards
+                                        </h4>
+                                        <p className="text-xs text-on-surface-variant">View the rankings for the completed rounds in the main section.</p>
                                     </div>
                                 )}
                             </div>
                         </div>
                     </div>
+                    
+                    {rounds.length > 0 && rounds.some(r => r.gradingEnded) && (
+                        <LeaderboardSection rounds={rounds} tracks={tracks} prizes={prizes} />
+                    )}
                 </div>
             </div>
         </div>

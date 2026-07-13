@@ -11,4 +11,5 @@ public interface RoundService {
     void deleteRound(Long id);
     RoundResponse updateRound(Long id, com.example.swp.features.round.dto.request.CreateRoundRequest request);
     RoundResponse endGrading(Long id);
+    RoundResponse getRoundById(Long id);
 }

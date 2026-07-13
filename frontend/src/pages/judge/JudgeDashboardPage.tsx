@@ -9,8 +9,10 @@ const JudgeDashboardPage: React.FC = () => {
     const [assignments, setAssignments] = useState<JudgeAssignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [expandedRoundId, setExpandedRoundId] = useState<number | null>(null);
+    const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [submissions, setSubmissions] = useState<any[]>([]);
+    const [myScores, setMyScores] = useState<any[]>([]);
+    const [currentRoundData, setCurrentRoundData] = useState<any>(null);
     const [loadingSubmissions, setLoadingSubmissions] = useState(false);
 
     useEffect(() => {
@@ -27,16 +29,27 @@ const JudgeDashboardPage: React.FC = () => {
         fetchAssignments();
     }, []);
 
-    const toggleRound = async (roundId: number) => {
-        if (expandedRoundId === roundId) {
-            setExpandedRoundId(null);
+    const toggleRound = async (roundId: number, trackId?: number) => {
+        const rowId = `${roundId}-${trackId || 'all'}`;
+        if (expandedRowId === rowId) {
+            setExpandedRowId(null);
             return;
         }
-        setExpandedRoundId(roundId);
+        setExpandedRowId(rowId);
         setLoadingSubmissions(true);
         try {
-            const response = await api.get(`/submissions/round/${roundId}`);
-            setSubmissions(response.data.data || []);
+            const [response, roundRes, scoresRes] = await Promise.all([
+                api.get(`/submissions/round/${roundId}`),
+                api.get(`/rounds/${roundId}`),
+                api.get(`/scores/my-scores/round/${roundId}`)
+            ]);
+            let allSubs = response.data.data || [];
+            if (trackId) {
+                allSubs = allSubs.filter((s: any) => s.trackId === trackId);
+            }
+            setSubmissions(allSubs);
+            setMyScores(scoresRes.data.data || []);
+            setCurrentRoundData(roundRes.data.data);
         } catch (err) {
             console.error("Failed to fetch submissions for round", err);
         } finally {
@@ -49,7 +62,18 @@ const JudgeDashboardPage: React.FC = () => {
 
     return (
         <div className="bg-white p-8 rounded-lg shadow-md">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Your Judging Assignments</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-gray-800">Your Judging Assignments</h1>
+                {assignments.length > 0 && (
+                    <button
+                        onClick={() => ExportService.exportMyScores()}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors shadow-sm"
+                        title="Export All My Scores CSV"
+                    >
+                        <Download size={18} /> Export All My Scores
+                    </button>
+                )}
+            </div>
             {assignments.length === 0 ? (
                 <p className="text-gray-500">You have no pending assignments.</p>
             ) : (
@@ -67,38 +91,35 @@ const JudgeDashboardPage: React.FC = () => {
                             {assignments.map(ass => (
                                 <React.Fragment key={ass.id}>
                                     <tr className="border-b">
-                                        <td className="py-3 px-4">{ass.roundName}</td>
+                                        <td className="py-3 px-4">
+                                            {ass.roundName}
+                                            {ass.trackName && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{ass.trackName}</span>}
+                                        </td>
                                         <td className="py-3 px-4">{new Date(ass.assignedAt).toLocaleDateString()}</td>
                                         <td className="py-3 px-4">
                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                                ass.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                                ass.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border border-green-200' : 
+                                                'bg-yellow-100 text-yellow-800 border border-yellow-200'
                                             }`}>
-                                                {ass.status}
+                                                {ass.status === 'COMPLETED' ? 'COMPLETED' : 'INCOMPLETE'}
                                             </span>
                                         </td>
                                         <td className="py-3 px-4">
                                             <div className="flex gap-3 items-center">
                                                 <button
-                                                    onClick={() => toggleRound(ass.roundId)}
+                                                    onClick={() => toggleRound(ass.roundId, ass.trackId)}
                                                     className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1"
                                                 >
-                                                    {expandedRoundId === ass.roundId ? (
+                                                    {expandedRowId === `${ass.roundId}-${ass.trackId || 'all'}` ? (
                                                         <><ChevronUp size={16} /> Hide Submissions</>
                                                     ) : (
                                                         <><ChevronDown size={16} /> View Submissions</>
                                                     )}
                                                 </button>
-                                                <button
-                                                    onClick={() => ExportService.exportRoundScoring(ass.roundId)}
-                                                    className="text-green-600 hover:text-green-800 font-semibold flex items-center gap-1"
-                                                    title="Export Scoring CSV"
-                                                >
-                                                    <Download size={16} /> Export
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
-                                    {expandedRoundId === ass.roundId && (
+                                    {expandedRowId === `${ass.roundId}-${ass.trackId || 'all'}` && (
                                         <tr className="bg-gray-50 border-b">
                                             <td colSpan={4} className="py-4 px-6">
                                                 {loadingSubmissions ? (
@@ -108,18 +129,68 @@ const JudgeDashboardPage: React.FC = () => {
                                                 ) : (
                                                     <div className="space-y-3">
                                                         <h4 className="font-semibold text-gray-700">Submissions to evaluate:</h4>
+                                                        {currentRoundData && (() => {
+                                                            const now = new Date();
+                                                            const roundEnd = currentRoundData.endTime ? new Date(currentRoundData.endTime) : null;
+                                                            const gradEnd = currentRoundData.gradingEndTime ? new Date(currentRoundData.gradingEndTime) : null;
+                                                            
+                                                            const isBeforeGrading = roundEnd && now < roundEnd;
+                                                            const isAfterGrading = (gradEnd && now > gradEnd) || currentRoundData.gradingEnded;
+                                                            
+                                                            if (isBeforeGrading) {
+                                                                return <div className="text-sm text-yellow-600 bg-yellow-50 p-2 rounded border border-yellow-200">The round is still active. Grading will open after {roundEnd.toLocaleString()}.</div>;
+                                                            } else if (isAfterGrading) {
+                                                                return <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">The grading period has ended for this round.</div>;
+                                                            }
+                                                            return null;
+                                                        })()}
                                                         <ul className="space-y-2">
-                                                            {submissions.map(sub => (
-                                                                <li key={sub.id} className="flex items-center justify-between bg-white p-3 rounded border border-gray-200">
-                                                                    <span className="font-medium text-gray-800">{sub.teamName}</span>
-                                                                    <Link
-                                                                        to={`/judge/score/${sub.id}`}
-                                                                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
-                                                                    >
-                                                                        Score Now
-                                                                    </Link>
-                                                                </li>
-                                                            ))}
+                                                            {submissions.map(sub => {
+                                                                const now = new Date();
+                                                                const roundEnd = currentRoundData?.endTime ? new Date(currentRoundData.endTime) : null;
+                                                                const gradEnd = currentRoundData?.gradingEndTime ? new Date(currentRoundData.gradingEndTime) : null;
+                                                                const canScore = (!roundEnd || now >= roundEnd) && (!gradEnd || now <= gradEnd) && !currentRoundData?.gradingEnded;
+
+                                                                const subScores = myScores.filter(s => s.submissionId === sub.id);
+                                                                let subStatus = 'Not Graded';
+                                                                let subStatusColor = 'bg-gray-100 text-gray-600 border-gray-200';
+                                                                if (subScores.length > 0) {
+                                                                    const isFinalized = subScores.every(s => s.isFinalized === true || s.finalized === true);
+                                                                    if (isFinalized) {
+                                                                        subStatus = 'Graded';
+                                                                        subStatusColor = 'bg-green-100 text-green-700 border-green-200';
+                                                                    } else {
+                                                                        subStatus = 'Draft';
+                                                                        subStatusColor = 'bg-purple-100 text-purple-700 border-purple-200';
+                                                                    }
+                                                                }
+
+                                                                return (
+                                                                    <li key={sub.id} className="flex items-center justify-between bg-white p-3 rounded border border-gray-200">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <span className="font-medium text-gray-800">{sub.teamName}</span>
+                                                                            <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${subStatusColor}`}>
+                                                                                {subStatus}
+                                                                            </span>
+                                                                        </div>
+                                                                        {canScore ? (
+                                                                            <Link
+                                                                                to={`/judge/score/${sub.id}`}
+                                                                                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${subStatus === 'Graded' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                                                                            >
+                                                                                {subStatus === 'Graded' ? 'View Score' : 'Score Now'}
+                                                                            </Link>
+                                                                        ) : (
+                                                                            <span
+                                                                                className="px-3 py-1 bg-gray-300 text-gray-500 rounded text-sm font-medium cursor-not-allowed"
+                                                                                title="Grading is not currently available"
+                                                                            >
+                                                                                {subStatus === 'Graded' ? 'View Score' : 'Score Now'}
+                                                                            </span>
+                                                                        )}
+                                                                    </li>
+                                                                );
+                                                            })}
                                                         </ul>
                                                     </div>
                                                 )}

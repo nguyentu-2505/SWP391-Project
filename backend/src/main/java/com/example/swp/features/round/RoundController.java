@@ -31,6 +31,12 @@ public class RoundController {
         return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<com.example.swp.common.ApiResponse<RoundResponse>> getRoundById(@PathVariable Long id) {
+        RoundResponse response = roundService.getRoundById(id);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<com.example.swp.common.ApiResponse<Void>> deleteRound(@PathVariable Long id) {

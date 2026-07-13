@@ -35,6 +35,7 @@ interface HackathonEvent {
     id: number;
     name: string;
     status: string;
+    endTime?: string;
 }
 
 const MyTeamPage: React.FC = () => {
@@ -264,7 +265,10 @@ const MyTeamPage: React.FC = () => {
     const isCurrentUserLeader = team?.members.some(m => m.username === currentUsername && m.isLeader) || false;
     const isFinalized = team?.status === 'FINALIZED';
     const isDisqualified = team?.status === 'DISQUALIFIED';
-    const isActive = team?.status === 'ACTIVE' || (!isFinalized && !isDisqualified);
+    const currentEvent = events.find(e => e.id === selectedEventId);
+    const isEventEnded = currentEvent?.endTime ? new Date() > new Date(currentEvent.endTime) : false;
+
+    const isActive = (team?.status === 'ACTIVE' || (!isFinalized && !isDisqualified)) && !isEventEnded;
 
     const statusBadgeClass = isDisqualified
         ? "bg-red-50 text-red-700 border-red-200"
@@ -323,7 +327,7 @@ const MyTeamPage: React.FC = () => {
                     <p className="text-sm text-on-surface-variant mb-6 max-w-md mx-auto">
                         {error || "You have not registered for any active events or formed a team."}
                     </p>
-                    {selectedEventId && (
+                    {selectedEventId && !isEventEnded && (
                         <Link 
                             to={`/events/${selectedEventId}/create-team`} 
                             className="inline-flex items-center gap-2 bg-primary-container hover:bg-[#d9611b] text-white font-semibold py-2.5 px-6 rounded-lg shadow-sm transition-colors text-sm"
@@ -399,9 +403,15 @@ const MyTeamPage: React.FC = () => {
                                     </button>
                                 )}
 
-                                {isFinalized && (
+                                {isFinalized && !isEventEnded && (
                                     <div className="flex items-center gap-2 text-sm text-on-surface-variant bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
                                         <Lock size={16} /> Team is finalized. Edits are locked.
+                                    </div>
+                                )}
+                                
+                                {isEventEnded && (
+                                    <div className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200 w-full">
+                                        <Lock size={16} /> Sự kiện đã kết thúc. Mọi chỉnh sửa đã bị khóa.
                                     </div>
                                 )}
                             </div>

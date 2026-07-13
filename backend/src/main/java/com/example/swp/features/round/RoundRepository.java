@@ -17,4 +17,6 @@ public interface RoundRepository extends JpaRepository<Round, Long> {
      * Dùng khi event COMPLETED để lấy ranking vòng chung kết.
      */
     Optional<Round> findTopByHackathonEventIdOrderByRoundOrderDesc(Long hackathonEventId);
+
+    List<Round> findByGradingEndTimeBeforeAndGradingEndedFalse(java.time.LocalDateTime time);
 }

@@ -19,6 +19,7 @@ public class RoundResponse {
     private Integer advancementSlots;
     private LocalDateTime gradingEndTime;
     private Boolean gradingEnded;
+    private LocalDateTime submissionDeadline;
 
     public static RoundResponseBuilder builder() { return new RoundResponseBuilder(); }
     public static class RoundResponseBuilder {
@@ -31,6 +32,7 @@ public class RoundResponse {
         private Integer advancementSlots;
         private LocalDateTime gradingEndTime;
         private Boolean gradingEnded;
+        private LocalDateTime submissionDeadline;
 
         public RoundResponseBuilder id(Long id) { this.id = id; return this; }
         public RoundResponseBuilder name(String name) { this.name = name; return this; }
@@ -41,6 +43,7 @@ public class RoundResponse {
         public RoundResponseBuilder advancementSlots(Integer advancementSlots) { this.advancementSlots = advancementSlots; return this; }
         public RoundResponseBuilder gradingEndTime(LocalDateTime gradingEndTime) { this.gradingEndTime = gradingEndTime; return this; }
         public RoundResponseBuilder gradingEnded(Boolean gradingEnded) { this.gradingEnded = gradingEnded; return this; }
+        public RoundResponseBuilder submissionDeadline(LocalDateTime submissionDeadline) { this.submissionDeadline = submissionDeadline; return this; }
         public RoundResponse build() {
             RoundResponse r = new RoundResponse();
             r.id = this.id; r.name = this.name; r.description = this.description;
@@ -48,6 +51,7 @@ public class RoundResponse {
             r.advancementSlots = this.advancementSlots;
             r.gradingEndTime = this.gradingEndTime;
             r.gradingEnded = this.gradingEnded != null ? this.gradingEnded : false;
+            r.submissionDeadline = this.submissionDeadline;
             return r;
         }
     }

@@ -14,7 +14,10 @@ export interface NotificationItem {
 export const NotificationService = {
     getMyNotifications: async (): Promise<NotificationItem[]> => {
         const response = await api.get('/notifications');
-        return response.data.data;
+        return response.data.data.map((n: any) => ({
+            ...n,
+            isRead: n.read !== undefined ? n.read : n.isRead
+        }));
     },
 
     getUnreadCount: async (): Promise<number> => {
@@ -24,7 +27,11 @@ export const NotificationService = {
 
     markAsRead: async (id: number): Promise<NotificationItem> => {
         const response = await api.patch(`/notifications/${id}/read`);
-        return response.data.data;
+        const data = response.data.data;
+        return {
+            ...data,
+            isRead: data.read !== undefined ? data.read : data.isRead
+        };
     },
 
     markAllAsRead: async (): Promise<void> => {
