@@ -218,7 +218,15 @@ const SubmitProjectPage: React.FC = () => {
                     </div>
                 </div>
 
-                {myTeam?.status !== 'FINALIZED' ? (
+                {myTeam?.status === 'DISQUALIFIED' ? (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 flex items-start gap-3">
+                        <AlertCircle className="shrink-0 mt-0.5" size={20} />
+                        <div>
+                            <p className="font-bold">Đội thi đã bị loại (Disqualified)</p>
+                            <p className="text-sm mt-1">Đội thi của bạn đã bị loại khỏi cuộc thi bởi Ban tổ chức và không thể thực hiện nộp bài.</p>
+                        </div>
+                    </div>
+                ) : myTeam?.status !== 'FINALIZED' ? (
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
                         <AlertCircle className="shrink-0 mt-0.5" size={20} />
                         <div>

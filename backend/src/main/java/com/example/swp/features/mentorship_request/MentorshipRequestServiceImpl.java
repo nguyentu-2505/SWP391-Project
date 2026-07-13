@@ -44,6 +44,10 @@ public class MentorshipRequestServiceImpl implements MentorshipRequestService {
                 .filter(tm -> tm.isLeader())
                 .orElseThrow(() -> new AccessDeniedException("Only the team leader can request mentorship."));
 
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new IllegalStateException("Your team has been disqualified and cannot request mentorship.");
+        }
+
         if (team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
             team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
             throw new IllegalStateException("Cannot request mentorship when the event is completed or cancelled.");
