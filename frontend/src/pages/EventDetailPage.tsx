@@ -438,7 +438,7 @@ const EventDetailPage: React.FC = () => {
                     </div>
                     
                     {rounds.length > 0 && rounds.some(r => r.gradingEnded) && (
-                        <LeaderboardSection rounds={rounds} tracks={tracks} />
+                        <LeaderboardSection rounds={rounds} tracks={tracks} prizes={prizes} />
                     )}
                 </div>
             </div>
