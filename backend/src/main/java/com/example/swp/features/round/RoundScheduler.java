@@ -76,6 +76,12 @@ public class RoundScheduler {
                 int advancedCount = 0;
                 java.util.Map<Long, Integer> slotsFilledPerTrack = new java.util.HashMap<>();
 
+                // Cron job runs as system, fetch an admin user to act as the advancer
+                com.example.swp.features.user.User systemAdmin = userRepository.findAll().stream()
+                        .filter(u -> u.getRole() == com.example.swp.features.user.Role.ADMIN)
+                        .findFirst().orElse(null);
+                com.example.swp.features.user.User advancer = systemAdmin != null ? systemAdmin : round.getHackathonEvent().getOrganizer();
+
                 for (TeamRankingResponse teamRank : rankings) {
                     Team team = teamRepository.findById(teamRank.getTeamId()).orElse(null);
                     
@@ -88,22 +94,17 @@ public class RoundScheduler {
                             advancement.setTeam(team);
                             advancement.setFromRound(round);
                             advancement.setToRound(nextRound);
-                            
-                            // Cron job runs as system, fetch an admin user to act as the advancer
-                            com.example.swp.features.user.User systemAdmin = userRepository.findAll().stream()
-                                    .filter(u -> u.getRole() == com.example.swp.features.user.Role.ADMIN)
-                                    .findFirst().orElse(null);
-                            if (systemAdmin != null) {
-                                advancement.setAdvancedBy(systemAdmin);
-                            } else {
-                                // Fallback to organizer if no admin exists
-                                advancement.setAdvancedBy(round.getHackathonEvent().getOrganizer());
-                            }
-                            
+                            advancement.setAdvancedBy(advancer);
                             advancement.setAdvancedAt(LocalDateTime.now());
                             advancementRepository.save(advancement);
                             slotsFilledPerTrack.put(trackId, currentSlots + 1);
                             advancedCount++;
+                        } else {
+                            team.setStatus(com.example.swp.features.team.TeamStatus.DISQUALIFIED);
+                            team.setDisqualificationReason("Eliminated after " + round.getName());
+                            team.setDisqualifiedAt(LocalDateTime.now());
+                            team.setDisqualifiedBy(advancer);
+                            teamRepository.save(team);
                         }
                     }
                 }
