@@ -70,8 +70,8 @@ const TeamsTab: React.FC = () => {
         if (!eventId) return;
         try {
             const [roundsRes, tracksRes] = await Promise.all([
-                api.get(`/rounds/event/${eventId}`),
-                api.get(`/tracks/event/${eventId}`)
+                api.get(`/rounds/hackathon/${eventId}`),
+                api.get(`/tracks/hackathon/${eventId}`)
             ]);
             setRounds(roundsRes.data.data);
             setTracks(tracksRes.data.data);
