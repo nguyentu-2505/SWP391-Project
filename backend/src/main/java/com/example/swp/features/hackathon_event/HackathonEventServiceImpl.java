@@ -334,10 +334,31 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
 
         if (newStatus == HackathonStatus.IN_PROGRESS) {
-            long teamCount = teamRepository.findByEventId(event.getId()).size();
+            // 1. Scan and disqualify teams that do not meet minTeamSize requirement
+            List<com.example.swp.features.team.Team> eventTeams = teamRepository.findByEventId(event.getId());
+            int disqualifiedCount = 0;
+            for (com.example.swp.features.team.Team team : eventTeams) {
+                if (team.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+                    long currentSize = teamMemberRepository.countByTeamId(team.getId());
+                    int minTeamSize = event.getMinTeamSize() != null ? event.getMinTeamSize() : 2;
+                    if (currentSize < minTeamSize) {
+                        team.setStatus(com.example.swp.features.team.TeamStatus.DISQUALIFIED);
+                        team.setDisqualificationReason("Not enough members (" + currentSize + "/" + minTeamSize + ") when registration closed.");
+                        team.setDisqualifiedAt(java.time.LocalDateTime.now());
+                        teamRepository.save(team);
+                        disqualifiedCount++;
+                    }
+                }
+            }
+            log.info("Disqualified {} teams for not meeting minTeamSize when starting the event.", disqualifiedCount);
+
+            // 2. Validate total active team count
+            long activeTeamCount = teamRepository.findByEventId(event.getId()).stream()
+                    .filter(t -> t.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED)
+                    .count();
             int requiredTeams = event.getMinTeamSize() != null ? event.getMinTeamSize() : 2;
-            if (teamCount < requiredTeams) {
-                throw new IllegalStateException("Cannot start event: At least " + requiredTeams + " teams are required to start the hackathon (currently " + teamCount + ").");
+            if (activeTeamCount < requiredTeams) {
+                throw new IllegalStateException("Cannot start event: At least " + requiredTeams + " active teams are required to start the hackathon (currently " + activeTeamCount + ").");
             }
 
             // Cancel any track that has less than 2 active teams, and move their teams to General Track
@@ -452,24 +473,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             log.info("Sent notifications to {} participants for newly published event id={}", participants.size(), updatedEvent.getId());
         }
 
-        // NẾU EVENT CHUYỂN SANG IN_PROGRESS -> QUÉT VÀ LOẠI CÁC TEAM KHÔNG ĐỦ MIN_TEAM_SIZE
-        if (currentStatus == HackathonStatus.PUBLISHED && newStatus == HackathonStatus.IN_PROGRESS) {
-            List<com.example.swp.features.team.Team> eventTeams = teamRepository.findByEventId(updatedEvent.getId());
-            int disqualifiedCount = 0;
-            for (com.example.swp.features.team.Team team : eventTeams) {
-                if (team.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
-                    long currentSize = teamMemberRepository.countByTeamId(team.getId());
-                    if (currentSize < updatedEvent.getMinTeamSize()) {
-                        team.setStatus(com.example.swp.features.team.TeamStatus.DISQUALIFIED);
-                        team.setDisqualificationReason("Not enough members (" + currentSize + "/" + updatedEvent.getMinTeamSize() + ") when registration closed.");
-                        team.setDisqualifiedAt(java.time.LocalDateTime.now());
-                        teamRepository.save(team);
-                        disqualifiedCount++;
-                    }
-                }
-            }
-            log.info("Transition to IN_PROGRESS: Disqualified {} teams for not meeting minTeamSize={}", disqualifiedCount, updatedEvent.getMinTeamSize());
-        }
+
 
         // NẾU EVENT COMPLETED -> PUBLISH EVENT ĐỂ GỬI NOTIFICATION KẾT QUẢ TOP 1-2-3 (ASYNC)
         if (currentStatus == HackathonStatus.IN_PROGRESS && newStatus == HackathonStatus.COMPLETED) {
