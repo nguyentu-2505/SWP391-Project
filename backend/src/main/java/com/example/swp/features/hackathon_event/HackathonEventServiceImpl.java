@@ -18,6 +18,9 @@ import com.example.swp.features.prize.PrizeRepository;
 import com.example.swp.features.submission.SubmissionRepository;
 import com.example.swp.features.hackathon_event.dto.response.HackathonEventAnalyticsResponse;
 import com.github.slugify.Slugify;
+import com.example.swp.features.track.TrackMentorRepository;
+import com.example.swp.features.judge_assignment.JudgeAssignmentRepository;
+import com.example.swp.features.prize.Prize;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -50,6 +53,8 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final com.example.swp.features.track.TrackRepository trackRepository;
     private final PrizeRepository prizeRepository;
     private final SubmissionRepository submissionRepository;
+    private final TrackMentorRepository trackMentorRepository;
+    private final JudgeAssignmentRepository judgeAssignmentRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     // ==================== CREATE ====================
@@ -335,14 +340,72 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 throw new IllegalStateException("Cannot start event: At least " + requiredTeams + " teams are required to start the hackathon (currently " + teamCount + ").");
             }
 
-            // Check if each track has at least 2 active teams
+            // Cancel any track that has less than 2 active teams, and move their teams to General Track
             List<com.example.swp.features.track.Track> tracks = trackRepository.findByHackathonEventId(event.getId());
             for (com.example.swp.features.track.Track track : tracks) {
                 long trackTeamCount = teamRepository.findByTrackId(track.getId()).stream()
                         .filter(t -> t.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED)
                         .count();
                 if (trackTeamCount < 2) {
-                    throw new IllegalStateException("Cannot start event: Track '" + track.getName() + "' must have at least 2 active teams (currently " + trackTeamCount + ").");
+                    log.info("Track '{}' (id={}) has only {} active teams. Automatically cancelling the track and moving teams to General Track.", track.getName(), track.getId(), trackTeamCount);
+                    
+                    // 1. Move teams in this track to General Track (track_id = null)
+                    List<com.example.swp.features.team.Team> teamsInTrack = teamRepository.findByTrackId(track.getId());
+                    for (com.example.swp.features.team.Team team : teamsInTrack) {
+                        team.setTrack(null);
+                        teamRepository.save(team);
+                        
+                        // Send notification to each team member
+                        if (team.getTeamMembers() != null) {
+                            for (com.example.swp.features.team_member.TeamMember member : team.getTeamMembers()) {
+                                try {
+                                    notificationService.createNotification(
+                                        member.getUser(),
+                                        "Bảng đấu bị hủy",
+                                        String.format("Bảng đấu '%s' đã bị hủy do không đủ số lượng đội tối thiểu. Đội '%s' của bạn đã được chuyển về Bảng đấu Chung.", track.getName(), team.getName()),
+                                        "TEAM",
+                                        "Team",
+                                        team.getId()
+                                    );
+                                } catch (Exception e) {
+                                    log.error("Failed to send track cancellation notification to user id={}: {}", member.getUser().getId(), e.getMessage());
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 2. Set track to null in Prizes associated with this track
+                    List<Prize> prizes = prizeRepository.findByTrackId(track.getId());
+                    for (Prize prize : prizes) {
+                        prize.setTrack(null);
+                        prizeRepository.save(prize);
+                    }
+                    
+                    // 3. Delete judge assignments for this track
+                    try {
+                        judgeAssignmentRepository.deleteByTrackId(track.getId());
+                    } catch (Exception e) {
+                        log.error("Failed to delete judge assignments for track id={}: {}", track.getId(), e.getMessage());
+                    }
+                    
+                    // 4. Delete track mentor assignments for this track
+                    try {
+                        trackMentorRepository.deleteByTrackId(track.getId());
+                    } catch (Exception e) {
+                        log.error("Failed to delete track mentors for track id={}: {}", track.getId(), e.getMessage());
+                    }
+                    
+                    // 5. Delete the Track entity itself
+                    trackRepository.delete(track);
+                    
+                    auditLogService.logAction(
+                        "CANCEL_TRACK_INSUFFICIENT_TEAMS", 
+                        "Track", 
+                        track.getId(), 
+                        "Track name: " + track.getName(), 
+                        "Automatically canceled and teams moved to General Track due to insufficient teams (" + trackTeamCount + ")", 
+                        event.getId()
+                    );
                 }
             }
 

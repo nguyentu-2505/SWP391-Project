@@ -13,4 +13,5 @@ public interface JudgeAssignmentRepository extends JpaRepository<JudgeAssignment
     boolean existsByJudgeIdAndRoundIdAndTrackId(Long judgeId, Long roundId, Long trackId);
     boolean existsByJudgeIdAndRoundIdAndTrackIdIsNull(Long judgeId, Long roundId);
     List<JudgeAssignment> findByRoundHackathonEventId(Long hackathonEventId);
+    void deleteByTrackId(Long trackId);
 }
