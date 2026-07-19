@@ -99,8 +99,8 @@ const RankingsPage: React.FC = () => {
             ) : isGradingActive ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
                     <Trophy className="mx-auto h-12 w-12 text-amber-500 animate-pulse mb-3" />
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">Vòng thi đang trong thời gian chấm điểm</h3>
-                    <p className="text-sm text-gray-500">Bảng xếp hạng của vòng {selectedRound?.name} sẽ tự động hiển thị sau khi thời gian chấm điểm kết thúc.</p>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">Grading is currently in progress for this round</h3>
+                    <p className="text-sm text-gray-500">The leaderboard for round {selectedRound?.name} will be automatically displayed after the grading period ends.</p>
                 </div>
             ) : rankings.length === 0 ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">

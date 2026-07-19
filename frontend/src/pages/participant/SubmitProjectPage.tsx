@@ -76,9 +76,9 @@ const SubmitProjectPage: React.FC = () => {
             } catch (err: any) {
                 console.error(err);
                 if (err.response?.status === 404) {
-                    setError('Bạn chưa tham gia đội thi nào trong cuộc thi này, hoặc đội của bạn không tồn tại.');
+                    setError('You are not in any team for this hackathon, or your team does not exist.');
                 } else {
-                    setError('Không thể tải dữ liệu cần thiết cho việc nộp bài. Vui lòng kiểm tra lại kết nối hoặc liên hệ BTC.');
+                    setError('Unable to load necessary submission data. Please check your connection or contact the organizer.');
                 }
             } finally {
                 setLoadingData(false);
@@ -222,40 +222,40 @@ const SubmitProjectPage: React.FC = () => {
                     <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 flex items-start gap-3">
                         <AlertCircle className="shrink-0 mt-0.5" size={20} />
                         <div>
-                            <p className="font-bold">Đội thi đã bị loại (Disqualified)</p>
-                            <p className="text-sm mt-1">Đội thi của bạn đã bị loại khỏi cuộc thi bởi Ban tổ chức và không thể thực hiện nộp bài.</p>
+                            <p className="font-bold">Disqualified</p>
+                            <p className="text-sm mt-1">Your team has been disqualified by the organizer and cannot make submissions.</p>
                         </div>
                     </div>
                 ) : myTeam?.status !== 'FINALIZED' ? (
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
                         <AlertCircle className="shrink-0 mt-0.5" size={20} />
                         <div>
-                            <p className="font-bold">Đội thi chưa được chốt (Finalized)</p>
-                            <p className="text-sm mt-1">Đội trưởng cần hoàn tất chốt đội thi (Finalize Team) trước khi có thể nộp bài.</p>
+                            <p className="font-bold">Team Not Finalized</p>
+                            <p className="text-sm mt-1">The team leader must finalize the team before making submissions.</p>
                         </div>
                     </div>
                 ) : event?.status !== 'IN_PROGRESS' ? (
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
                         <AlertCircle className="shrink-0 mt-0.5" size={20} />
                         <div>
-                            <p className="font-bold">Cuộc thi chưa bắt đầu</p>
-                            <p className="text-sm mt-1">Cuộc thi chưa chuyển sang giai đoạn diễn ra (In Progress). Vui lòng quay lại sau.</p>
+                            <p className="font-bold">Hackathon Not Started</p>
+                            <p className="text-sm mt-1">The hackathon has not transitioned to "In Progress" yet. Please check back later.</p>
                         </div>
                     </div>
                 ) : rounds.length === 0 ? (
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
                         <AlertCircle className="shrink-0 mt-0.5" size={20} />
                         <div>
-                            <p className="font-bold">Chưa cấu hình vòng thi</p>
-                            <p className="text-sm mt-1">BTC chưa thiết lập các vòng đấu cho cuộc thi này.</p>
+                            <p className="font-bold">Rounds Not Configured</p>
+                            <p className="text-sm mt-1">The organizer has not configured any rounds for this event yet.</p>
                         </div>
                     </div>
                 ) : eventData && new Date() > new Date(eventData.endTime) ? (
                     <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-start gap-3">
                         <AlertCircle className="shrink-0 mt-0.5" size={20} />
                         <div>
-                            <p className="font-bold text-base">Sự kiện đã kết thúc</p>
-                            <p className="text-sm mt-1 text-gray-600">Bạn không thể nộp dự án sau khi sự kiện đã kết thúc.</p>
+                            <p className="font-bold text-base">Event Ended</p>
+                            <p className="text-sm mt-1 text-gray-600">You cannot submit projects after the event has ended.</p>
                         </div>
                     </div>
                 ) : !activeRound ? (
@@ -264,15 +264,15 @@ const SubmitProjectPage: React.FC = () => {
                         <div>
                             {nextRound ? (
                                 <>
-                                    <p className="font-bold text-base">Chưa tới thời gian nộp bài</p>
+                                    <p className="font-bold text-base">Submission Window Closed</p>
                                     <p className="text-sm mt-1 text-gray-600">
-                                        Vòng thi tiếp theo <strong>"{nextRound.name}"</strong> sẽ mở cổng nộp bài lúc: <strong>{new Date(nextRound.startTime).toLocaleString()}</strong>.
+                                        The next round <strong>"{nextRound.name}"</strong> will accept submissions starting: <strong>{new Date(nextRound.startTime).toLocaleString()}</strong>.
                                     </p>
                                 </>
                             ) : (
                                 <>
-                                    <p className="font-bold text-base">Hiện tại cổng nộp bài đang đóng</p>
-                                    <p className="text-sm mt-1 text-gray-600">Hệ thống đang trong thời gian chấm điểm hoặc chuẩn bị tiến hành thăng hạng. Vui lòng quay lại sau.</p>
+                                    <p className="font-bold text-base">Submissions Currently Closed</p>
+                                    <p className="text-sm mt-1 text-gray-600">The submission portal is closed for grading or round advancement. Please check back later.</p>
                                 </>
                             )}
                         </div>

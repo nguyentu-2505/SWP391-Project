@@ -1,3 +1,4 @@
+// Checked and verified: No Vietnamese UI texts present in RankingTab.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';

@@ -14,7 +14,7 @@ const formatDateTimeLocal = (dateString?: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
-    // Lấy YYYY-MM-DDTHH:mm
+    // Get YYYY-MM-DDTHH:mm
     return date.toISOString().slice(0, 16);
 };
 
@@ -127,7 +127,7 @@ const HackathonEventPage: React.FC = () => {
     } catch (error: any) {
       console.error('Failed to update hackathon event:', error);
       const errMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message;
-      toast.error('Cập nhật thất bại: ' + errMsg, { id: loadingToast });
+      toast.error('Failed to update event: ' + errMsg, { id: loadingToast });
     }
   };
 
@@ -140,7 +140,7 @@ const HackathonEventPage: React.FC = () => {
     } catch (error: any) {
       console.error('Failed to update status:', error);
       const errMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message;
-      toast.error('Cập nhật trạng thái thất bại: ' + errMsg, { id: loadingToast });
+      toast.error('Failed to update status: ' + errMsg, { id: loadingToast });
     }
   };
 
@@ -397,17 +397,17 @@ const HackathonEventPage: React.FC = () => {
             </div>
             {/* Time Rules Hint */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700 space-y-1">
-                <p className="font-semibold">📋 Quy tắc đặt thời gian:</p>
+                <p className="font-semibold">📋 Time configuration rules:</p>
                 <ul className="list-disc list-inside space-y-0.5">
-                  <li>Ngày <b>Mở đăng ký</b> phải trước ngày <b>Đóng đăng ký</b></li>
-                  <li>Ngày <b>Đóng đăng ký</b> phải trước ngày <b>Bắt đầu sự kiện</b></li>
-                  <li>Ngày <b>Bắt đầu sự kiện</b> phải trước ngày <b>Kết thúc sự kiện</b></li>
-                  <li>Ví dụ: Mở ĐK → Đóng ĐK → Bắt đầu → Kết thúc</li>
+                  <li><b>Registration Start</b> must be before <b>Registration End</b></li>
+                  <li><b>Registration End</b> must be before <b>Event Start Time</b></li>
+                  <li><b>Event Start Time</b> must be before <b>Event End Time</b></li>
+                  <li>Example: Registration Start → Registration End → Event Start → Event End</li>
                 </ul>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start (Mở đăng ký)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
                     <input
                         type="datetime-local"
                         value={newEvent.registrationStart || ''}
@@ -416,7 +416,7 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End (Đóng đăng ký)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
                     <input
                         type="datetime-local"
                         value={newEvent.registrationEnd || ''}
@@ -425,7 +425,7 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time * (Bắt đầu sự kiện)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time *</label>
                     <input
                         type="datetime-local"
                         value={newEvent.startTime}
@@ -434,7 +434,7 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time * (Kết thúc sự kiện)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time *</label>
                     <input
                         type="datetime-local"
                         value={newEvent.endTime}
@@ -523,17 +523,17 @@ const HackathonEventPage: React.FC = () => {
               </div>
               {/* Time Rules Hint */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700 space-y-1">
-                <p className="font-semibold">📋 Quy tắc đặt thời gian:</p>
+                <p className="font-semibold">📋 Time configuration rules:</p>
                 <ul className="list-disc list-inside space-y-0.5">
-                  <li>Ngày <b>Mở đăng ký</b> phải trước ngày <b>Đóng đăng ký</b></li>
-                  <li>Ngày <b>Đóng đăng ký</b> phải trước ngày <b>Bắt đầu sự kiện</b></li>
-                  <li>Ngày <b>Bắt đầu sự kiện</b> phải trước ngày <b>Kết thúc sự kiện</b></li>
-                  <li>Ví dụ: Mở ĐK → Đóng ĐK → Bắt đầu → Kết thúc</li>
+                  <li><b>Registration Start</b> must be before <b>Registration End</b></li>
+                  <li><b>Registration End</b> must be before <b>Event Start Time</b></li>
+                  <li><b>Event Start Time</b> must be before <b>Event End Time</b></li>
+                  <li>Example: Registration Start → Registration End → Event Start → Event End</li>
                 </ul>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start (Mở đăng ký)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
                     <input
                         type="datetime-local"
                         value={selectedEvent.registrationStart || ''}
@@ -542,7 +542,7 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End (Đóng đăng ký)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
                     <input
                         type="datetime-local"
                         value={selectedEvent.registrationEnd || ''}
@@ -551,7 +551,7 @@ const HackathonEventPage: React.FC = () => {
                     />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time * (Bắt đầu sự kiện)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time *</label>
                   <input
                     type="datetime-local"
                     value={selectedEvent.startTime}
@@ -560,7 +560,7 @@ const HackathonEventPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time * (Kết thúc sự kiện)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time *</label>
                   <input
                     type="datetime-local"
                     value={selectedEvent.endTime}

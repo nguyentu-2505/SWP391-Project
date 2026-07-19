@@ -329,14 +329,14 @@ const PrizesTab: React.FC = () => {
                                         onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
                                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
                                     >
-                                        <option value="VND">VNĐ</option>
+                                        <option value="VND">VND</option>
                                         <option value="USD">USD ($)</option>
                                     </select>
                                 </div>
                             </div>
                             {form.cash !== '' && (
                                 <div className="text-[10px] text-emerald-700 font-semibold italic mt-1">
-                                    Preview: {form.currency === 'USD' ? '$' : ''}{Number(form.cash).toLocaleString()} {form.currency === 'USD' ? 'USD' : 'VNĐ'}
+                                    Preview: {form.currency === 'USD' ? '$' : ''}{Number(form.cash).toLocaleString()} {form.currency === 'USD' ? 'USD' : 'VND'}
                                 </div>
                             )}
                         </div>
@@ -443,7 +443,7 @@ const PrizesTab: React.FC = () => {
                                             <span>
                                                 {prize.currency === 'USD' ? '$' : ''}
                                                 {prize.cash.toLocaleString()}
-                                                {prize.currency === 'USD' ? ' USD' : ' VNĐ'}
+                                                {prize.currency === 'USD' ? ' USD' : ' VND'}
                                             </span>
                                         </div>
                                     )}

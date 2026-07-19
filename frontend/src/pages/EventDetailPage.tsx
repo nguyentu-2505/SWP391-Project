@@ -340,7 +340,7 @@ const EventDetailPage: React.FC = () => {
                                                                     <span>
                                                                         {p.currency === 'USD' ? '$' : ''}
                                                                         {p.cash.toLocaleString()}
-                                                                        {p.currency === 'USD' ? ' USD' : ' VNĐ'}
+                                                                        {p.currency === 'USD' ? ' USD' : ' VND'}
                                                                     </span>
                                                                 </div>
                                                             )}

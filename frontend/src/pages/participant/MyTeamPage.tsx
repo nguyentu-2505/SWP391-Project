@@ -411,7 +411,7 @@ const MyTeamPage: React.FC = () => {
                                 
                                 {isEventEnded && (
                                     <div className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200 w-full">
-                                        <Lock size={16} /> Sự kiện đã kết thúc. Mọi chỉnh sửa đã bị khóa.
+                                        <Lock size={16} /> The event has ended. All edits are locked.
                                     </div>
                                 )}
                             </div>

@@ -221,7 +221,7 @@ const OrganizerEventsPage: React.FC = () => {
         try {
             await api.post(`/hackathon-events/${id}/clone`);
             toast.success('Event cloned successfully!', { id: loadingToast });
-            fetchEvents(); // Refresh list
+            await fetchMyEvents(); // Refresh list
         } catch (error: any) {
             console.error('Failed to clone event:', error);
             const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
