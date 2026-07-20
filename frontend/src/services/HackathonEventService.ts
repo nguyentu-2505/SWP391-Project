@@ -43,7 +43,14 @@ export interface UpdateHackathonEventRequest {
 }
 
 const createHackathonEvent = async (event: CreateHackathonEventRequest): Promise<HackathonEvent> => {
-    const response = await api.post(API_URL, event);
+    const payload = {
+        ...event,
+        startTime: event.startTime === "" ? null : event.startTime,
+        endTime: event.endTime === "" ? null : event.endTime,
+        registrationStart: event.registrationStart === "" ? null : event.registrationStart,
+        registrationEnd: event.registrationEnd === "" ? null : event.registrationEnd,
+    };
+    const response = await api.post(API_URL, payload);
     return response.data.data;
 };
 
@@ -72,7 +79,14 @@ const getHackathonEventBySlug = async (slug: string): Promise<HackathonEvent> =>
 };
 
 const updateHackathonEvent = async (id: number, event: UpdateHackathonEventRequest): Promise<HackathonEvent> => {
-    const response = await api.put(`${API_URL}/${id}`, event);
+    const payload = {
+        ...event,
+        startTime: event.startTime === "" ? null : event.startTime,
+        endTime: event.endTime === "" ? null : event.endTime,
+        registrationStart: event.registrationStart === "" ? null : event.registrationStart,
+        registrationEnd: event.registrationEnd === "" ? null : event.registrationEnd,
+    };
+    const response = await api.put(`${API_URL}/${id}`, payload);
     return response.data.data;
 };
 

@@ -29,8 +29,6 @@ public class CreateScoreRequest {
         @NotNull(message = "Criterion ID cannot be null")
         private Long criterionId;
 
-        @Min(value = 1, message = "Score value must be at least 1")
-        @Max(value = 10, message = "Score value must be at most 10")
         private int scoreValue;
 
         private String comment;

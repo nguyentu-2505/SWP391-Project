@@ -52,10 +52,10 @@ const ScoringPage: React.FC = () => {
                 const submissionData = subRes.data.data;
                 setSubmission(submissionData);
 
-                // Fetch criteria: assuming hackathon event ID 1 for now
+                // Fetch criteria: using actual event ID from submission details
                 let critData = [];
                 try {
-                    const critRes = await api.get(`/criteria/event/1`);
+                    const critRes = await api.get(`/criteria/event/${submissionData.eventId}`);
                     critData = critRes.data.data ?? [];
                     
                     if (critData.length === 0) {

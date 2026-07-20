@@ -549,7 +549,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
      */
     private void requireOrganizerOrAdmin(HackathonEvent event) {
         User currentUser = getCurrentUser();
-        boolean isOwner = event.getOrganizer().getId().equals(currentUser.getId());
+        boolean isOwner = event.getOrganizer() != null && event.getOrganizer().getId().equals(currentUser.getId());
         boolean isAdmin = "ADMIN".equals(currentUser.getRole().name());
         if (!isOwner && !isAdmin) {
             throw new AccessDeniedException("Only the organizer or admin can perform this action.");

@@ -18,9 +18,15 @@ const AdminPendingApprovalsPage: React.FC = () => {
     const fetchPendingUsers = useCallback(async () => {
         try {
             setLoading(true);
-            // Assuming the API supports pagination, but for now fetching without params
             const response = await api.get('/users/pending');
-            setUsers(response.data.data);
+            const responseData = response.data.data;
+            if (responseData && 'content' in responseData) {
+                setUsers(responseData.content);
+            } else if (Array.isArray(responseData)) {
+                setUsers(responseData);
+            } else {
+                setUsers([]);
+            }
         } catch (err) {
             setError('Failed to fetch users awaiting approval.');
             toast.error('Failed to fetch users awaiting approval.');
