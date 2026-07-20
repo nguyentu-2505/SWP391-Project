@@ -39,6 +39,26 @@ const RoundsTab: React.FC = () => {
     const [editingRound, setEditingRound] = useState<Round | null>(null);
     const [eventDetails, setEventDetails] = useState<any>(null);
 
+    const [progressRoundId, setProgressRoundId] = useState<number | null>(null);
+    const [gradingProgress, setGradingProgress] = useState<any[]>([]);
+    const [loadingProgress, setLoadingProgress] = useState(false);
+    const [showProgressModal, setShowProgressModal] = useState(false);
+
+    const handleViewProgress = async (roundId: number) => {
+        setProgressRoundId(roundId);
+        setLoadingProgress(true);
+        setShowProgressModal(true);
+        try {
+            const res = await api.get(`/rounds/${roundId}/grading-progress`);
+            setGradingProgress(res.data.data ?? []);
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || 'Failed to load grading progress.');
+            setShowProgressModal(false);
+        } finally {
+            setLoadingProgress(false);
+        }
+    };
+
     // Confirm Modal State
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmTitle, setConfirmTitle] = useState('');
@@ -428,6 +448,13 @@ const RoundsTab: React.FC = () => {
                                      </button>
                                 )}
                                 <button
+                                     onClick={() => handleViewProgress(round.id)}
+                                     className="text-[10px] bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
+                                     title="View judge grading progress"
+                                 >
+                                     Grading Progress
+                                 </button>
+                                <button
                                     onClick={() => openEditModal(round)}
                                     className="text-blue-400 hover:text-blue-600 transition-colors p-1 cursor-pointer"
                                     title="Edit round"
@@ -645,6 +672,52 @@ const RoundsTab: React.FC = () => {
             onConfirm={confirmAction}
             onCancel={() => setConfirmOpen(false)}
         />
+
+        {showProgressModal && (
+            <Modal isOpen={showProgressModal} onClose={() => setShowProgressModal(false)}>
+                <div className="p-6 max-w-lg space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Clock size={20} className="text-blue-600" />
+                        Grading Progress Dashboard
+                    </h3>
+                    {loadingProgress ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="animate-spin text-blue-600" size={32} />
+                        </div>
+                    ) : gradingProgress.length === 0 ? (
+                        <p className="text-center py-6 text-sm text-gray-500">No judge assignments found for this round.</p>
+                    ) : (
+                        <div className="space-y-4">
+                            {gradingProgress.map((p: any) => (
+                                <div key={p.judgeId} className="p-4 border border-gray-100 rounded-lg bg-gray-50">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-semibold text-sm text-gray-900">{p.judgeName}</span>
+                                        <span className="text-xs text-gray-500 font-medium">{p.gradedSubmissions} / {p.assignedSubmissions} teams fully graded</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div 
+                                            className={`h-2 rounded-full transition-all duration-300 ${p.progressPercentage === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                            style={{ width: `${p.progressPercentage}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center mt-1 text-[10px] text-gray-400">
+                                        <span>Progress: {p.progressPercentage}%</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className="flex justify-end pt-3 border-t border-gray-100">
+                        <button 
+                            onClick={() => setShowProgressModal(false)}
+                            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-xs font-semibold cursor-pointer"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+        )}
         </>
     );
 };

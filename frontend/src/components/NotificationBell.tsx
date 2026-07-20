@@ -35,7 +35,7 @@ const NotificationBell: React.FC = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
-    // Poll unread count every 30s
+    // Poll unread count
     const fetchUnreadCount = useCallback(async () => {
         try {
             const count = await NotificationService.getUnreadCount();
@@ -47,8 +47,76 @@ const NotificationBell: React.FC = () => {
 
     useEffect(() => {
         fetchUnreadCount();
-        const interval = setInterval(fetchUnreadCount, 30000);
-        return () => clearInterval(interval);
+
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+
+        let eventSource: EventSource | null = null;
+        let reconnectDelay = 3000;
+        let reconnectTimeout: any = null;
+
+        const connect = () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource(`http://localhost:8080/api/v1/notifications/stream?token=${token}`);
+
+            eventSource.addEventListener('NOTIFICATION', (event: MessageEvent) => {
+                try {
+                    const newNotif = JSON.parse(event.data);
+                    setNotifications(prev => {
+                        if (prev.some(n => n.id === newNotif.id)) return prev;
+                        return [newNotif, ...prev];
+                    });
+                    fetchUnreadCount();
+                } catch (e) {
+                    console.error("Failed to parse realtime notification:", e);
+                }
+            });
+
+            eventSource.addEventListener('UNREAD_COUNT', (event: MessageEvent) => {
+                try {
+                    const count = parseInt(event.data, 10);
+                    if (!isNaN(count)) {
+                        setUnreadCount(count);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse unread count:", e);
+                }
+            });
+
+            eventSource.onopen = () => {
+                console.log("Notification SSE connected successfully.");
+                reconnectDelay = 3000;
+            };
+
+            eventSource.onerror = (e) => {
+                console.error("Notification SSE error, retrying in " + reconnectDelay + "ms", e);
+                if (eventSource) {
+                    eventSource.close();
+                }
+                reconnectTimeout = setTimeout(() => {
+                    connect();
+                    reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+                }, reconnectDelay);
+            };
+        };
+
+        connect();
+
+        // Backup polling every 45s in case SSE is blocked
+        const backupInterval = setInterval(fetchUnreadCount, 45000);
+
+        return () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
+            clearInterval(backupInterval);
+        };
     }, [fetchUnreadCount]);
 
     // Fetch full list when dropdown opens

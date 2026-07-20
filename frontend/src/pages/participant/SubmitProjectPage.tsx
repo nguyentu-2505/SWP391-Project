@@ -41,6 +41,44 @@ const SubmitProjectPage: React.FC = () => {
     const [repoError, setRepoError] = useState('');
     const [demoError, setDemoError] = useState('');
     const [reportError, setReportError] = useState('');
+    const [uploadingFile, setUploadingFile] = useState(false);
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const max_size = 20 * 1024 * 1024;
+        if (file.size > max_size) {
+            toast.error("File size exceeds 20MB limit.");
+            return;
+        }
+
+        const extension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+        if (extension !== ".pdf" && extension !== ".zip" && extension !== ".pptx") {
+            toast.error("Only .pdf, .zip, and .pptx files are allowed.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        setUploadingFile(true);
+        try {
+            const res = await api.post("/files/upload", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            });
+            const fileUrl = res.data.url;
+            setReportUrl(fileUrl);
+            toast.success("File uploaded successfully!");
+        } catch (err: any) {
+            const msg = err.response?.data?.message || "Failed to upload file.";
+            toast.error(msg);
+        } finally {
+            setUploadingFile(false);
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -353,32 +391,47 @@ const SubmitProjectPage: React.FC = () => {
                             )}
                         </div>
 
-                        {/* Report URL */}
+                        {/* Report URL or File Upload */}
                         <div>
                             <label htmlFor="reportUrl" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
-                                Report URL <span className="text-slate-400 font-normal normal-case">(Optional)</span>
+                                Report URL or Upload Project File <span className="text-slate-400 font-normal normal-case">(Optional, max 20MB)</span>
                             </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                    <LinkIcon size={16} />
+                            <div className="flex flex-col md:flex-row gap-3">
+                                <div className="relative flex-1">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                        <LinkIcon size={16} />
+                                    </div>
+                                    <input
+                                        id="reportUrl"
+                                        type="text"
+                                        placeholder="https://docs.google.com/..."
+                                        value={reportUrl}
+                                        onChange={(e) => {
+                                            setReportUrl(e.target.value);
+                                            if (reportError) validateForm();
+                                        }}
+                                        className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all ${reportError ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
+                                            }`}
+                                    />
                                 </div>
-                                <input
-                                    id="reportUrl"
-                                    type="text"
-                                    placeholder="https://docs.google.com/..."
-                                    value={reportUrl}
-                                    onChange={(e) => {
-                                        setReportUrl(e.target.value);
-                                        if (reportError) validateForm();
-                                    }}
-                                    className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 transition-all ${reportError ? 'border-red-300 focus:border-red-500' : 'border-outline-variant focus:border-primary-container'
-                                        }`}
-                                />
+                                <div className="shrink-0 flex items-center">
+                                    <label className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg cursor-pointer transition-all border border-slate-700 font-medium text-sm">
+                                        <UploadCloud size={16} className={uploadingFile ? "animate-bounce" : ""} />
+                                        {uploadingFile ? "Uploading..." : "Upload PDF/ZIP/PPTX"}
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept=".pdf,.zip,.pptx"
+                                            onChange={handleFileUpload}
+                                            disabled={uploadingFile}
+                                        />
+                                    </label>
+                                </div>
                             </div>
                             {reportError ? (
                                 <p className="mt-1.5 text-xs text-red-600 font-medium">{reportError}</p>
                             ) : (
-                                <p className="mt-1.5 text-xs text-on-surface-variant">Provide a link to your project report or documentation.</p>
+                                <p className="mt-1.5 text-xs text-on-surface-variant">Provide a URL link or upload a file directly. Supported: .pdf, .zip, .pptx.</p>
                             )}
                         </div>
 

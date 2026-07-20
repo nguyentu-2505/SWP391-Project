@@ -43,7 +43,7 @@ const PublicLayout: React.FC = () => {
     return (
         <div className="flex flex-col min-h-screen bg-background">
             <PublicHeader />
-            <main className="flex-grow">
+            <main className="flex-grow animate-fade-in">
                 <Outlet />
             </main>
         </div>

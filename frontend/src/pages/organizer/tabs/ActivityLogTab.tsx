@@ -53,26 +53,56 @@ const ActivityLogTab: React.FC = () => {
         fetchLogs(0, false);
 
         const token = localStorage.getItem('accessToken');
-        const eventSource = new EventSource(`http://localhost:8080/api/v1/audit-logs/event/${eventId}/stream?token=${token}`);
+        let eventSource: EventSource | null = null;
+        let reconnectDelay = 3000; // Start with 3s delay
+        let reconnectTimeout: any = null;
 
-        eventSource.addEventListener('LOG_ADDED', (event: MessageEvent) => {
-            try {
-                const newLog = JSON.parse(event.data);
-                setLogs(prev => {
-                    if (prev.some(l => l.id === newLog.id)) return prev;
-                    return [newLog, ...prev];
-                });
-            } catch (e) {
-                console.error("Failed to parse realtime log:", e);
+        const connect = () => {
+            if (eventSource) {
+                eventSource.close();
             }
-        });
 
-        eventSource.onerror = (e) => {
-            console.error("SSE connection error:", e);
+            eventSource = new EventSource(`http://localhost:8080/api/v1/audit-logs/event/${eventId}/stream?token=${token}`);
+
+            eventSource.addEventListener('LOG_ADDED', (event: MessageEvent) => {
+                try {
+                    const newLog = JSON.parse(event.data);
+                    setLogs(prev => {
+                        if (prev.some(l => l.id === newLog.id)) return prev;
+                        return [newLog, ...prev];
+                    });
+                } catch (e) {
+                    console.error("Failed to parse realtime log:", e);
+                }
+            });
+
+            eventSource.onopen = () => {
+                console.log("SSE connected successfully.");
+                reconnectDelay = 3000; // Reset delay on successful connection
+            };
+
+            eventSource.onerror = (e) => {
+                console.error("SSE connection error, attempting reconnect in " + reconnectDelay + "ms", e);
+                if (eventSource) {
+                    eventSource.close();
+                }
+                reconnectTimeout = setTimeout(() => {
+                    connect();
+                    // Exponential backoff up to 30s max
+                    reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+                }, reconnectDelay);
+            };
         };
 
+        connect();
+
         return () => {
-            eventSource.close();
+            if (eventSource) {
+                eventSource.close();
+            }
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
         };
     }, [eventId]);
 
