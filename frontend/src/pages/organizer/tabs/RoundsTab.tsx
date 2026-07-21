@@ -39,6 +39,26 @@ const RoundsTab: React.FC = () => {
     const [editingRound, setEditingRound] = useState<Round | null>(null);
     const [eventDetails, setEventDetails] = useState<any>(null);
 
+    const [progressRoundId, setProgressRoundId] = useState<number | null>(null);
+    const [gradingProgress, setGradingProgress] = useState<any[]>([]);
+    const [loadingProgress, setLoadingProgress] = useState(false);
+    const [showProgressModal, setShowProgressModal] = useState(false);
+
+    const handleViewProgress = async (roundId: number) => {
+        setProgressRoundId(roundId);
+        setLoadingProgress(true);
+        setShowProgressModal(true);
+        try {
+            const res = await api.get(`/rounds/${roundId}/grading-progress`);
+            setGradingProgress(res.data.data ?? []);
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || 'Failed to load grading progress.');
+            setShowProgressModal(false);
+        } finally {
+            setLoadingProgress(false);
+        }
+    };
+
     // Confirm Modal State
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmTitle, setConfirmTitle] = useState('');
@@ -173,18 +193,18 @@ const RoundsTab: React.FC = () => {
     };
 
     const handleEndGradingEarly = (id: number) => {
-        setConfirmTitle('Kết thúc sớm vòng thi');
-        setConfirmMessage('Bạn có chắc chắn muốn kết thúc sớm thời gian nộp bài / chấm điểm cho vòng thi này? Bảng xếp hạng sẽ hiển thị ngay lập tức.');
+        setConfirmTitle('End Round Early');
+        setConfirmMessage('Are you sure you want to end the submission / grading time for this round early? The rankings will be displayed immediately.');
         setConfirmText('End');
         setConfirmIsDanger(false);
         setConfirmAction(() => async () => {
-            const loadingToast = toast.loading('Đang kết thúc sớm...');
+            const loadingToast = toast.loading('Ending early...');
             try {
                 await api.post(`/rounds/${id}/end-grading`);
-                toast.success('Đã kết thúc sớm thành công!', { id: loadingToast });
+                toast.success('Ended early successfully!', { id: loadingToast });
                 fetchRounds();
             } catch (err: any) {
-                toast.error(err.response?.data?.error?.message || 'Không thể kết thúc sớm.', { id: loadingToast });
+                toast.error(err.response?.data?.error?.message || 'Failed to end early.', { id: loadingToast });
             }
             setConfirmOpen(false);
         });
@@ -230,8 +250,8 @@ const RoundsTab: React.FC = () => {
                     const firstExcluded = list[slots];
                     if (lastAdvanced && firstExcluded && lastAdvanced.finalScore === firstExcluded.finalScore) {
                         ties[trackName] = [
-                            `${lastAdvanced.teamName} (Hạng ${lastAdvanced.rank}, ${lastAdvanced.finalScore} điểm)`,
-                            `${firstExcluded.teamName} (Hạng ${firstExcluded.rank}, ${firstExcluded.finalScore} điểm)`
+                            `${lastAdvanced.teamName} (Rank ${lastAdvanced.rank}, ${lastAdvanced.finalScore} points)`,
+                            `${firstExcluded.teamName} (Rank ${firstExcluded.rank}, ${firstExcluded.finalScore} points)`
                         ];
                     }
                 }
@@ -245,7 +265,7 @@ const RoundsTab: React.FC = () => {
                 tiesByTrack: ties,
             });
         } catch (err: any) {
-            toast.error('Không thể tải bản xem trước thăng hạng.');
+            toast.error('Failed to load advancement preview.');
             setAdvancementPreview(prev => ({ ...prev, show: false, loading: false }));
         }
     };
@@ -422,11 +442,18 @@ const RoundsTab: React.FC = () => {
                                      <button
                                          onClick={() => handleEndGradingEarly(round.id)}
                                          className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
-                                         title="Kết thúc sớm vòng thi hoặc thời gian chấm điểm"
+                                         title="End round or grading time early"
                                      >
                                          End Early
                                      </button>
                                 )}
+                                <button
+                                     onClick={() => handleViewProgress(round.id)}
+                                     className="text-[10px] bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
+                                     title="View judge grading progress"
+                                 >
+                                     Grading Progress
+                                 </button>
                                 <button
                                     onClick={() => openEditModal(round)}
                                     className="text-blue-400 hover:text-blue-600 transition-colors p-1 cursor-pointer"
@@ -547,25 +574,25 @@ const RoundsTab: React.FC = () => {
                     <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                         <Clock size={20} className="text-blue-600" />
                         {rounds.findIndex(r => r.id === advancementPreview.roundId) === rounds.length - 1 
-                            ? 'Xác nhận Hoàn thành Sự kiện (Complete Event)' 
-                            : 'Xác nhận thăng hạng đội thi (Round Advancement)'}
+                            ? 'Confirm Complete Event' 
+                            : 'Confirm Round Advancement'}
                     </h3>
                     {advancementPreview.loading ? (
                         <div className="flex items-center justify-center py-6">
                             <Loader2 className="animate-spin text-blue-500 mr-2" size={20} />
-                            <span className="text-sm text-gray-500">Đang tải danh sách xếp hạng...</span>
+                            <span className="text-sm text-gray-500">Loading rankings...</span>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             <p className="text-sm text-gray-600">
                                 {rounds.findIndex(r => r.id === advancementPreview.roundId) === rounds.length - 1
-                                    ? 'Dưới đây là danh sách xếp hạng chung cuộc của các đội thi ở từng Track:'
-                                    : 'Dưới đây là danh sách các đội có điểm số cao nhất của mỗi Track dự kiến sẽ được thăng hạng lên vòng tiếp theo:'}
+                                    ? 'Below is the final ranking list of teams in each Track:'
+                                    : 'Below is the list of teams with the highest scores from each Track expected to advance to the next round:'}
                             </p>
                             
                             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                                 {Object.keys(advancementPreview.proposedTeamsByTrack).length === 0 ? (
-                                    <p className="text-xs text-gray-400 italic text-center py-4">Chưa có bảng điểm xếp hạng nào được ghi nhận cho vòng thi này.</p>
+                                    <p className="text-xs text-gray-400 italic text-center py-4">No ranking scores have been recorded for this round yet.</p>
                                 ) : (
                                     Object.entries(advancementPreview.proposedTeamsByTrack).map(([trackName, teams]) => {
                                         const tieWarning = advancementPreview.tiesByTrack[trackName];
@@ -576,7 +603,7 @@ const RoundsTab: React.FC = () => {
                                                     {teams.map((t, idx) => (
                                                         <li key={t.teamId} className="flex justify-between items-center text-gray-700 bg-white px-2.5 py-1.5 rounded border border-gray-100">
                                                             <span>Rank {t.rank}: <strong>{t.teamName}</strong></span>
-                                                            <span className="font-semibold text-blue-600">{t.finalScore} điểm</span>
+                                                            <span className="font-semibold text-blue-600">{t.finalScore} points</span>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -584,9 +611,9 @@ const RoundsTab: React.FC = () => {
                                                     <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 space-y-1">
                                                         <div className="flex items-center gap-1.5 font-bold">
                                                             <AlertCircle size={14} className="text-amber-600" />
-                                                            Cảnh báo bằng điểm!
+                                                            Tie score warning!
                                                         </div>
-                                                        <p className="text-gray-600">Có hiện tượng bằng điểm tại ranh giới thăng hạng giữa:</p>
+                                                        <p className="text-gray-600">There is a tie at the advancement boundary between:</p>
                                                         <ul className="list-disc pl-4 space-y-0.5 text-gray-500">
                                                             {tieWarning.map((info, idx) => (
                                                                 <li key={idx}>{info}</li>
@@ -601,7 +628,7 @@ const RoundsTab: React.FC = () => {
                             </div>
 
                             <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg text-xs text-blue-800">
-                                <strong>Lưu ý:</strong> Hành động này sẽ khóa điểm số của vòng thi hiện tại và thực hiện thăng hạng chính thức (hoặc chốt điểm chung cuộc). Hãy đảm bảo các Giám khảo đã hoàn thành tất cả các lượt chấm điểm.
+                                <strong>Note:</strong> This action will lock the scores of the current round and perform official advancement (or finalize final scores). Please ensure that all Judges have completed all grading.
                             </div>
 
                             <div className="flex justify-end gap-3 pt-2">
@@ -610,25 +637,25 @@ const RoundsTab: React.FC = () => {
                                     onClick={() => setAdvancementPreview(prev => ({ ...prev, show: false }))}
                                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-700 transition-colors"
                                 >
-                                    Hủy bỏ
+                                    Cancel
                                 </button>
                                 <button
                                     type="button"
                                     onClick={async () => {
                                         const roundId = advancementPreview.roundId;
                                         setAdvancementPreview(prev => ({ ...prev, show: false }));
-                                        const loadingToast = toast.loading('Đang xử lý...');
+                                        const loadingToast = toast.loading('Processing...');
                                         try {
                                             const res = await api.post(`/rounds/${roundId}/advance`);
-                                            toast.success(res.data.message || 'Xử lý thành công!', { id: loadingToast });
+                                            toast.success(res.data.message || 'Processed successfully!', { id: loadingToast });
                                             fetchRounds();
                                         } catch (err: any) {
-                                            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Xử lý thất bại.', { id: loadingToast });
+                                            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Processing failed.', { id: loadingToast });
                                         }
                                     }}
                                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors"
                                 >
-                                    Xác nhận
+                                    Confirm
                                 </button>
                             </div>
                         </div>
@@ -645,6 +672,52 @@ const RoundsTab: React.FC = () => {
             onConfirm={confirmAction}
             onCancel={() => setConfirmOpen(false)}
         />
+
+        {showProgressModal && (
+            <Modal isOpen={showProgressModal} onClose={() => setShowProgressModal(false)}>
+                <div className="p-6 max-w-lg space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Clock size={20} className="text-blue-600" />
+                        Grading Progress Dashboard
+                    </h3>
+                    {loadingProgress ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="animate-spin text-blue-600" size={32} />
+                        </div>
+                    ) : gradingProgress.length === 0 ? (
+                        <p className="text-center py-6 text-sm text-gray-500">No judge assignments found for this round.</p>
+                    ) : (
+                        <div className="space-y-4">
+                            {gradingProgress.map((p: any) => (
+                                <div key={p.judgeId} className="p-4 border border-gray-100 rounded-lg bg-gray-50">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="font-semibold text-sm text-gray-900">{p.judgeName}</span>
+                                        <span className="text-xs text-gray-500 font-medium">{p.gradedSubmissions} / {p.assignedSubmissions} teams fully graded</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div 
+                                            className={`h-2 rounded-full transition-all duration-300 ${p.progressPercentage === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                            style={{ width: `${p.progressPercentage}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between items-center mt-1 text-[10px] text-gray-400">
+                                        <span>Progress: {p.progressPercentage}%</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className="flex justify-end pt-3 border-t border-gray-100">
+                        <button 
+                            onClick={() => setShowProgressModal(false)}
+                            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-xs font-semibold cursor-pointer"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+        )}
         </>
     );
 };

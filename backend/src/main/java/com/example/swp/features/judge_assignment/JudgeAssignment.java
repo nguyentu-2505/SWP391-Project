@@ -14,7 +14,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "judge_assignment")
+@Table(name = "judge_assignment", indexes = {
+    @Index(name = "idx_judge_round_track", columnList = "judge_id, round_id, track_id")
+})
 public class JudgeAssignment {
 
     @Id

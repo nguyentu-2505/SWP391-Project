@@ -5,6 +5,16 @@ import com.example.swp.features.hackathon_event.HackathonEventRepository;
 import com.example.swp.features.round.dto.request.CreateRoundRequest;
 import com.example.swp.features.round.dto.response.RoundResponse;
 import com.example.swp.features.audit_log.AuditLogService;
+import com.example.swp.features.judge_assignment.JudgeAssignmentRepository;
+import com.example.swp.features.submission.SubmissionRepository;
+import com.example.swp.features.score.ScoreRepository;
+import com.example.swp.features.criterion.CriterionRepository;
+import com.example.swp.features.round.dto.GradingProgressDto;
+import com.example.swp.features.judge_assignment.JudgeAssignment;
+import com.example.swp.features.submission.Submission;
+import com.example.swp.features.criterion.Criterion;
+import com.example.swp.features.team.TeamStatus;
+import com.example.swp.features.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +29,10 @@ public class RoundServiceImpl implements RoundService {
     private final RoundRepository roundRepository;
     private final HackathonEventRepository hackathonEventRepository;
     private final AuditLogService auditLogService;
+    private final JudgeAssignmentRepository judgeAssignmentRepository;
+    private final SubmissionRepository submissionRepository;
+    private final ScoreRepository scoreRepository;
+    private final CriterionRepository criterionRepository;
 
     @Override
     public RoundResponse createRound(CreateRoundRequest request) {
@@ -270,5 +284,77 @@ public class RoundServiceImpl implements RoundService {
         auditLogService.logAction("END_GRADING", "ROUND", saved.getId(), null, "Ended grading early for round " + saved.getName(), saved.getHackathonEvent().getId());
 
         return mapToResponse(saved);
+    }
+
+    @Override
+    public List<GradingProgressDto> getGradingProgress(Long roundId) {
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new com.example.swp.exception.ResourceNotFoundException("Round not found: " + roundId));
+
+        List<JudgeAssignment> assignments = judgeAssignmentRepository.findByRoundId(roundId);
+        List<Submission> submissions = submissionRepository.findByRoundId(roundId).stream()
+                .filter(s -> s.getTeam().getStatus() != TeamStatus.DISQUALIFIED)
+                .collect(Collectors.toList());
+
+        List<Criterion> criteria = criterionRepository.findByHackathonEventId(round.getHackathonEvent().getId());
+
+        List<GradingProgressDto> progressList = new java.util.ArrayList<>();
+
+        for (JudgeAssignment assignment : assignments) {
+            User judge = assignment.getJudge();
+            
+            // Filter submissions assigned to this judge
+            List<Submission> targetSubmissions = submissions;
+            if (assignment.getTrack() != null) {
+                Long trackId = assignment.getTrack().getId();
+                targetSubmissions = submissions.stream()
+                        .filter(s -> s.getTeam().getTrack() != null && s.getTeam().getTrack().getId().equals(trackId))
+                        .collect(Collectors.toList());
+            }
+
+            int totalExpectedScores = targetSubmissions.size() * criteria.size();
+            int gradedScores = 0;
+            int fullyGradedSubmissions = 0;
+
+            if (totalExpectedScores > 0) {
+                List<com.example.swp.features.score.Score> judgeScores = scoreRepository.findByRoundIdAndJudgeId(roundId, judge.getId());
+                java.util.Set<String> finalizedKeys = judgeScores.stream()
+                        .filter(com.example.swp.features.score.Score::isFinalized)
+                        .map(s -> s.getSubmission().getId() + "_" + s.getCriterion().getId())
+                        .collect(Collectors.toSet());
+
+                for (Submission sub : targetSubmissions) {
+                    boolean subFullyGraded = true;
+                    for (Criterion crit : criteria) {
+                        if (finalizedKeys.contains(sub.getId() + "_" + crit.getId())) {
+                            gradedScores++;
+                        } else {
+                            subFullyGraded = false;
+                        }
+                    }
+                    if (subFullyGraded && !criteria.isEmpty()) {
+                        fullyGradedSubmissions++;
+                    }
+                }
+            } else if (targetSubmissions.isEmpty() && criteria.isEmpty()) {
+                fullyGradedSubmissions = 0;
+            }
+
+            double progressPercentage = totalExpectedScores > 0 
+                    ? (double) gradedScores / totalExpectedScores * 100 
+                    : 100.0;
+            // Round to 2 decimal places
+            progressPercentage = Math.round(progressPercentage * 100.0) / 100.0;
+
+            progressList.add(GradingProgressDto.builder()
+                    .judgeId(judge.getId())
+                    .judgeName(judge.getFullName() != null && !judge.getFullName().trim().isEmpty() ? judge.getFullName() : judge.getUsername())
+                    .assignedSubmissions(targetSubmissions.size())
+                    .gradedSubmissions(fullyGradedSubmissions)
+                    .progressPercentage(progressPercentage)
+                    .build());
+        }
+
+        return progressList;
     }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
-import { Calendar, Clock, Info, Trophy, ChevronLeft, CalendarRange, Tag, Target } from 'lucide-react';
+import { Calendar, Clock, Info, Trophy, ChevronLeft, CalendarRange, Tag, Target, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import StatusBadge from '../components/StatusBadge';
 import Skeleton from '../components/Skeleton';
@@ -340,7 +340,7 @@ const EventDetailPage: React.FC = () => {
                                                                     <span>
                                                                         {p.currency === 'USD' ? '$' : ''}
                                                                         {p.cash.toLocaleString()}
-                                                                        {p.currency === 'USD' ? ' USD' : ' VNĐ'}
+                                                                        {p.currency === 'USD' ? ' USD' : ' VND'}
                                                                     </span>
                                                                 </div>
                                                             )}
@@ -421,6 +421,18 @@ const EventDetailPage: React.FC = () => {
                                                     !regStatus.canRegister ? (new Date() < new Date(event.registrationStart) ? 'Registration Not Started' : 'Registration Closed') :
                                                         'Register Now'}
                                         </button>
+                                    </div>
+                                )}
+
+                                {event && (
+                                    <div className="pt-2">
+                                        <Link
+                                            to={`/events/${event.id}/recruitment`}
+                                            className="w-full py-2.5 inline-flex justify-center items-center gap-2 text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 rounded-lg shadow-sm transition-all border border-slate-700"
+                                        >
+                                            <Users size={16} />
+                                            Recruitment Board
+                                        </Link>
                                     </div>
                                 )}
 

@@ -273,14 +273,14 @@ const TracksTab: React.FC = () => {
                                     <button
                                         onClick={() => openEditModal(track)}
                                         className="opacity-60 hover:opacity-100 transition-opacity p-1 cursor-pointer"
-                                        title="Chỉnh sửa bảng đấu"
+                                        title="Edit track"
                                     >
                                         <Edit2 size={15} />
                                     </button>
                                     <button
                                         onClick={() => handleDelete(track.id)}
                                         className="opacity-60 hover:opacity-100 transition-opacity p-1 cursor-pointer"
-                                        title="Xóa bảng đấu"
+                                        title="Delete track"
                                     >
                                         <Trash2 size={15} />
                                     </button>

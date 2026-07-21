@@ -130,7 +130,7 @@ const DashboardPage: React.FC = () => {
                             <p className="text-[10px] text-on-surface-variant mb-1 uppercase tracking-widest font-bold">Days Remaining</p>
                             <h3 className="text-4xl font-bold text-on-surface mb-2">{stats.daysRemaining}</h3>
                             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-brand-orange rounded-full" style={{ width: '60%' }}></div>
+                                <div className="h-full progress-wave rounded-full" style={{ width: '60%' }}></div>
                             </div>
                         </div>
                     </div>
@@ -146,7 +146,7 @@ const DashboardPage: React.FC = () => {
                         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-fixed to-transparent opacity-30 rounded-bl-full -z-0"></div>
                         <div className="flex-grow z-10">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 border border-green-200 text-green-700 mb-4">
-                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                <span className="w-2 h-2 rounded-full bg-green-500 radar-dot"></span>
                                 <span className="text-xs font-bold">Round 2 is Live</span>
                             </div>
                             <h3 className="text-xl font-bold text-on-surface mb-2">Prototype Submission Phase</h3>
@@ -158,6 +158,7 @@ const DashboardPage: React.FC = () => {
                                 size="sm" 
                                 className="pl-0 text-primary hover:bg-transparent hover:underline"
                                 rightIcon={<ArrowRight size={16} />}
+                                onClick={() => navigate(role === Role.PARTICIPANT ? '/events' : '/hackathon-events')}
                             >
                                 View Round Details
                             </Button>
@@ -232,7 +233,12 @@ const DashboardPage: React.FC = () => {
                         }
                     </div>
                     <div className="p-4 border-t border-slate-100 text-center bg-slate-50 flex justify-center">
-                        <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5 w-full">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-primary hover:bg-primary/5 w-full"
+                            onClick={() => navigate(role === Role.ADMIN || role === Role.ORGANIZER ? '/admin/audit-logs' : '/notifications')}
+                        >
                             View All Activity
                         </Button>
                     </div>
