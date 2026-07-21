@@ -73,6 +73,7 @@ public class ApiResponse<T> {
     public static ApiResponse<Void> error(String code, String message, Object details) {
         return ApiResponse.<Void>builder()
                 .success(false)
+                .message(message)
                 .error(new ApiError(code, message, details))
                 .build();
     }

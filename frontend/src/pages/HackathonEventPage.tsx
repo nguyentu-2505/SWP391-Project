@@ -84,7 +84,8 @@ const HackathonEventPage: React.FC = () => {
       toast.success('Event created successfully', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to create hackathon event:', error);
-      toast.error('Failed to create event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Failed to create event: ' + errorMessage, { id: loadingToast });
     }
   };
 
@@ -212,7 +213,8 @@ const HackathonEventPage: React.FC = () => {
       toast.success('Event deleted successfully', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to delete hackathon event:', error);
-      toast.error('Failed to delete event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Failed to delete event: ' + errorMessage, { id: loadingToast });
     }
   };
 
