@@ -1,80 +1,52 @@
-BÁO CÁO KẾT QUẢ SỬA LỖI HỆ THỐNG (BUG FIXING REPORT)
+BÁO CÁO KẾT QUẢ SỬA LỖI HỆ THỐNG (BUG FIXING REPORT - NGUYÊN)
 Dự án: Hệ thống SEAL Hackathon
 Trạng thái cập nhật: Đã sửa hoàn tất & Đã push lên GitHub (nhánh Nguyen_NK)
 Ngày báo cáo: 21/07/2026
 --------------------------------------------------------------------------------
 
 TỔNG QUAN:
-Báo cáo này chi tiết kết quả phân tích nguyên nhân và phương án sửa chữa 10 lỗi nghiệp vụ được báo cáo bởi các thành viên trong đội (Tuấn, Huy, Nguyên, Bảo, Tú). Toàn bộ mã nguồn sửa đổi đã được biên dịch thành công và đẩy trực tiếp lên kho chứa Git.
+Báo cáo này chi tiết kết quả phân tích nguyên nhân và phương án sửa chữa các lỗi nghiệp vụ thuộc phần Quản lý Sự kiện (Event Management) được phụ trách bởi Nguyên. Toàn bộ mã nguồn sửa đổi đã được biên dịch thành công và đẩy trực tiếp lên kho chứa Git.
 
 ================================================================================
-CHI TIẾT CÁC LỖI VÀ KẾT QUẢ SỬA CHỮA
+CHI TIẾT CÁC LỖI VÀ KẾT QUẢ SỬA CHỮA (NGUYÊN)
 ================================================================================
 
-1. Lỗi "Failed to fetch mentorship request" (Tuấn)
-- Hiện trạng: Thí sinh chưa có đội thi khi xem danh sách yêu cầu cố vấn bị crash giao diện.
-- Nguyên nhân: API 'GET /api/v1/mentorship-requests/my-requests' của Backend ném lỗi 404 ResourceNotFoundException("You are not in any team.") khi thí sinh chưa gia nhập đội thi nào.
-- Cách sửa: Chỉnh sửa MentorshipRequestServiceImpl.java để trả về danh sách rỗng List.of() thay vì ném lỗi 404.
-- Trạng thái: ĐÃ VÁ LỖI & ĐỒNG BỘ.
-
-2. Lỗi "Thiếu hiển thị User đăng ký mới trong danh sách duyệt của Admin" (Huy)
-- Hiện trạng: Tạo được tài khoản thành công nhưng Admin vào duyệt thì bảng Pending trống trơn.
-- Nguyên nhân: API '/users/pending' trả về một đối tượng Page của Spring Boot chứa thuộc tính 'content' là mảng danh sách người dùng. Frontend ở file AdminPendingApprovalsPage.tsx lại gán thẳng đối tượng Page này vào biến mảng users, gây sai kiểu dữ liệu và không render được.
-- Cách sửa: Sửa AdminPendingApprovalsPage.tsx để trích xuất chính xác mảng 'content' từ Page trả về.
-- Trạng thái: ĐÃ VÁ LỖI & ĐỒNG BỘ.
-
-3. Lỗi "Failed to create event: Request failed with status code 400" (Nguyên)
+1. Lỗi "Failed to create event: Request failed with status code 400"
 - Hiện trạng: Không tạo được cuộc thi mới khi để trống thời gian đăng ký.
 - Nguyên nhân: Khi tạo event, các trường ngày bắt đầu/kết thúc đăng ký trống được Frontend gửi đi dưới dạng chuỗi rỗng "". Jackson parser ở backend không thể convert chuỗi rỗng thành LocalDateTime nên báo lỗi 400 Bad Request.
 - Cách sửa: Cập nhật HackathonEventService.ts để tự động chuyển chuỗi rỗng "" thành null trước khi gọi API.
 - Trạng thái: ĐÃ VÁ LỖI & ĐỒNG BỘ.
 
-4. Lỗi "Cập nhật thất bại: java.lang.NullPointerException: Cannot invoke User.getId() because event.getOrganizer() is null" (Nguyên)
+2. Lỗi "Cập nhật thất bại: java.lang.NullPointerException: Cannot invoke User.getId() because event.getOrganizer() is null"
 - Hiện trạng: Cập nhật cuộc thi bị báo lỗi NPE hệ thống.
 - Nguyên nhân: Hàm kiểm tra quyền requireOrganizerOrAdmin() trong HackathonEventServiceImpl.java gọi trực tiếp event.getOrganizer().getId() mà không check null, gây crash khi gặp các event hệ thống/event clone có cột organizer là null.
 - Cách sửa: Thêm điều kiện null-safety trong HackathonEventServiceImpl.java:
   "boolean isOwner = event.getOrganizer() != null && event.getOrganizer().getId().equals(currentUser.getId());"
 - Trạng thái: ĐÃ VÁ LỖI & ĐỒNG BỘ.
 
-5. Lỗi "Bị lỗi không sửa được ngày đăng kí như dự định" (Nguyên)
+3. Lỗi "Bị lỗi không sửa được ngày đăng kí như dự định"
 - Hiện trạng: Sửa ngày đăng ký trong modal edit bị lỗi 400.
-- Nguyên nhân: Giống lỗi số 3, khi bấm lưu các ngày trống được gửi dưới dạng chuỗi rỗng "" khiến Jackson parser báo lỗi 400.
+- Nguyên nhân: Giống lỗi số 1, khi bấm lưu các ngày trống được gửi dưới dạng chuỗi rỗng "" khiến Jackson parser báo lỗi 400.
 - Cách sửa: Sửa đổi phần payload trong HackathonEventService.ts chuyển chuỗi rỗng sang null.
 - Trạng thái: ĐÃ VÁ LỖI & ĐỒNG BỘ.
 
-6. Lỗi "Không delete được event" (Nguyên)
+4. Lỗi "Không delete được event"
 - Hiện trạng: Không xóa được cuộc thi.
-- Nguyên nhân: Do lỗi NullPointerException ở mục số 4 chặn đứng luồng nghiệp vụ trước khi thực thi xóa.
-- Cách sửa: Tự động chạy bình thường sau khi sửa lỗi NPE ở mục số 4.
+- Nguyên nhân: Do lỗi NullPointerException ở mục số 2 chặn đứng luồng nghiệp vụ trước khi thực thi xóa.
+- Cách sửa: Tự động chạy bình thường sau khi sửa lỗi NPE ở mục số 2.
 - Trạng thái: ĐÃ VÁ LỖI & ĐỒNG BỘ.
 
-7. Lỗi "Không cập nhật được trạng thái complete" (Nguyên)
+5. Lỗi "Không cập nhật được trạng thái complete"
 - Hiện trạng: Không thể kết thúc cuộc thi cũ.
-- Nguyên nhân: Do lỗi NullPointerException ở mục số 4 chặn đứng luồng nghiệp vụ khi chuyển trạng thái sang COMPLETED.
-- Cách sửa: Tự động chạy bình thường sau khi sửa lỗi NPE ở mục số 4.
+- Nguyên nhân: Do lỗi NullPointerException ở mục số 2 chặn đứng luồng nghiệp vụ khi chuyển trạng thái sang COMPLETED.
+- Cách sửa: Tự động chạy bình thường sau khi sửa lỗi NPE ở mục số 2.
 - Trạng thái: ĐÃ VÁ LỖI & ĐỒNG BỘ.
 
-8. Lỗi "Không thế publish event khác vì có 1 cái đang được mở" (Nguyên)
+6. Lỗi "Không thế publish event khác vì có 1 cái đang được mở"
 - Hiện trạng: Bị hệ thống chặn không cho publish sự kiện mới.
-- Nguyên nhân: Hệ thống quy định chỉ cho phép tối đa 1 cuộc thi hoạt động cùng lúc. Do cuộc thi cũ bị lỗi không thể nhấn "Complete" để kết thúc (vì crash NPE ở mục 4), slot hoạt động bị chiếm dụng.
-- Cách sửa: Sau khi vá lỗi NPE ở mục 4, bạn chỉ cần nhấn "Complete" cho cuộc thi cũ là có thể Publish cuộc thi mới bình thường.
+- Nguyên nhân: Hệ thống quy định chỉ cho phép tối đa 1 cuộc thi hoạt động cùng lúc. Do cuộc thi cũ bị lỗi không thể nhấn "Complete" để kết thúc (vì crash NPE ở mục 2), slot hoạt động bị chiếm dụng.
+- Cách sửa: Sau khi vá lỗi NPE ở mục 2, bạn chỉ cần nhấn "Complete" cho cuộc thi cũ là có thể Publish cuộc thi mới bình thường.
 - Trạng thái: ĐÃ VÁ LỖI & ĐỒNG BỘ.
-
-9. Lỗi "Không chấm bài thi thí sinh được" (Bảo)
-- Hiện trạng: Giám khảo vào chấm bài thi không tải được tiêu chí hoặc báo lỗi.
-- Nguyên nhân:
-  1. File ScoringPage.tsx bị hardcode cứng API lấy tiêu chí là '/criteria/event/1' thay vì lấy theo Event ID thực tế của bài nộp.
-  2. File CreateScoreRequest.java ở backend đặt ràng buộc @Min(1) và @Max(10) cho điểm số. Nếu cuộc thi cấu hình điểm tối đa > 10 hoặc giám khảo chấm 0 điểm, API sẽ trả về lỗi 400 validation.
-- Cách sửa:
-  1. Cập nhật ScoringPage.tsx để lấy tiêu chí theo 'submissionData.eventId'.
-  2. Bỏ các annotation @Min/@Max cứng trong CreateScoreRequest.java (backend đã có kiểm tra động theo điểm tối đa trong database).
-- Trạng thái: ĐÃ VÁ LỖI & ĐỒNG BỘ.
-
-10. Lỗi "Chưa tạo được team" (Tú)
-- Hiện trạng: Thí sinh không thể tạo nhóm mới.
-- Nguyên nhân: Backend yêu cầu hồ sơ thí sinh phải hoàn thiện mới được tạo nhóm (isProfileComplete() kiểm tra fullName và phone khác null/rỗng). Thí sinh mới đăng ký chỉ nhập username/email nên bị chặn.
-- Cách sửa: Hướng dẫn thí sinh Tú truy cập trang Profile/Settings để cập nhật đầy đủ Họ tên và Số điện thoại trước khi tạo nhóm.
-- Trạng thái: ĐÃ CÓ GIẢI PHÁP HƯỚNG DẪN.
 
 ================================================================================
 CẢI TIẾN THÔNG BÁO LỖI HỆ THỐNG (ERROR MESSAGE PROPAGATION)
