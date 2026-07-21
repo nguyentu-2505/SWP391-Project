@@ -307,7 +307,7 @@ public class MentorshipRequestServiceImpl implements MentorshipRequestService {
             User participant = getCurrentUser();
             List<TeamMember> memberships = teamMemberRepository.findByUserId(participant.getId());
             if (memberships.isEmpty()) {
-                return List.of();
+                throw new ResourceNotFoundException("You are not in any team.");
             }
             return memberships.stream()
                 .map(m -> m.getTeam().getId())
