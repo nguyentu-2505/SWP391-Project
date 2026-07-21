@@ -92,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
                             .refreshToken(request.getRefreshToken())
                             .build();
                 })
-                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
+                .orElseThrow(() -> new BadRequestException("Refresh token is not in database!"));
     }
 
     @Override
