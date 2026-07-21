@@ -41,14 +41,18 @@ const JudgesTab: React.FC = () => {
         const fetchData = async () => {
             if (!eventId) return;
             try {
-                const [roundRes, judgeRes, trackRes, assignmentRes] = await Promise.all([
+                const [roundRes, judgeRes, guestJudgeRes, trackRes, assignmentRes] = await Promise.all([
                     api.get(`/rounds/hackathon/${eventId}`),
                     api.get(`/users/role/JUDGE`),
+                    api.get(`/users/role/GUEST_JUDGE`),
                     api.get(`/tracks/hackathon/${eventId}`),
                     api.get(`/judge-assignments/event/${eventId}`)
                 ]);
                 setRounds(roundRes.data.data);
-                setJudges(judgeRes.data.data);
+                
+                const allJudges = [...judgeRes.data.data, ...guestJudgeRes.data.data];
+                setJudges(allJudges);
+                
                 setTracks(trackRes.data.data);
                 setAssignments(assignmentRes.data.data);
             } catch (err) {

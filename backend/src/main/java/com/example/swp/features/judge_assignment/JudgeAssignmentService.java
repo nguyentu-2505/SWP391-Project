@@ -7,6 +7,7 @@ import com.example.swp.features.round.Round;
 import com.example.swp.features.round.RoundRepository;
 import com.example.swp.features.track.Track;
 import com.example.swp.features.track.TrackRepository;
+import com.example.swp.features.track.TrackMentorRepository;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.user.Role;
@@ -27,6 +28,7 @@ public class JudgeAssignmentService {
     private final UserRepository userRepository;
     private final RoundRepository roundRepository;
     private final TrackRepository trackRepository;
+    private final TrackMentorRepository trackMentorRepository;
     private final AuditLogService auditLogService;
 
     public JudgeAssignmentResponse assignJudge(AssignJudgeRequest request) {
@@ -52,13 +54,17 @@ public class JudgeAssignmentService {
                 throw new IllegalArgumentException("Track does not belong to the hackathon event of this round.");
             }
 
-            // Mentor conflict check removed per user request
+            if (trackMentorRepository.existsByTrackIdAndMentorId(track.getId(), judge.getId())) {
+                throw new IllegalStateException("User is already assigned as a mentor for this track, so they cannot be assigned to grade it.");
+            }
 
             if (assignmentRepository.existsByJudgeIdAndRoundIdAndTrackId(judge.getId(), round.getId(), track.getId())) {
                 throw new IllegalStateException("Judge is already assigned to this track in this round.");
             }
         } else {
-            // Event-wide mentor conflict check removed per user request
+            if (trackMentorRepository.existsByEventIdAndMentorId(round.getHackathonEvent().getId(), judge.getId())) {
+                throw new IllegalStateException("User is already assigned as a mentor for one or more tracks in this event, so they cannot be assigned as an event-wide judge.");
+            }
 
             if (assignmentRepository.existsByJudgeIdAndRoundIdAndTrackIdIsNull(judge.getId(), round.getId())) {
                 throw new IllegalStateException("Judge is already assigned to all tracks in this round.");

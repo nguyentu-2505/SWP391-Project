@@ -41,6 +41,7 @@ import OrganizerEventsPage from './pages/organizer/OrganizerEventsPage';
 import EventDashboardPage from './pages/organizer/EventDashboardPage';
 import SubmissionsTab from './pages/organizer/tabs/SubmissionsTab';
 import JudgesTab from './pages/organizer/tabs/JudgesTab';
+import MentorsTab from './pages/organizer/tabs/MentorsTab';
 import RankingTab from './pages/organizer/tabs/RankingTab';
 import TeamsTab from './pages/organizer/tabs/TeamsTab';
 import RoundsTab from './pages/organizer/tabs/RoundsTab';
@@ -109,7 +110,7 @@ function App() {
               </Route>
 
               {/* Judge Routes */}
-              <Route element={<PrivateRoute allowedRoles={[Role.JUDGE]} />}>
+              <Route element={<PrivateRoute allowedRoles={[Role.JUDGE, Role.GUEST_JUDGE]} />}>
                 <Route path="/judge/dashboard" element={<JudgeDashboardPage />} />
                 <Route path="/judge/assignments/:assignmentId/submissions" element={<AssignmentSubmissionsPage />} />
                 <Route path="/judge/score/:submissionId" element={<ScoringPage />} />
@@ -127,6 +128,7 @@ function App() {
                 <Route path="/organizer/events/:eventId/dashboard" element={<EventDashboardPage />}>
                   <Route path="submissions" element={<SubmissionsTab />} />
                   <Route path="judges" element={<JudgesTab />} />
+                  <Route path="mentors" element={<MentorsTab />} />
                   <Route path="ranking" element={<RankingTab />} />
                   <Route path="teams" element={<TeamsTab />} />
                   <Route path="rounds" element={<RoundsTab />} />

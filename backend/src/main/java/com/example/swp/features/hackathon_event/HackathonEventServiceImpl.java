@@ -335,14 +335,29 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 throw new IllegalStateException("Cannot start event: At least " + requiredTeams + " teams are required to start the hackathon (currently " + teamCount + ").");
             }
 
-            // Check if each track has at least 2 active teams
+            List<com.example.swp.features.round.Round> rounds = roundRepository.findByHackathonEventId(event.getId());
+            int minTrackTeamSize = 2; // Default minimum
+            if (rounds != null && !rounds.isEmpty()) {
+                com.example.swp.features.round.Round firstRound = rounds.stream()
+                        .filter(r -> r.getRoundOrder() == 1)
+                        .findFirst()
+                        .orElse(null);
+                if (firstRound != null && firstRound.getAdvancementSlots() != null) {
+                    minTrackTeamSize = Math.max(2, firstRound.getAdvancementSlots());
+                }
+            }
+
+            // Check if each track has enough active teams
             List<com.example.swp.features.track.Track> tracks = trackRepository.findByHackathonEventId(event.getId());
             for (com.example.swp.features.track.Track track : tracks) {
                 long trackTeamCount = teamRepository.findByTrackId(track.getId()).stream()
                         .filter(t -> t.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED)
                         .count();
-                if (trackTeamCount < 2) {
-                    throw new IllegalStateException("Cannot start event: Track '" + track.getName() + "' must have at least 2 active teams (currently " + trackTeamCount + ").");
+                if (trackTeamCount == 1) {
+                    throw new IllegalStateException("Cannot start event: Track '" + track.getName() + "' has exactly 1 active team. A track must either be empty (0 teams) or have enough teams to compete.");
+                }
+                if (trackTeamCount > 1 && trackTeamCount < minTrackTeamSize) {
+                    throw new IllegalStateException("Cannot start event: Track '" + track.getName() + "' has " + trackTeamCount + " active teams, but requires at least " + minTrackTeamSize + " (based on 1st round advancement slots).");
                 }
             }
 
@@ -354,7 +369,6 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             event.setStartTime(now);
 
             // Adjust first round start time to now so submissions can begin immediately
-            List<com.example.swp.features.round.Round> rounds = roundRepository.findByHackathonEventId(event.getId());
             if (rounds != null) {
                 for (com.example.swp.features.round.Round round : rounds) {
                     if (round.getRoundOrder() == 1) {

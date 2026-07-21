@@ -424,20 +424,20 @@ const EventDetailPage: React.FC = () => {
                                     </div>
                                 )}
 
-                                {rounds.length > 0 && rounds.some(r => r.gradingEnded) && (
+                                {rounds.length > 0 && rounds.some(r => new Date() > new Date(r.endTime)) && (
                                     <div className="pt-4 border-t border-slate-100 mt-4">
                                         <h4 className="text-sm font-bold uppercase tracking-wider text-on-surface flex items-center gap-2 mb-3">
                                             <Trophy size={16} className="text-primary-container" />
                                             Leaderboards
                                         </h4>
-                                        <p className="text-xs text-on-surface-variant">View the rankings for the completed rounds in the main section.</p>
+                                        <p className="text-xs text-on-surface-variant">View the real-time rankings for rounds that have passed their submission deadline in the main section.</p>
                                     </div>
                                 )}
                             </div>
                         </div>
                     </div>
                     
-                    {rounds.length > 0 && rounds.some(r => r.gradingEnded) && (
+                    {rounds.length > 0 && rounds.some(r => new Date() > new Date(r.endTime)) && (
                         <LeaderboardSection rounds={rounds} tracks={tracks} prizes={prizes} />
                     )}
                 </div>

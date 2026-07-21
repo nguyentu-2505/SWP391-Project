@@ -10,6 +10,7 @@ import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.user.Role;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
+import com.example.swp.features.judge_assignment.JudgeAssignmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,6 +30,7 @@ public class TrackServiceImpl implements TrackService {
     private final TrackMentorRepository trackMentorRepository;  // NEW
     private final UserRepository userRepository;                 // NEW
     private final AuditLogService auditLogService;               // NEW
+    private final JudgeAssignmentRepository judgeAssignmentRepository;
 
     // ── Existing methods – UNCHANGED ──────────────────────────────────────────
 
@@ -92,10 +94,10 @@ public class TrackServiceImpl implements TrackService {
             throw new AccessDeniedException("Guest judges cannot be assigned as track mentors.");
         }
 
-        // Validation: only MENTOR role can mentor tracks
-        if (mentor.getRole() != Role.MENTOR) {
+        // Validation: only MENTOR or JUDGE roles can mentor tracks
+        if (mentor.getRole() != Role.MENTOR && mentor.getRole() != Role.JUDGE) {
             throw new IllegalArgumentException(
-                "Only users with MENTOR role can be assigned as track mentors. " +
+                "Only users with MENTOR or JUDGE role can be assigned as track mentors. " +
                 "User '" + mentor.getUsername() + "' has role: " + mentor.getRole()
             );
         }
@@ -105,6 +107,14 @@ public class TrackServiceImpl implements TrackService {
             throw new IllegalStateException(
                 "User '" + mentor.getUsername() + "' is already assigned as mentor for this track."
             );
+        }
+
+        // Conflict check: mentor cannot be a judge for this track or event-wide
+        if (judgeAssignmentRepository.existsByJudgeIdAndTrackId(mentor.getId(), trackId)) {
+            throw new IllegalStateException("User is already assigned to grade submissions for this track.");
+        }
+        if (judgeAssignmentRepository.existsByJudgeIdAndRoundHackathonEventIdAndTrackIdIsNull(mentor.getId(), track.getHackathonEvent().getId())) {
+            throw new IllegalStateException("User is already assigned as an event-wide judge, so they cannot mentor a specific track.");
         }
 
         User assigner = getCurrentUser();

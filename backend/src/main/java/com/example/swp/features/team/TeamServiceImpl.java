@@ -380,6 +380,7 @@ public class TeamServiceImpl implements TeamService {
                         .build()
                 ).collect(Collectors.toList()) : null)
                 .finalScore(team.getFinalScore())
+                .disqualificationReason(team.getDisqualificationReason())
                 .currentRoundId(currentRound != null ? currentRound.getId() : null)
                 .currentRoundName(currentRound != null ? currentRound.getName() : null)
                 .currentRoundOrder(currentRound != null ? currentRound.getRoundOrder() : null)

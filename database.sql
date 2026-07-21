@@ -391,7 +391,11 @@ VALUES
     -- id=16: Participant 9
     ('student9',  '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student9@fpt.edu.vn',  'PARTICIPANT', 'SE170009', 'FPT University', 1, 1, N'Ngô Văn I',   '0901000016', N'Java, Spring', N'Sinh viên năm 4', NULL),
     -- id=17: Participant 10
-    ('student10', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student10@fpt.edu.vn', 'PARTICIPANT', 'SE170010', 'FPT University', 1, 1, N'Bùi Thị K',   '0901000017', N'AWS, Docker', N'Sinh viên năm 3', NULL);
+    ('student10', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student10@fpt.edu.vn', 'PARTICIPANT', 'SE170010', 'FPT University', 1, 1, N'Bùi Thị K',   '0901000017', N'AWS, Docker', N'Sinh viên năm 3', NULL),
+    -- id=18: Guest Judge 1
+    ('guestjudge1', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'guestjudge1@external.com', 'GUEST_JUDGE', NULL,        'External Tech Corp', 1, 1, N'Võ Hoài Guest',      '0901000018', N'Blockchain, AI',       N'Giám khảo khách mời từ doanh nghiệp', NULL),
+    -- id=19: Guest Judge 2
+    ('guestjudge2', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'guestjudge2@external.com', 'GUEST_JUDGE', NULL,        'FPT Software',       1, 1, N'Đặng Lê Guest',      '0901000019', N'Cloud Architecture',   N'Chuyên gia khách mời từ FPT Software', NULL);
 
 
 -- -----------------------------------------------
@@ -497,18 +501,21 @@ INSERT INTO team_member (team_id, user_id, is_leader) VALUES
 
 
 -- -----------------------------------------------
--- 5.11 submission (mỗi team nộp bài cho vòng 1)
+-- 5.11 submission
 -- -----------------------------------------------
 INSERT INTO submission (team_id, round_id, repository_url, demo_url, report_url, version) VALUES
+                                                                                              --Round 1
                                                                                               (1, 1, 'https://github.com/team-alpha/smartstudy-ai',    'https://smartstudy.demo.fpt.edu.vn',    'https://docs.google.com/team-alpha-report',    1),  -- submission id=1
                                                                                               (2, 1, 'https://github.com/team-beta/campusconnect',     'https://campusconnect.demo.fpt.edu.vn', 'https://docs.google.com/team-beta-report',     1),  -- submission id=2
-                                                                                              -- Team Gamma (HealthBot)
                                                                                               (3, 1, 'https://github.com/team-gamma/healthbot',       'https://healthbot.demo.fpt.edu.vn',       'https://docs.google.com/team-gamma-report',       1), -- submission id=3
                                                                                               (4, 1, 'https://github.com/team-delta/smartfarm-iot',   'https://smartfarm.demo.fpt.edu.vn',       'https://docs.google.com/team-delta-report',       1), -- submission id=4
-                                                                                              (5, 1, 'https://github.com/team-epsilon/eduplatform',   'https://eduplatform.demo.fpt.edu.vn',     'https://docs.google.com/team-epsilon-report',     1); -- submission id=5
-
-
-
+                                                                                              (5, 1, 'https://github.com/team-epsilon/eduplatform',   'https://eduplatform.demo.fpt.edu.vn',     'https://docs.google.com/team-epsilon-report',     1), -- submission id=5
+                                                                                              --Round 2
+                                                                                              (1, 2, 'https://github.com/team-alpha/smartstudy-ai',    'https://smartstudy.demo.fpt.edu.vn',    'https://docs.google.com/team-alpha-report-r2',    2),  -- submission id=6
+                                                                                              (2, 2, 'https://github.com/team-beta/campusconnect',     'https://campusconnect.demo.fpt.edu.vn', 'https://docs.google.com/team-beta-report-r2',     2),  -- submission id=7
+                                                                                              (3, 2, 'https://github.com/team-gamma/healthbot',        'https://healthbot.demo.fpt.edu.vn',     'https://docs.google.com/team-gamma-report-r2',    2),  -- submission id=8
+                                                                                              (4, 2, 'https://github.com/team-delta/smartfarm-iot',    'https://smartfarm.demo.fpt.edu.vn',     'https://docs.google.com/team-delta-report-r2',    2),  -- submission id=9
+                                                                                              (5, 2, 'https://github.com/team-epsilon/eduplatform',    'https://eduplatform.demo.fpt.edu.vn',   'https://docs.google.com/team-epsilon-report-r2',  2);  -- submission id=10
 -- -----------------------------------------------
 -- 5.16 notification (sample notifications)
 -- -----------------------------------------------

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Users, Crown, X, Plus, Mail, Info, CheckCircle, Lock, Send, Trash2, LogOut, ArrowUpCircle, Edit2, Clock } from 'lucide-react';
+import { Users, Crown, X, Plus, Mail, Info, CheckCircle, Lock, Send, Trash2, LogOut, ArrowUpCircle, Edit2, Clock, AlertCircle } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Skeleton from '../../components/Skeleton';
@@ -20,6 +20,7 @@ interface TeamDetails {
     trackName: string;
     status: string;
     members: TeamMemberInfo[];
+    disqualificationReason?: string;
 }
 
 interface Invitation {
@@ -353,6 +354,16 @@ const MyTeamPage: React.FC = () => {
                                     {team.status || 'ACTIVE'}
                                 </span>
                             </div>
+
+                            {isDisqualified && team.disqualificationReason && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                                    <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={20} />
+                                    <div>
+                                        <h4 className="text-sm font-bold text-red-900">Team Disqualified</h4>
+                                        <p className="text-sm text-red-700 mt-1 whitespace-pre-line">{team.disqualificationReason}</p>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
