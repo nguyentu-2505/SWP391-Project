@@ -1,0 +1,2557 @@
+{
+  "info": {
+    "name": "SEAL Hackathon Discovered API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /api/v1/audit-logs",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/audit-logs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "audit-logs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/audit-logs/user/{userId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/audit-logs/user/{userId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "audit-logs",
+            "user",
+            "{userId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/audit-logs/event/{eventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/audit-logs/event/{eventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "audit-logs",
+            "event",
+            "{eventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/audit-logs",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/audit-logs",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "audit-logs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/login",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/refresh",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/refresh",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "refresh"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/register",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/register",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "register"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/verify-otp",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/verify-otp",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "verify-otp"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/create-guest-judge",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/create-guest-judge",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "create-guest-judge"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/forgot-password",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/forgot-password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "forgot-password"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/reset-password",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/auth/reset-password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "reset-password"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/CategoryCustomers",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/CategoryCustomers",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "CategoryCustomers"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/CategoryCustomers/{id}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/CategoryCustomers/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "CategoryCustomers",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/CategoryCustomers",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/CategoryCustomers",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "CategoryCustomers"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/CategoryCustomers/{id}",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/CategoryCustomers/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "CategoryCustomers",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/CategoryCustomers/{id}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/CategoryCustomers/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "CategoryCustomers",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/criteria",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/criteria",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "criteria"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/criteria/event/{hackathonEventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/criteria/event/{hackathonEventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "criteria",
+            "event",
+            "{hackathonEventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/criteria/default",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/criteria/default",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "criteria",
+            "default"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/criteria/{id}",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/criteria/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "criteria",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/criteria/{id}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/criteria/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "criteria",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/criteria/copy",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/criteria/copy",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "criteria",
+            "copy"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/dashboard/stats",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/dashboard/stats",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "dashboard",
+            "stats"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/event-registrations",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/event-registrations",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "event-registrations"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/event-registrations/event/{eventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/event-registrations/event/{eventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "event-registrations",
+            "event",
+            "{eventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/event-registrations/my-registration/event/{eventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/event-registrations/my-registration/event/{eventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "event-registrations",
+            "my-registration",
+            "event",
+            "{eventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/export/rounds/{roundId}/ranking",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/export/rounds/{roundId}/ranking",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "export",
+            "rounds",
+            "{roundId}",
+            "ranking"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/export/rounds/{roundId}/scoring",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/export/rounds/{roundId}/scoring",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "export",
+            "rounds",
+            "{roundId}",
+            "scoring"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/export/teams/csv",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/export/teams/csv",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "export",
+            "teams",
+            "csv"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/export/participants/csv",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/export/participants/csv",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "export",
+            "participants",
+            "csv"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/files/upload",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/files/upload",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "files",
+            "upload"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/files/download/{fileName:.+}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/files/download/{fileName:.+}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "files",
+            "download",
+            "{fileName:.+}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/hackathon-events",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/hackathon-events",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/hackathon-events/admin/all",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events/admin/all",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events",
+            "admin",
+            "all"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/hackathon-events/my-events",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events/my-events",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events",
+            "my-events"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/hackathon-events/{slug}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events/{slug}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events",
+            "{slug}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/hackathon-events/id/{id}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events/id/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events",
+            "id",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/hackathon-events/{id}",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/hackathon-events/{id}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/hackathon-events/{id}/status",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events/{id}/status",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events",
+            "{id}",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/hackathon-events/{id}/clone",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events/{id}/clone",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events",
+            "{id}",
+            "clone"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/hackathon-events/{id}/analytics",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/hackathon-events/{id}/analytics",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "hackathon-events",
+            "{id}",
+            "analytics"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/judge-assignments",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/judge-assignments",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "judge-assignments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/judge-assignments/my-assignments",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/judge-assignments/my-assignments",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "judge-assignments",
+            "my-assignments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/judge-assignments/judge/{judgeId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/judge-assignments/judge/{judgeId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "judge-assignments",
+            "judge",
+            "{judgeId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/judge-assignments/round/{roundId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/judge-assignments/round/{roundId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "judge-assignments",
+            "round",
+            "{roundId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/judge-assignments/event/{eventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/judge-assignments/event/{eventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "judge-assignments",
+            "event",
+            "{eventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/judge-assignments/{assignmentId}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/judge-assignments/{assignmentId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "judge-assignments",
+            "{assignmentId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/mentorship-requests",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/mentorship-requests",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "mentorship-requests"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/mentorship-requests/open",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/mentorship-requests/open",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "mentorship-requests",
+            "open"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/mentorship-requests/my-requests",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/mentorship-requests/my-requests",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "mentorship-requests",
+            "my-requests"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/mentorship-requests/{id}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/mentorship-requests/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "mentorship-requests",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/mentorship-requests/{id}/accept",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{base_url}}/api/v1/mentorship-requests/{id}/accept",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "mentorship-requests",
+            "{id}",
+            "accept"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/mentorship-requests/{id}/resolve",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{base_url}}/api/v1/mentorship-requests/{id}/resolve",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "mentorship-requests",
+            "{id}",
+            "resolve"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/mentorship-requests/{id}/release",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{base_url}}/api/v1/mentorship-requests/{id}/release",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "mentorship-requests",
+            "{id}",
+            "release"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/mentorship-requests/{id}/reject",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{base_url}}/api/v1/mentorship-requests/{id}/reject",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "mentorship-requests",
+            "{id}",
+            "reject"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/mentorship-requests/{id}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/mentorship-requests/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "mentorship-requests",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/notifications",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/notifications",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notifications"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/notifications",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/notifications",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notifications"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/notifications/unread-count",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/notifications/unread-count",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notifications",
+            "unread-count"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/notifications/{id}/read",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{base_url}}/api/v1/notifications/{id}/read",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notifications",
+            "{id}",
+            "read"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/notifications/read-all",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/notifications/read-all",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notifications",
+            "read-all"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/prizes",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/prizes",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "prizes"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/prizes/{prizeId}/assign",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{base_url}}/api/v1/prizes/{prizeId}/assign",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "prizes",
+            "{prizeId}",
+            "assign"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/prizes/event/{hackathonEventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/prizes/event/{hackathonEventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "prizes",
+            "event",
+            "{hackathonEventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/prizes/event/{hackathonEventId}/auto-assign",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/prizes/event/{hackathonEventId}/auto-assign",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "prizes",
+            "event",
+            "{hackathonEventId}",
+            "auto-assign"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/prizes/{prizeId}",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/prizes/{prizeId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "prizes",
+            "{prizeId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/prizes/{prizeId}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/prizes/{prizeId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "prizes",
+            "{prizeId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/prizes/event/{hackathonEventId}/track/{trackId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/prizes/event/{hackathonEventId}/track/{trackId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "prizes",
+            "event",
+            "{hackathonEventId}",
+            "track",
+            "{trackId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/profile/me",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/profile/me",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "profile",
+            "me"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/profile/me",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/profile/me",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "profile",
+            "me"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/rankings/round/{roundId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/rankings/round/{roundId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rankings",
+            "round",
+            "{roundId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/recruitment",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/recruitment",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "recruitment"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/recruitment/event/{eventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/recruitment/event/{eventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "recruitment",
+            "event",
+            "{eventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/recruitment/{id}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/recruitment/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "recruitment",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/rounds/{id}/advance",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/rounds/{id}/advance",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rounds",
+            "{id}",
+            "advance"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/rounds",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/rounds",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rounds"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/rounds/hackathon/{hackathonEventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/rounds/hackathon/{hackathonEventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rounds",
+            "hackathon",
+            "{hackathonEventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/rounds/{id}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/rounds/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rounds",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/rounds/{id}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/rounds/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rounds",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/rounds/{id}",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/rounds/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rounds",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/rounds/{id}/end-grading",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/rounds/{id}/end-grading",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rounds",
+            "{id}",
+            "end-grading"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/rounds/{id}/grading-progress",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/rounds/{id}/grading-progress",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "rounds",
+            "{id}",
+            "grading-progress"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/scores",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/scores",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "scores"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/scores/submission/{submissionId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/scores/submission/{submissionId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "scores",
+            "submission",
+            "{submissionId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/scores/submission/{submissionId}/judge/{judgeId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/scores/submission/{submissionId}/judge/{judgeId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "scores",
+            "submission",
+            "{submissionId}",
+            "judge",
+            "{judgeId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/scores/my-scores/round/{roundId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/scores/my-scores/round/{roundId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "scores",
+            "my-scores",
+            "round",
+            "{roundId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/scores/my-scores/submission/{submissionId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/scores/my-scores/submission/{submissionId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "scores",
+            "my-scores",
+            "submission",
+            "{submissionId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/scores",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/scores",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "scores"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/scores/finalize/round/{roundId}",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/scores/finalize/round/{roundId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "scores",
+            "finalize",
+            "round",
+            "{roundId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/scores/{id}",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/scores/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "scores",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/submissions",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/submissions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "submissions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/submissions/{id}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/submissions/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "submissions",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/submissions/team/{teamId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/submissions/team/{teamId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "submissions",
+            "team",
+            "{teamId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/submissions/round/{roundId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/submissions/round/{roundId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "submissions",
+            "round",
+            "{roundId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/submissions/event/{eventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/submissions/event/{eventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "submissions",
+            "event",
+            "{eventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/support-tickets",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/support-tickets",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "support-tickets"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/support-tickets",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/support-tickets",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "support-tickets"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/support-tickets/{id}/resolve",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{base_url}}/api/v1/support-tickets/{id}/resolve",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "support-tickets",
+            "{id}",
+            "resolve"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/support-tickets/{id}/reply",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{base_url}}/api/v1/support-tickets/{id}/reply",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "support-tickets",
+            "{id}",
+            "reply"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teams",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/teams",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "teams"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teams/{id}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/teams/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "teams",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teams/event/{eventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/teams/event/{eventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "teams",
+            "event",
+            "{eventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teams",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/teams",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "teams"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teams/track/{trackId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/teams/track/{trackId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "teams",
+            "track",
+            "{trackId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teams/my-team/event/{eventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/teams/my-team/event/{eventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "teams",
+            "my-team",
+            "event",
+            "{eventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teams/{id}/disqualify",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/teams/{id}/disqualify",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "teams",
+            "{id}",
+            "disqualify"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/teams/{id}",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/teams/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "teams",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teams/{id}/finalize",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/teams/{id}/finalize",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "teams",
+            "{id}",
+            "finalize"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/teams/{id}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/teams/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "teams",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/team-invitations",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-invitations",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-invitations"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/team-invitations/pending",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-invitations/pending",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-invitations",
+            "pending"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/team-invitations/{invitationId}/respond",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-invitations/{invitationId}/respond",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-invitations",
+            "{invitationId}",
+            "respond"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/team-invitations/{invitationId}/revoke",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-invitations/{invitationId}/revoke",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-invitations",
+            "{invitationId}",
+            "revoke"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/team-invitations/team/{teamId}/sent",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-invitations/team/{teamId}/sent",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-invitations",
+            "team",
+            "{teamId}",
+            "sent"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/team-members",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-members",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-members"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/team-members/team/{teamId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-members/team/{teamId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-members",
+            "team",
+            "{teamId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/team-members/{teamMemberId}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-members/{teamMemberId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-members",
+            "{teamMemberId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/team-members/{userId}/kick/{teamId}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-members/{userId}/kick/{teamId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-members",
+            "{userId}",
+            "kick",
+            "{teamId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/team-members/leave/{teamId}",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-members/leave/{teamId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-members",
+            "leave",
+            "{teamId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/team-members/transfer-leadership",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/team-members/transfer-leadership",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "team-members",
+            "transfer-leadership"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/tracks",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/tracks",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tracks"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/tracks/hackathon/{hackathonEventId}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/tracks/hackathon/{hackathonEventId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tracks",
+            "hackathon",
+            "{hackathonEventId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/tracks/{trackId}/mentors/{mentorUserId}",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/tracks/{trackId}/mentors/{mentorUserId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tracks",
+            "{trackId}",
+            "mentors",
+            "{mentorUserId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/tracks/{trackId}/mentors/{mentorUserId}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/tracks/{trackId}/mentors/{mentorUserId}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tracks",
+            "{trackId}",
+            "mentors",
+            "{mentorUserId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/tracks/{trackId}/mentors",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/tracks/{trackId}/mentors",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tracks",
+            "{trackId}",
+            "mentors"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/tracks/{id}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/tracks/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tracks",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/tracks/{id}",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/tracks/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tracks",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/profile",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "profile"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/profile",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "profile"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/profile/change-password",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/profile/change-password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "profile",
+            "change-password"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/profile/avatar",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "{{base_url}}/api/v1/profile/avatar",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "profile",
+            "avatar"
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/users/{id}/approve",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/{id}/approve",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{id}",
+            "approve"
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/users/{id}",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/{id}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{id}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/users",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/api/v1/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/users",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/users/pending",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/pending",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "pending"
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/users/role/{role}",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/users/role/{role}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "role",
+            "{role}"
+          ]
+        }
+      }
+    }
+  ]
+}
