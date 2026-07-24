@@ -167,7 +167,6 @@ html {
   border: 1px solid rgba(226, 232, 240, 1);
 }
 
-/* Custom transitions and interactive states */
 .transition-soft {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -192,11 +191,11 @@ html {
   box-shadow: 0 12px 30px -10px rgba(15, 23, 42, 0.15);
 }
 
-/* Slide Up Fade In Page Transition & Cyber Swipe */
+/* Slide Up Fade In Page Transition */
 @keyframes fade-slide-up {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -204,43 +203,9 @@ html {
   }
 }
 
-@keyframes tech-swipe {
-  0% {
-    top: 0;
-    opacity: 0;
-    transform: scaleX(0);
-  }
-  20% {
-    opacity: 1;
-    transform: scaleX(1);
-  }
-  80% {
-    opacity: 0.8;
-  }
-  100% {
-    top: 100%;
-    opacity: 0;
-    transform: scaleX(0.5);
-  }
-}
-
+/* Note: NO position: relative here so fixed modal overlays like fixed inset-0 remain position: fixed */
 .animate-fade-in {
-  position: relative;
-  animation: fade-slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-fade-in::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, #f97316, #494bd6, #f97316, transparent);
-  z-index: 1000;
-  animation: tech-swipe 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-  pointer-events: none;
-  filter: drop-shadow(0 0 10px #f97316) drop-shadow(0 0 4px #494bd6);
+  animation: fade-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Skeleton Loading Animation Shimmer & Pulse */
@@ -286,7 +251,7 @@ html {
   content: '';
 }
 
-/* Global Button and Link Hover Interactions */
+/* Button micro-interactions */
 button:not(:disabled),
 .btn:not(:disabled),
 a.hover-interactive {
@@ -296,55 +261,13 @@ a.hover-interactive {
 button:not(:disabled):hover,
 .btn:not(:disabled):hover,
 a.hover-interactive:hover {
-  transform: translateY(-1.5px) scale(1.015);
-  box-shadow: 0 8px 20px -4px rgba(249, 115, 22, 0.25);
+  transform: translateY(-1px) scale(1.01);
 }
 
 button:not(:disabled):active,
 .btn:not(:disabled):active,
 a.hover-interactive:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: none;
-}
-
-/* Global Card & Container Dynamic Lift */
-.card, 
-[class*="rounded-xl"][class*="border"], 
-[class*="rounded-lg"][class*="border"], 
-[class*="bg-slate-900/40"],
-[class*="bg-white"][class*="shadow"] {
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.card:hover, 
-[class*="rounded-xl"][class*="border"]:not(form):hover, 
-[class*="rounded-lg"][class*="border"]:not(form):hover, 
-[class*="bg-slate-900/40"]:hover,
-[class*="bg-white"][class*="shadow"]:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 32px -10px rgba(15, 23, 42, 0.18);
-  border-color: rgba(249, 115, 22, 0.3) !important;
-}
-
-/* Global Form Inputs Glow & Focus Micro-interactions */
-input[type="text"], 
-input[type="email"], 
-input[type="password"], 
-input[type="number"], 
-textarea, 
-select {
-  transition: all 0.2s ease-in-out;
-}
-
-input[type="text"]:focus, 
-input[type="email"]:focus, 
-input[type="password"]:focus, 
-input[type="number"]:focus, 
-textarea:focus, 
-select:focus {
-  transform: translateY(-1px);
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
-  border-color: #f97316 !important;
 }
 
 /* Springy scale-in animation for all Modals */

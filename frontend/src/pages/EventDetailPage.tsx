@@ -424,17 +424,7 @@ const EventDetailPage: React.FC = () => {
                                     </div>
                                 )}
 
-                                {event && (
-                                    <div className="pt-2">
-                                        <Link
-                                            to={`/events/${event.id}/recruitment`}
-                                            className="w-full py-2.5 inline-flex justify-center items-center gap-2 text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 rounded-lg shadow-sm transition-all border border-slate-700"
-                                        >
-                                            <Users size={16} />
-                                            Recruitment Board
-                                        </Link>
-                                    </div>
-                                )}
+
 
                                 {rounds.length > 0 && rounds.some(r => r.gradingEnded) && (
                                     <div className="pt-4 border-t border-slate-100 mt-4">
