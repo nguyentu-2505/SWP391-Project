@@ -12,6 +12,7 @@ const EventDashboardPage: React.FC = () => {
         { to: `/organizer/events/${eventId}/dashboard/criteria`, icon: <Target size={16} />, label: 'Criteria' },
         { to: `/organizer/events/${eventId}/dashboard/tracks`, icon: <Tag size={16} />, label: 'Tracks' },
         { to: `/organizer/events/${eventId}/dashboard/judges`, icon: <LayoutDashboard size={16} />, label: 'Judges' },
+        { to: `/organizer/events/${eventId}/dashboard/mentors`, icon: <Users size={16} />, label: 'Mentors' },
         { to: `/organizer/events/${eventId}/dashboard/ranking`, icon: <ListOrdered size={16} />, label: 'Ranking' },
         { to: `/organizer/events/${eventId}/dashboard/prizes`, icon: <Award size={16} />, label: 'Prizes' },
         { to: `/organizer/events/${eventId}/dashboard/analytics`, icon: <BarChart2 size={16} />, label: 'Analytics' },

@@ -15,13 +15,13 @@ const LeaderboardSection: React.FC<LeaderboardSectionProps> = ({ rounds, tracks,
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const completedRounds = rounds.filter(r => r.gradingEnded);
+    const pastRounds = rounds.filter(r => new Date() > new Date(r.endTime));
 
     useEffect(() => {
-        if (completedRounds.length > 0 && !selectedRoundId) {
-            setSelectedRoundId(completedRounds[completedRounds.length - 1].id);
+        if (pastRounds.length > 0 && !selectedRoundId) {
+            setSelectedRoundId(pastRounds[pastRounds.length - 1].id);
         }
-    }, [completedRounds, selectedRoundId]);
+    }, [pastRounds, selectedRoundId]);
 
     useEffect(() => {
         const fetchRankings = async () => {
@@ -40,11 +40,11 @@ const LeaderboardSection: React.FC<LeaderboardSectionProps> = ({ rounds, tracks,
         fetchRankings();
     }, [selectedRoundId]);
 
-    if (completedRounds.length === 0) {
+    if (pastRounds.length === 0) {
         return (
             <div className="p-6 bg-slate-50 border border-slate-100 rounded-xl text-center">
                 <Trophy className="mx-auto h-12 w-12 text-slate-300 mb-3" />
-                <p className="text-slate-600 font-medium">No leaderboards available yet. Grading is still in progress for the rounds.</p>
+                <p className="text-slate-600 font-medium">No leaderboards available yet. Waiting for rounds to finish their submission periods.</p>
             </div>
         );
     }
@@ -67,7 +67,7 @@ const LeaderboardSection: React.FC<LeaderboardSectionProps> = ({ rounds, tracks,
                         onChange={(e) => setSelectedRoundId(Number(e.target.value))}
                         className="px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-container/20"
                     >
-                        {completedRounds.map(r => (
+                        {pastRounds.map(r => (
                             <option key={r.id} value={r.id}>{r.name}</option>
                         ))}
                     </select>

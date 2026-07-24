@@ -107,7 +107,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                         )}
 
                         {/* JUDGE MENU */}
-                        {role === Role.JUDGE && (
+                        {(role === Role.JUDGE || role === Role.GUEST_JUDGE) && (
                             <>
                                 <SidebarItem to="/judge/dashboard" icon={<LayoutDashboard size={18} />} label="Scoring Dashboard" onClick={closeSidebar} />
                             </>

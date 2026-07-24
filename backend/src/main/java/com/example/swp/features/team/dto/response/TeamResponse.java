@@ -19,6 +19,7 @@ public class TeamResponse {
     private String status;
     private java.util.List<TeamMemberInfo> members;
     private java.math.BigDecimal finalScore;
+    private String disqualificationReason;
 
     private Long currentRoundId;
     private String currentRoundName;
@@ -62,6 +63,7 @@ public class TeamResponse {
         private String status;
         private java.util.List<TeamMemberInfo> members;
         private java.math.BigDecimal finalScore;
+        private String disqualificationReason;
         private Long currentRoundId;
         private String currentRoundName;
         private Integer currentRoundOrder;
@@ -76,6 +78,7 @@ public class TeamResponse {
         public TeamResponseBuilder status(String status) { this.status = status; return this; }
         public TeamResponseBuilder members(java.util.List<TeamMemberInfo> members) { this.members = members; return this; }
         public TeamResponseBuilder finalScore(java.math.BigDecimal finalScore) { this.finalScore = finalScore; return this; }
+        public TeamResponseBuilder disqualificationReason(String disqualificationReason) { this.disqualificationReason = disqualificationReason; return this; }
         public TeamResponseBuilder currentRoundId(Long currentRoundId) { this.currentRoundId = currentRoundId; return this; }
         public TeamResponseBuilder currentRoundName(String currentRoundName) { this.currentRoundName = currentRoundName; return this; }
         public TeamResponseBuilder currentRoundOrder(Integer currentRoundOrder) { this.currentRoundOrder = currentRoundOrder; return this; }
@@ -85,6 +88,7 @@ public class TeamResponse {
             r.projectDescription = this.projectDescription; r.trackId = this.trackId;
             r.eventId = this.eventId; r.trackName = this.trackName; r.status = this.status; 
             r.members = this.members; r.finalScore = this.finalScore;
+            r.disqualificationReason = this.disqualificationReason;
             r.currentRoundId = this.currentRoundId;
             r.currentRoundName = this.currentRoundName;
             r.currentRoundOrder = this.currentRoundOrder;

@@ -28,9 +28,7 @@ public class RankingService {
     private final ScoreRepository scoreRepository;
 
     public List<TeamRankingResponse> getRankingForRound(Long roundId) {
-        List<Submission> submissions = submissionRepository.findByRoundId(roundId).stream()
-                .filter(sub -> sub.getTeam().getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED)
-                .collect(Collectors.toList());
+        List<Submission> submissions = submissionRepository.findByRoundId(roundId);
                 
         if (submissions.isEmpty()) {
             return List.of();
