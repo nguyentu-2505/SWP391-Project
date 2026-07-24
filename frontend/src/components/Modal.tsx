@@ -71,7 +71,7 @@ const Modal: React.FC<ModalProps> = ({
                 </div>
 
                 {/* Body */}
-                <div className="px-6 py-6 overflow-y-auto">
+                <div className="px-6 py-6 overflow-y-auto no-scrollbar">
                     {children}
                 </div>
 
