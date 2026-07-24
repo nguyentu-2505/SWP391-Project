@@ -24,7 +24,7 @@ const HackathonEventPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 2, maxTeamSize: 5, organizerId: undefined });
+  const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 3, maxTeamSize: 5, organizerId: undefined });
   const [selectedEvent, setSelectedEvent] = useState<HackathonEvent | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -80,7 +80,7 @@ const HackathonEventPage: React.FC = () => {
       await HackathonEventService.createHackathonEvent(newEvent);
       fetchEvents();
       setIsCreateModalOpen(false);
-      setNewEvent({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 2, maxTeamSize: 5, organizerId: undefined });
+      setNewEvent({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 3, maxTeamSize: 5, organizerId: undefined });
       toast.success('Event created successfully', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to create hackathon event:', error);

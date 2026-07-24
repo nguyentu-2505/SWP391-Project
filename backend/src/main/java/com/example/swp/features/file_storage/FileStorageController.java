@@ -21,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/files")
 @CrossOrigin(origins = "*")
+@SuppressWarnings("null")
 public class FileStorageController {
 
     private final Path fileStorageLocation;
@@ -94,6 +95,10 @@ public class FileStorageController {
                     contentType = Files.probeContentType(filePath);
                 } catch (IOException e) {
                     log.warn("Could not determine file content type.");
+                }
+                
+                if (contentType == null) {
+                    contentType = "application/octet-stream";
                 }
 
                 return ResponseEntity.ok()

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
-import { Calendar, Clock, Info, Trophy, ChevronLeft, CalendarRange, Tag, Target, Users } from 'lucide-react';
+import { Calendar, Clock, Info, Trophy, ChevronLeft, CalendarRange, Tag, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
 import StatusBadge from '../components/StatusBadge';
 import Skeleton from '../components/Skeleton';
@@ -81,14 +81,6 @@ const EventDetailPage: React.FC = () => {
             }
         };
 
-        const fetchRounds = async (eventId: number) => {
-            try {
-                const response = await api.get(`/rounds/hackathon/${eventId}`);
-                setRounds(response.data.data || []);
-            } catch (err) {
-                console.error("Failed to fetch rounds", err);
-            }
-        };
 
         const checkRegistrationStatus = async (eventId: number) => {
             try {

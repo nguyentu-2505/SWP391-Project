@@ -18,9 +18,7 @@ import com.example.swp.features.prize.PrizeRepository;
 import com.example.swp.features.submission.SubmissionRepository;
 import com.example.swp.features.hackathon_event.dto.response.HackathonEventAnalyticsResponse;
 import com.github.slugify.Slugify;
-import com.example.swp.features.track.TrackMentorRepository;
-import com.example.swp.features.judge_assignment.JudgeAssignmentRepository;
-import com.example.swp.features.prize.Prize;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -53,8 +51,6 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final com.example.swp.features.track.TrackRepository trackRepository;
     private final PrizeRepository prizeRepository;
     private final SubmissionRepository submissionRepository;
-    private final TrackMentorRepository trackMentorRepository;
-    private final JudgeAssignmentRepository judgeAssignmentRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     // ==================== CREATE ====================
@@ -101,7 +97,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .endTime(request.getEndTime())
                 .registrationStart(request.getRegistrationStart())
                 .registrationEnd(request.getRegistrationEnd())
-                .minTeamSize(request.getMinTeamSize() != null ? request.getMinTeamSize() : 2)
+                .minTeamSize(request.getMinTeamSize() != null ? request.getMinTeamSize() : 3)
                 .maxTeamSize(request.getMaxTeamSize() != null ? request.getMaxTeamSize() : 5)
                 .rules(request.getRules())
                 .imageUrl(request.getImageUrl())
@@ -354,7 +350,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             for (com.example.swp.features.team.Team team : eventTeams) {
                 if (team.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
                     long currentSize = teamMemberRepository.countByTeamId(team.getId());
-                    int minTeamSize = event.getMinTeamSize() != null ? event.getMinTeamSize() : 2;
+                    int minTeamSize = event.getMinTeamSize() != null ? event.getMinTeamSize() : 3;
                     if (currentSize < minTeamSize) {
                         team.setStatus(com.example.swp.features.team.TeamStatus.DISQUALIFIED);
                         team.setDisqualificationReason("Not enough members (" + currentSize + "/" + minTeamSize
@@ -371,7 +367,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             long activeTeamCount = teamRepository.findByEventId(event.getId()).stream()
                     .filter(t -> t.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED)
                     .count();
-            int requiredTeams = event.getMinTeamSize() != null ? event.getMinTeamSize() : 2;
+            int requiredTeams = event.getMinTeamSize() != null ? event.getMinTeamSize() : 3;
             if (activeTeamCount < requiredTeams) {
                 throw new IllegalStateException("Cannot start event: At least " + requiredTeams
                         + " active teams are required to start the hackathon (currently " + activeTeamCount + ").");
