@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from './api';
 
 const API_URL = '/criteria';
 
@@ -23,47 +23,27 @@ export interface UpdateCriterionRequest {
 }
 
 const createCriterion = async (criterion: CreateCriterionRequest): Promise<Criterion> => {
-    const response = await axios.post(API_URL, criterion, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
+    const response = await api.post(API_URL, criterion);
     return response.data;
 };
 
 const getCriteriaForEvent = async (hackathonEventId: number): Promise<Criterion[]> => {
-    const response = await axios.get(`${API_URL}/event/${hackathonEventId}`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
+    const response = await api.get(`${API_URL}/event/${hackathonEventId}`);
     return response.data;
 };
 
 const getDefaultCriteria = async (): Promise<Criterion[]> => {
-    const response = await axios.get(`${API_URL}/default`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
+    const response = await api.get(`${API_URL}/default`);
     return response.data;
 };
 
 const updateCriterion = async (id: number, criterion: UpdateCriterionRequest): Promise<Criterion> => {
-    const response = await axios.put(`${API_URL}/${id}`, criterion, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
+    const response = await api.put(`${API_URL}/${id}`, criterion);
     return response.data;
 };
 
 const deleteCriterion = async (id: number): Promise<void> => {
-    await axios.delete(`${API_URL}/${id}`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-        }
-    });
+    await api.delete(`${API_URL}/${id}`);
 };
 
 export const CriterionService = {
