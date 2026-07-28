@@ -199,7 +199,7 @@ const Layout: React.FC = () => {
             <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
             <div className="flex flex-col flex-grow md:ml-64 transition-all duration-300 w-full min-w-0">
                 <Header toggleSidebar={() => setSidebarOpen(true)} />
-                <main className="flex-grow p-4 md:p-8 overflow-x-hidden animate-fade-in">
+                <main className="flex-grow p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full overflow-x-hidden animate-fade-in">
                     <Outlet />
                 </main>
             </div>

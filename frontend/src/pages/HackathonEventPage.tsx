@@ -358,8 +358,8 @@ const HackathonEventPage: React.FC = () => {
         </div>
       )}
 
-      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
-        <div className="p-6 max-h-[90vh] overflow-y-auto">
+      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} maxWidth="2xl">
+        <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Calendar size={20} className="text-blue-600" />
                 Create New Hackathon Event
@@ -484,8 +484,8 @@ const HackathonEventPage: React.FC = () => {
       </Modal>
 
       {selectedEvent && (
-        <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
-          <div className="p-6 max-h-[90vh] overflow-y-auto">
+        <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} maxWidth="2xl">
+          <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Edit2 size={20} className="text-blue-600" />
                 Edit Hackathon Event

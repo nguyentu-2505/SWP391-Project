@@ -319,8 +319,8 @@ const LandingPage: React.FC = () => {
 
             {/* 1. Participant Journey Modal */}
             {isParticipantModalOpen && (
-                <Modal isOpen={isParticipantModalOpen} onClose={() => setIsParticipantModalOpen(false)}>
-                    <div className="p-6 max-w-2xl space-y-6 max-h-[85vh] overflow-y-auto">
+                <Modal isOpen={isParticipantModalOpen} onClose={() => setIsParticipantModalOpen(false)} maxWidth="2xl">
+                    <div className="space-y-6">
                         <div className="flex items-center gap-2 pb-4 border-b border-gray-100">
                             <Rocket size={24} className="text-blue-600" />
                             <h3 className="text-xl font-bold text-gray-900">Your Hackathon Journey</h3>
@@ -402,8 +402,8 @@ const LandingPage: React.FC = () => {
 
             {/* 2. Judge Criteria Modal */}
             {isJudgeModalOpen && (
-                <Modal isOpen={isJudgeModalOpen} onClose={() => setIsJudgeModalOpen(false)}>
-                    <div className="p-6 max-w-2xl space-y-6 max-h-[85vh] overflow-y-auto">
+                <Modal isOpen={isJudgeModalOpen} onClose={() => setIsJudgeModalOpen(false)} maxWidth="2xl">
+                    <div className="space-y-6">
                         <div className="flex items-center gap-2 pb-4 border-b border-gray-100">
                             <Gavel size={24} className="text-blue-600" />
                             <h3 className="text-xl font-bold text-gray-900">Judging Rules & Evaluation Rubric</h3>
@@ -471,8 +471,8 @@ const LandingPage: React.FC = () => {
 
             {/* 3. Mentor Panel Modal */}
             {isMentorModalOpen && (
-                <Modal isOpen={isMentorModalOpen} onClose={() => { setIsMentorModalOpen(false); setMentorApplied(false); }}>
-                    <div className="p-6 max-w-2xl space-y-6 max-h-[85vh] overflow-y-auto">
+                <Modal isOpen={isMentorModalOpen} onClose={() => { setIsMentorModalOpen(false); setMentorApplied(false); }} maxWidth="2xl">
+                    <div className="space-y-6">
                         <div className="flex items-center gap-2 pb-4 border-b border-gray-100">
                             <Brain size={24} className="text-blue-600" />
                             <h3 className="text-xl font-bold text-gray-900">Mentor Panel & Guidelines</h3>
