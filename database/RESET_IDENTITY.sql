@@ -9,7 +9,7 @@ DBCC CHECKIDENT ('judge_assignment', RESEED, 0);
 DBCC CHECKIDENT ('notification', RESEED, 0);
 DBCC CHECKIDENT ('submission', RESEED, 0);
 DBCC CHECKIDENT ('mentorship_request', RESEED, 0);
-DBCC CHECKIDENT ('track_mentor', RESEED, 0);
+DBCC CHECKIDENT ('track_mentor', RESEED, 0);a
 DBCC CHECKIDENT ('team_member', RESEED, 0);
 DBCC CHECKIDENT ('team', RESEED, 0);
 DBCC CHECKIDENT ('round', RESEED, 0);
