@@ -26,6 +26,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     private final AuditLogService auditLogService;
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public TeamMemberResponse addTeamMember(AddTeamMemberRequest request) {
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));

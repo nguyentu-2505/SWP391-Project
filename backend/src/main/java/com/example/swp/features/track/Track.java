@@ -2,12 +2,14 @@ package com.example.swp.features.track;
 
 import com.example.swp.features.hackathon_event.HackathonEvent;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -53,3 +55,4 @@ public class Track {
         }
     }
 }
+

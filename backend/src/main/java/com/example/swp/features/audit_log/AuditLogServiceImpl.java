@@ -8,6 +8,7 @@ import com.example.swp.features.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @SuppressWarnings("null")
+@Transactional(readOnly = true)
 public class AuditLogServiceImpl implements AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
@@ -22,16 +24,17 @@ public class AuditLogServiceImpl implements AuditLogService {
     private final com.example.swp.features.hackathon_event.HackathonEventRepository hackathonEventRepository;
 
     @Override
+    @Transactional
     public AuditLogResponse createAuditLog(CreateAuditLogRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        
+
         AuditLog auditLog = AuditLog.builder()
                 .user(user)
                 .action(request.getAction())
                 .details(request.getDetails())
                 .build();
-        
+
         AuditLog savedLog = auditLogRepository.save(auditLog);
         return mapToResponse(savedLog);
     }
@@ -51,7 +54,8 @@ public class AuditLogServiceImpl implements AuditLogService {
     }
 
     @Override
-    public org.springframework.data.domain.Page<AuditLogResponse> getAuditLogsByEvent(Long eventId, org.springframework.data.domain.Pageable pageable) {
+    public org.springframework.data.domain.Page<AuditLogResponse> getAuditLogsByEvent(Long eventId,
+            org.springframework.data.domain.Pageable pageable) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
@@ -61,23 +65,28 @@ public class AuditLogServiceImpl implements AuditLogService {
 
         if (currentUser.getRole() != com.example.swp.features.user.Role.ADMIN) {
             if (event.getOrganizer() == null || !event.getOrganizer().getId().equals(currentUser.getId())) {
-                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to view the audit logs for this event.");
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "You do not have permission to view the audit logs for this event.");
             }
         }
 
         return auditLogRepository.findByEventIdOrderByCreatedAtDesc(eventId, pageable)
                 .map(this::mapToResponse);
     }
-    
+
     @Override
-    public void logAction(String action, String entityType, Long entityId, String oldValue, String newValue, Long eventId) {
+    @Transactional
+    public void logAction(String action, String entityType, Long entityId, String oldValue, String newValue,
+            Long eventId) {
         org.springframework.security.core.Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = (auth != null) ? auth.getName() : "SYSTEM";
         User currentUser = userRepository.findByUsername(username).orElse(null); // Can be null for system actions
 
         String details = String.format("Entity: %s, ID: %d", entityType, entityId);
-        if (oldValue != null) details += ", Old: " + oldValue;
-        if (newValue != null) details += ", New: " + newValue;
+        if (oldValue != null)
+            details += ", Old: " + oldValue;
+        if (newValue != null)
+            details += ", New: " + newValue;
 
         AuditLog auditLog = AuditLog.builder()
                 .user(currentUser)
@@ -93,7 +102,8 @@ public class AuditLogServiceImpl implements AuditLogService {
 
         // Notify active SSE subscribers
         if (eventId != null) {
-            java.util.List<org.springframework.web.servlet.mvc.method.annotation.SseEmitter> eventEmitters = emitters.get(eventId);
+            java.util.List<org.springframework.web.servlet.mvc.method.annotation.SseEmitter> eventEmitters = emitters
+                    .get(eventId);
             if (eventEmitters != null) {
                 AuditLogResponse response = mapToResponse(savedLog);
                 java.util.List<org.springframework.web.servlet.mvc.method.annotation.SseEmitter> deadEmitters = new java.util.ArrayList<>();
@@ -124,11 +134,13 @@ public class AuditLogServiceImpl implements AuditLogService {
 
         if (currentUser.getRole() != com.example.swp.features.user.Role.ADMIN) {
             if (event.getOrganizer() == null || !event.getOrganizer().getId().equals(currentUser.getId())) {
-                throw new org.springframework.security.access.AccessDeniedException("You do not have permission to view the audit logs for this event.");
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "You do not have permission to view the audit logs for this event.");
             }
         }
 
-        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(30 * 60 * 1000L); // 30 minutes
+        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(
+                30 * 60 * 1000L); // 30 minutes
         emitters.computeIfAbsent(eventId, k -> new java.util.concurrent.CopyOnWriteArrayList<>()).add(emitter);
 
         emitter.onCompletion(() -> removeEmitter(eventId, emitter));
@@ -147,7 +159,8 @@ public class AuditLogServiceImpl implements AuditLogService {
     }
 
     private void removeEmitter(Long eventId, org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter) {
-        java.util.List<org.springframework.web.servlet.mvc.method.annotation.SseEmitter> eventEmitters = emitters.get(eventId);
+        java.util.List<org.springframework.web.servlet.mvc.method.annotation.SseEmitter> eventEmitters = emitters
+                .get(eventId);
         if (eventEmitters != null) {
             eventEmitters.remove(emitter);
             if (eventEmitters.isEmpty()) {
@@ -167,26 +180,5 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .oldValue(auditLog.getOldValue())
                 .newValue(auditLog.getNewValue())
                 .build();
-    }
-
-    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 15000)
-    public void sendHeartbeat() {
-        for (java.util.Map.Entry<Long, java.util.List<org.springframework.web.servlet.mvc.method.annotation.SseEmitter>> entry : emitters.entrySet()) {
-            java.util.List<org.springframework.web.servlet.mvc.method.annotation.SseEmitter> deadEmitters = new java.util.ArrayList<>();
-            for (org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter : entry.getValue()) {
-                try {
-                    emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("ping").data("keepalive"));
-                } catch (Exception e) {
-                    emitter.complete();
-                    deadEmitters.add(emitter);
-                }
-            }
-            if (!deadEmitters.isEmpty()) {
-                entry.getValue().removeAll(deadEmitters);
-                if (entry.getValue().isEmpty()) {
-                    emitters.remove(entry.getKey());
-                }
-            }
-        }
     }
 }

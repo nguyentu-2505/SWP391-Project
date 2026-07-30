@@ -7,5 +7,6 @@ import java.util.List;
 
 @Repository
 public interface TrackRepository extends JpaRepository<Track, Long> {
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"hackathonEvent"})
     List<Track> findByHackathonEventId(Long hackathonEventId);
 }

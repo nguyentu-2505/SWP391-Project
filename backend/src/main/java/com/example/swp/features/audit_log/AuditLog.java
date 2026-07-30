@@ -2,12 +2,15 @@ package com.example.swp.features.audit_log;
 
 import com.example.swp.features.user.User;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

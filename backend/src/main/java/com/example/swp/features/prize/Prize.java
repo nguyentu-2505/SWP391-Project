@@ -4,12 +4,14 @@ import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.team.Team;
 import com.example.swp.features.track.Track;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

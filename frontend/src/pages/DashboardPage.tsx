@@ -237,7 +237,7 @@ const DashboardPage: React.FC = () => {
                             variant="ghost" 
                             size="sm" 
                             className="text-primary hover:bg-primary/5 w-full"
-                            onClick={() => navigate(role === Role.ADMIN || role === Role.ORGANIZER ? '/admin/audit-logs' : '/notifications')}
+                            onClick={() => navigate(role === Role.ADMIN ? '/admin/audit-logs' : '/notifications')}
                         >
                             View All Activity
                         </Button>

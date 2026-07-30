@@ -16,9 +16,10 @@ const AuditLogsPage: React.FC = () => {
         try {
             const allAuditLogs = await AuditLogService.getAllAuditLogs();
             setAuditLogs(allAuditLogs);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to fetch audit logs:', err);
-            toast.error('Failed to fetch audit logs. Admin permissions required.');
+            const errorMessage = err.response?.data?.message || 'Failed to fetch audit logs.';
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }

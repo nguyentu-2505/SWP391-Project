@@ -5,16 +5,18 @@ import com.example.swp.features.team_member.TeamMember;
 import com.example.swp.features.track.Track;
 import com.example.swp.features.user.User;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -70,3 +72,4 @@ public class Team {
     private LocalDateTime createdAt;
 
 }
+
