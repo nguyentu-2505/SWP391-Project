@@ -363,15 +363,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             }
             log.info("Disqualified {} teams for not meeting minTeamSize when starting the event.", disqualifiedCount);
 
-            // 2. Validate total active team count
-            long activeTeamCount = teamRepository.findByEventId(event.getId()).stream()
-                    .filter(t -> t.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED)
-                    .count();
-            int requiredTeams = event.getMinTeamSize() != null ? event.getMinTeamSize() : 3;
-            if (activeTeamCount < requiredTeams) {
-                throw new IllegalStateException("Cannot start event: At least " + requiredTeams
-                        + " active teams are required to start the hackathon (currently " + activeTeamCount + ").");
-            }
+            // 2. Validate tracks and disqualify teams in invalid tracks
             List<com.example.swp.features.round.Round> rounds = roundRepository.findByHackathonEventId(event.getId());
             int minTrackTeamSize = 2; // Default minimum
             if (rounds != null && !rounds.isEmpty()) {
@@ -385,17 +377,29 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             }
             List<com.example.swp.features.track.Track> tracks = trackRepository.findByHackathonEventId(event.getId());
             for (com.example.swp.features.track.Track track : tracks) {
-                long trackTeamCount = teamRepository.findByTrackId(track.getId()).stream()
+                List<com.example.swp.features.team.Team> trackTeams = teamRepository.findByTrackId(track.getId()).stream()
                         .filter(t -> t.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED)
-                        .count();
+                        .collect(Collectors.toList());
+                long trackTeamCount = trackTeams.size();
+                
+                boolean shouldDisqualifyTrack = false;
+                String reason = "";
                 if (trackTeamCount == 1) {
-                    throw new IllegalStateException("Cannot start event: Track '" + track.getName()
-                            + "' has exactly 1 active team. A track must either be empty (0 teams) or have enough teams to compete.");
+                    shouldDisqualifyTrack = true;
+                    reason = "Track '" + track.getName() + "' only has 1 active team. A track must either be empty (0 teams) or have enough teams to compete.";
+                } else if (trackTeamCount > 1 && trackTeamCount < minTrackTeamSize) {
+                    shouldDisqualifyTrack = true;
+                    reason = "Track '" + track.getName() + "' has " + trackTeamCount + " active teams, but requires at least " + minTrackTeamSize + " (based on 1st round advancement slots).";
                 }
-                if (trackTeamCount > 1 && trackTeamCount < minTrackTeamSize) {
-                    throw new IllegalStateException("Cannot start event: Track '" + track.getName() + "' has "
-                            + trackTeamCount + " active teams, but requires at least " + minTrackTeamSize
-                            + " (based on 1st round advancement slots).");
+
+                if (shouldDisqualifyTrack) {
+                    for (com.example.swp.features.team.Team t : trackTeams) {
+                        t.setStatus(com.example.swp.features.team.TeamStatus.DISQUALIFIED);
+                        t.setDisqualificationReason(reason);
+                        t.setDisqualifiedAt(java.time.LocalDateTime.now());
+                        teamRepository.save(t);
+                    }
+                    log.info("Disqualified {} teams in track '{}' due to insufficient teams.", trackTeamCount, track.getName());
                 }
             }
 
