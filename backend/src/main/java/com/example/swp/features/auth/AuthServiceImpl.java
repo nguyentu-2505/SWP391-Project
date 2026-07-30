@@ -141,6 +141,7 @@ public class AuthServiceImpl implements AuthService {
         String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
         user.setOtpCode(otpCode);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        log.info("Generated Registration OTP for user {}: {}", user.getUsername(), otpCode);
 
         try {
             userRepository.save(user);
@@ -233,6 +234,7 @@ public class AuthServiceImpl implements AuthService {
         String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
         user.setOtpCode(otpCode);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        log.info("Generated Forgot Password OTP for user {}: {}", user.getEmail(), otpCode);
         userRepository.save(user);
 
         String emailBody = "Hello,\n\nYour 6-digit OTP for password reset is: " + otpCode + "\nIt will expire in 5 minutes.\n\nBest regards,\nHackathon Event Notification Team";
