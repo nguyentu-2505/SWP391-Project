@@ -117,7 +117,7 @@ function App() {
               </Route>
 
               {/* Mentor Routes */}
-              <Route element={<PrivateRoute allowedRoles={[Role.MENTOR]} />}>
+              <Route element={<PrivateRoute allowedRoles={[Role.MENTOR, Role.JUDGE, Role.GUEST_JUDGE]} />}>
                 <Route path="/mentor/dashboard" element={<MentorDashboardPage />} />
                 <Route path="/mentor/requests" element={<MentorRequestsPage />} />
               </Route>

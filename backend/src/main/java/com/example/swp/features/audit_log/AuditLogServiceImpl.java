@@ -168,4 +168,25 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .newValue(auditLog.getNewValue())
                 .build();
     }
+
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 15000)
+    public void sendHeartbeat() {
+        for (java.util.Map.Entry<Long, java.util.List<org.springframework.web.servlet.mvc.method.annotation.SseEmitter>> entry : emitters.entrySet()) {
+            java.util.List<org.springframework.web.servlet.mvc.method.annotation.SseEmitter> deadEmitters = new java.util.ArrayList<>();
+            for (org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter : entry.getValue()) {
+                try {
+                    emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("ping").data("keepalive"));
+                } catch (Exception e) {
+                    emitter.complete();
+                    deadEmitters.add(emitter);
+                }
+            }
+            if (!deadEmitters.isEmpty()) {
+                entry.getValue().removeAll(deadEmitters);
+                if (entry.getValue().isEmpty()) {
+                    emitters.remove(entry.getKey());
+                }
+            }
+        }
+    }
 }

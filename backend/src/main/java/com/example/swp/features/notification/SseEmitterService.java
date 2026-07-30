@@ -145,6 +145,22 @@ public class SseEmitterService {
         }
     }
 
+    /**
+     * Heartbeat để phát hiện và dọn dẹp các connection đã chết (khi user tắt tab, logout mà ko báo server).
+     */
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 15000)
+    public void sendHeartbeat() {
+        for (Map.Entry<Long, SseEmitter> entry : emitters.entrySet()) {
+            try {
+                entry.getValue().send(SseEmitter.event().name("ping").data("keepalive"));
+            } catch (Exception e) {
+                entry.getValue().complete();
+                emitters.remove(entry.getKey());
+                log.debug("Removed dead SSE connection for userId={}", entry.getKey());
+            }
+        }
+    }
+
     /** Số lượng connection đang active — dùng cho monitoring/debug */
     public int getActiveConnectionCount() {
         return emitters.size();

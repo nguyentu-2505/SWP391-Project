@@ -517,6 +517,10 @@ public class HackathonEventServiceImpl implements HackathonEventService {
      * Kiểm tra quyền: chỉ organizer của event hoặc ADMIN mới được thao tác.
      */
     private void requireOrganizerOrAdmin(HackathonEvent event) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || "system".equals(auth.getName())) {
+            return; // Allow scheduled tasks
+        }
         User currentUser = getCurrentUser();
         boolean isOwner = event.getOrganizer() != null && event.getOrganizer().getId().equals(currentUser.getId());
         boolean isAdmin = "ADMIN".equals(currentUser.getRole().name());
