@@ -1,5 +1,7 @@
 package com.example.swp.features.team_member;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.team.Team;
 import com.example.swp.features.team.TeamRepository;
@@ -16,6 +18,7 @@ import com.example.swp.features.hackathon_event.HackathonStatus;
 import com.example.swp.features.audit_log.AuditLogService;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class TeamMemberServiceImpl implements TeamMemberService {

@@ -1,5 +1,7 @@
 package com.example.swp.features.round;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.hackathon_event.HackathonEventRepository;
 import com.example.swp.features.round.dto.request.CreateRoundRequest;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class RoundServiceImpl implements RoundService {

@@ -1,5 +1,7 @@
 package com.example.swp.features.notification;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.swp.features.notification.dto.response.NotificationResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Service
+@Transactional
 @SuppressWarnings("null")
 public class SseEmitterService {
 

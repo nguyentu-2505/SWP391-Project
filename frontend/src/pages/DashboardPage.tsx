@@ -32,14 +32,7 @@ const DashboardPage: React.FC = () => {
         fetchStats();
     }, []);
 
-    // Mocked recent activity for visual enhancement matching the Stitch design
-    const activities = [
-        { id: 1, icon: <Upload size={14} className="text-primary" />, title: 'Alpha Logic submitted Round 2 deliverables.', time: '10 mins ago' },
-        { id: 2, icon: <CheckCircle size={14} className="text-green-600" />, title: 'Mentor John Doe accepted a session request from CodeCrafters.', time: '1 hour ago' },
-        { id: 3, icon: <UserPlus size={14} className="text-slate-600" />, title: 'New team registered: ByteMe.', time: '3 hours ago' },
-        { id: 4, icon: <Megaphone size={14} className="text-orange-600" />, title: 'Admin published a new announcement regarding Judging Criteria.', time: 'Yesterday' },
-        { id: 5, icon: <Upload size={14} className="text-primary" />, title: 'Nexus Team submitted Round 2 deliverables.', time: 'Yesterday' },
-    ];
+
 
     return (
         <div className="space-y-8 max-w-[1440px] mx-auto">
@@ -56,7 +49,7 @@ const DashboardPage: React.FC = () => {
                         <Button 
                             variant="secondary" 
                             leftIcon={<CalendarRange size={16} />}
-                            onClick={() => navigate('/mentors')}
+                            onClick={() => navigate('/my-mentorship-requests')}
                         >
                             Schedule Session
                         </Button>
@@ -111,7 +104,6 @@ const DashboardPage: React.FC = () => {
                             <div className="p-2 bg-purple-50 rounded-lg">
                                 <CheckCircle className="text-purple-600" size={24} />
                             </div>
-                            <span className="text-xs text-brand-orange font-semibold">Requires Attention</span>
                         </div>
                         <div>
                             <p className="text-[10px] text-on-surface-variant mb-1 uppercase tracking-widest font-bold">Pending Reviews</p>
@@ -177,35 +169,8 @@ const DashboardPage: React.FC = () => {
                         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                             <h3 className="text-lg font-bold text-on-surface">Top Mentors</h3>
                         </div>
-                        <div className="divide-y divide-slate-100">
-                            {/* Row 1 */}
-                            <div className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-primary font-bold text-sm">JD</div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-on-surface">John Doe</p>
-                                        <p className="text-xs text-on-surface-variant">AI &amp; Machine Learning</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-sm font-semibold text-on-surface">12 Sessions</p>
-                                    <p className="text-xs text-on-surface-variant">4.9/5 Rating</p>
-                                </div>
-                            </div>
-                            {/* Row 2 */}
-                            <div className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-primary font-bold text-sm">AS</div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-on-surface">Alice Smith</p>
-                                        <p className="text-xs text-on-surface-variant">UI/UX Design</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-sm font-semibold text-on-surface">8 Sessions</p>
-                                    <p className="text-xs text-on-surface-variant">5.0/5 Rating</p>
-                                </div>
-                            </div>
+                        <div className="p-8 text-center text-slate-500 text-sm">
+                            No mentor data available yet.
                         </div>
                     </div>
                 </div>
@@ -215,22 +180,8 @@ const DashboardPage: React.FC = () => {
                     <div className="px-6 py-4 border-b border-slate-100">
                         <h3 className="text-lg font-bold text-on-surface">Recent Activity</h3>
                     </div>
-                    <div className="flex-grow p-6 flex flex-col gap-6 relative">
-                        {/* Vertical line for timeline */}
-                        <div className="absolute left-[39px] top-6 bottom-6 w-px bg-outline-variant"></div>
-                        {
-                            activities.map(act => (
-                                <div key={act.id} className="relative z-10 flex gap-4">
-                                    <div className="w-8 h-8 rounded-full bg-slate-50 border-2 border-white flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                                        {act.icon}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-on-surface">{act.title}</p>
-                                        <p className="text-xs text-on-surface-variant mt-1">{act.time}</p>
-                                    </div>
-                                </div>
-                            ))
-                        }
+                    <div className="flex-grow p-8 flex flex-col items-center justify-center text-center text-slate-500 text-sm">
+                        <p>No recent activity.</p>
                     </div>
                     <div className="p-4 border-t border-slate-100 text-center bg-slate-50 flex justify-center">
                         <Button 

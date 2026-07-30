@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class HackathonEventServiceImpl implements HackathonEventService {

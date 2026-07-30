@@ -1,5 +1,7 @@
 package com.example.swp.features.notification;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.swp.features.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class NotificationSender {
 

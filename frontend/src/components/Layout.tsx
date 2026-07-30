@@ -114,7 +114,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                         )}
 
                         {/* MENTOR MENU */}
-                        {(role === Role.MENTOR || role === Role.JUDGE || role === Role.GUEST_JUDGE) && (
+                        {(role === Role.MENTOR || role === Role.JUDGE) && (
                             <>
                                 <SidebarItem to="/mentor/dashboard" icon={<LayoutDashboard size={18} />} label="Mentor Dashboard" onClick={closeSidebar} />
                                 <SidebarItem to="/mentor/requests" icon={<Bell size={18} />} label="Session Requests" onClick={closeSidebar} />

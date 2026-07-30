@@ -20,6 +20,7 @@ import java.util.List;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class SupportTicketServiceImpl implements SupportTicketService {

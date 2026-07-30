@@ -1,5 +1,7 @@
 package com.example.swp.features.judge_assignment;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.judge_assignment.dto.request.AssignJudgeRequest;
 import com.example.swp.features.judge_assignment.dto.response.JudgeAssignmentResponse;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class JudgeAssignmentService {
