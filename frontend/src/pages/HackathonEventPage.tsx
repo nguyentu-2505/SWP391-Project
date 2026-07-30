@@ -11,11 +11,14 @@ import { UserService, User } from '../services/UserService';
 import api from '../services/api';
 
 const formatDateTimeLocal = (dateString?: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    // Get YYYY-MM-DDTHH:mm
-    return date.toISOString().slice(0, 16);
+  if (!dateString) return '';
+  if (dateString.includes('T')) {
+      return dateString.substring(0, 16);
+  }
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  const tzOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
 };
 
 const HackathonEventPage: React.FC = () => {
@@ -86,22 +89,6 @@ const HackathonEventPage: React.FC = () => {
       console.error('Failed to create hackathon event:', error);
       const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
       toast.error('Failed to create event: ' + errorMessage, { id: loadingToast });
-    }
-  };
-
-  const handleCloneEvent = async (id: number) => {
-    if (!window.confirm("Are you sure you want to clone this event? This will copy all tracks, rounds, criteria, and prizes as a new DRAFT event.")) {
-      return;
-    }
-    const loadingToast = toast.loading('Cloning event...');
-    try {
-      await api.post(`/hackathon-events/${id}/clone`);
-      toast.success('Event cloned successfully!', { id: loadingToast });
-      fetchEvents(); // Refresh list
-    } catch (error: any) {
-      console.error('Failed to clone event:', error);
-      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
-      toast.error('Failed to clone event: ' + errorMessage, { id: loadingToast });
     }
   };
 
@@ -324,13 +311,6 @@ const HackathonEventPage: React.FC = () => {
                               title="Edit"
                             >
                               <Edit2 size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleCloneEvent(event.id)}
-                              className="text-purple-600 hover:text-purple-900 transition-colors cursor-pointer"
-                              title="Clone"
-                            >
-                              <Copy size={18} />
                             </button>
                             <Link
                               to={`/organizer/events/${event.id}/dashboard`}

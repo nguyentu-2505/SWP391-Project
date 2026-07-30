@@ -37,4 +37,7 @@ public interface HackathonEventRepository extends JpaRepository<HackathonEvent, 
     @NonNull Optional<HackathonEvent> findById(@NonNull Long id);
 
     boolean existsByStatusInAndIsDeletedFalseAndIdNot(List<HackathonStatus> statuses, Long id);
+
+    @EntityGraph(attributePaths = {"organizer"})
+    List<HackathonEvent> findByStatusAndIsDeletedFalse(HackathonStatus status);
 }

@@ -11,9 +11,13 @@ import { Role } from '../../services/authUtils';
 
 const formatDateTimeLocal = (dateString?: string) => {
     if (!dateString) return '';
+    if (dateString.includes('T')) {
+        return dateString.substring(0, 16);
+    }
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
-    return date.toISOString().slice(0, 16);
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
 };
 
 const OrganizerEventsPage: React.FC = () => {
@@ -213,22 +217,6 @@ const OrganizerEventsPage: React.FC = () => {
         }
     };
 
-    const handleCloneEvent = async (id: number) => {
-        if (!window.confirm("Are you sure you want to clone this event? This will copy all tracks, rounds, criteria, and prizes as a new DRAFT event.")) {
-            return;
-        }
-        const loadingToast = toast.loading('Cloning event...');
-        try {
-            await api.post(`/hackathon-events/${id}/clone`);
-            toast.success('Event cloned successfully!', { id: loadingToast });
-            await fetchMyEvents(); // Refresh list
-        } catch (error: any) {
-            console.error('Failed to clone event:', error);
-            const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
-            toast.error('Failed to clone event: ' + errorMessage, { id: loadingToast });
-        }
-    };
-
     const openEditModal = (event: HackathonEvent) => {
         setSelectedEvent({
             ...event,
@@ -322,14 +310,6 @@ const OrganizerEventsPage: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
                                                 <div className="flex space-x-3 items-center justify-end">
-                                                    <button
-                                                        onClick={() => handleCloneEvent(event.id)}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-                                                        title="Clone Event"
-                                                    >
-                                                        <Copy size={14} />
-                                                        Clone
-                                                    </button>
                                                     <button
                                                         onClick={() => openEditModal(event)}
                                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
