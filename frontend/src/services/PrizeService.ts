@@ -49,6 +49,11 @@ const assignPrizeToTeam = async (prizeId: number, request: AssignPrizeRequest): 
     return response.data;
 };
 
+const unassignPrizeFromTeam = async (prizeId: number): Promise<Prize> => {
+    const response = await api.patch(`/prizes/${prizeId}/unassign`);
+    return response.data;
+};
+
 const getPrizesByEvent = async (hackathonEventId: number): Promise<Prize[]> => {
     const response = await api.get(`/prizes/event/${hackathonEventId}`);
     // If wrapped in ApiResponse
@@ -65,6 +70,7 @@ export const PrizeService = {
     updatePrize,
     deletePrize,
     assignPrizeToTeam,
+    unassignPrizeFromTeam,
     getPrizesByEvent,
     getPrizesByEventAndTrack
 };

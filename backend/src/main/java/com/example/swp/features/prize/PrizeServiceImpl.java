@@ -10,6 +10,9 @@ import com.example.swp.features.track.TrackRepository;
 import com.example.swp.features.prize.dto.request.AssignPrizeRequest;
 import com.example.swp.features.prize.dto.request.CreatePrizeRequest;
 import com.example.swp.features.prize.dto.response.PrizeResponse;
+import com.example.swp.features.notification.NotificationService;
+import com.example.swp.features.team_member.TeamMember;
+import com.example.swp.features.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +34,7 @@ public class PrizeServiceImpl implements PrizeService {
     private final com.example.swp.features.round.RoundRepository roundRepository;
     private final com.example.swp.features.ranking.RankingService rankingService;
     private final com.example.swp.features.audit_log.AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     @Override
     public PrizeResponse createPrize(CreatePrizeRequest request) {
@@ -110,6 +114,37 @@ public class PrizeServiceImpl implements PrizeService {
         prize.setWinningTeam(team);
         Prize updatedPrize = prizeRepository.save(prize);
         auditLogService.logAction("ASSIGN_PRIZE", "PRIZE", prizeId, null, "Assigned prize " + prize.getName() + " to team " + team.getName(), prize.getHackathonEvent().getId());
+
+        // Notify team members
+        List<User> winningMembers = team.getTeamMembers().stream()
+                .map(TeamMember::getUser).collect(Collectors.toList());
+        if (!winningMembers.isEmpty()) {
+            notificationService.createNotifications(
+                    winningMembers,
+                    "Prize Awarded!",
+                    "Congratulations! Your team '" + team.getName() + "' has been awarded the prize: " + prize.getName(),
+                    "PRIZE",
+                    "TEAM",
+                    team.getId()
+            );
+        }
+
+        return mapToResponse(updatedPrize);
+    }
+
+    @Override
+    public PrizeResponse unassignPrizeFromTeam(Long prizeId) {
+        Prize prize = prizeRepository.findById(prizeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prize not found"));
+        
+        if (prize.getWinningTeam() == null) {
+            throw new IllegalArgumentException("Prize is not assigned to any team");
+        }
+
+        Team team = prize.getWinningTeam();
+        prize.setWinningTeam(null);
+        Prize updatedPrize = prizeRepository.save(prize);
+        auditLogService.logAction("UNASSIGN_PRIZE", "PRIZE", prizeId, null, "Unassigned prize " + prize.getName() + " from team " + team.getName(), prize.getHackathonEvent().getId());
         return mapToResponse(updatedPrize);
     }
 
@@ -193,6 +228,22 @@ public class PrizeServiceImpl implements PrizeService {
                         prize.setWinningTeam(winningTeam);
                         prizeRepository.save(prize);
                         awardedTeamIds.add(winningTeamId);
+                        
+                        if (winningTeam != null) {
+                            List<User> winningMembers = winningTeam.getTeamMembers().stream()
+                                    .map(TeamMember::getUser).collect(Collectors.toList());
+                            if (!winningMembers.isEmpty()) {
+                                notificationService.createNotifications(
+                                        winningMembers,
+                                        "Prize Awarded!",
+                                        "Congratulations! Your team '" + winningTeam.getName() + "' has been awarded the prize: " + prize.getName(),
+                                        "PRIZE",
+                                        "TEAM",
+                                        winningTeam.getId()
+                                );
+                            }
+                        }
+                        
                         break;
                     }
                 }
