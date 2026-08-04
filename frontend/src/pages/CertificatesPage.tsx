@@ -28,7 +28,14 @@ const isNonStudentName = (name: string, role?: string) => {
     return n.includes('judge') || n.includes('mentor') || n.includes('organizer') || n.includes('admin');
 };
 
-// Generate a unique shareable certificate ID — safe for Unicode/Vietnamese names
+// Generate a unique shareable certificate ID — URL-safe base64, safe for Unicode/Vietnamese names
+// Standard base64 uses +, /, = which break URL path params. URL-safe variant: + → -, / → _, strip =
+const toUrlSafeBase64 = (str: string): string =>
+    btoa(unescape(encodeURIComponent(str)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+
 const generateCertId = (cert: CertificateData): string => {
     const payload = {
         certId: '',
@@ -44,8 +51,7 @@ const generateCertId = (cert: CertificateData): string => {
         issueDate: cert.issueDate,
         eventSeason: cert.eventSeason,
     };
-    // encodeURIComponent handles Unicode/Vietnamese, btoa handles base64
-    return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    return toUrlSafeBase64(JSON.stringify(payload));
 };
 
 const CertificatesPage: React.FC = () => {

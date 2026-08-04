@@ -16,10 +16,15 @@ interface VerifiedCertData {
     eventSeason: string;
 }
 
-// Decode certId → cert data, safe for Unicode/Vietnamese names
+// Decode certId → cert data
+// certId is URL-safe base64: - → +, _ → /, then pad = back before atob()
 const decodeCertId = (certId: string): VerifiedCertData | null => {
     try {
-        const decoded = decodeURIComponent(escape(atob(certId)));
+        // Restore standard base64 from URL-safe variant
+        const b64 = certId.replace(/-/g, '+').replace(/_/g, '/');
+        // Add padding if needed
+        const padded = b64 + '=='.slice(0, (4 - b64.length % 4) % 4);
+        const decoded = decodeURIComponent(escape(atob(padded)));
         const data = JSON.parse(decoded);
         return data as VerifiedCertData;
     } catch {
@@ -82,16 +87,33 @@ const CertificateVerifyPage: React.FC = () => {
         <>
             <style>{`
                 @media print {
+                    @page {
+                        size: A4 landscape;
+                        margin: 0;
+                    }
                     body * { visibility: hidden !important; }
                     #printable-cert, #printable-cert * { visibility: visible !important; }
                     #printable-cert {
-                        position: fixed !important; left: 0 !important; top: 0 !important;
+                        position: fixed !important;
+                        left: 0 !important; top: 0 !important;
                         width: 100vw !important; height: 100vh !important;
+                        max-height: 100vh !important;
                         background: #18130b !important;
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
-                        display: flex !important; align-items: center !important; justify-content: center !important;
+                        color-adjust: exact !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
                         z-index: 9999 !important;
+                        page-break-inside: avoid !important;
+                        page-break-after: avoid !important;
+                        page-break-before: avoid !important;
+                        overflow: hidden !important;
+                    }
+                    #printable-cert > * {
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
                     }
                     .no-print { display: none !important; }
                 }
