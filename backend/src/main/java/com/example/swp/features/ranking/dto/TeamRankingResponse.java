@@ -21,6 +21,12 @@ public class TeamRankingResponse {
     private List<CriterionScoreDto> criterionBreakdown;
     private java.time.LocalDateTime submittedAt;
 
+    /** true nếu thứ hạng này được Admin/Organizer điều chỉnh thủ công */
+    private boolean manuallyAdjusted;
+
+    /** Lý do điều chỉnh thủ công (chỉ có khi manuallyAdjusted = true) */
+    private String overrideReason;
+
     public int getRank() { return rank; }
     public void setRank(int rank) { this.rank = rank; }
     public BigDecimal getFinalScore() { return finalScore; }
@@ -48,6 +54,8 @@ public class TeamRankingResponse {
         private String trackName;
         private List<CriterionScoreDto> criterionBreakdown;
         private java.time.LocalDateTime submittedAt;
+        private boolean manuallyAdjusted;
+        private String overrideReason;
 
         public TeamRankingResponseBuilder rank(int rank) { this.rank = rank; return this; }
         public TeamRankingResponseBuilder teamId(Long teamId) { this.teamId = teamId; return this; }
@@ -58,6 +66,8 @@ public class TeamRankingResponse {
         public TeamRankingResponseBuilder trackName(String trackName) { this.trackName = trackName; return this; }
         public TeamRankingResponseBuilder criterionBreakdown(List<CriterionScoreDto> criterionBreakdown) { this.criterionBreakdown = criterionBreakdown; return this; }
         public TeamRankingResponseBuilder submittedAt(java.time.LocalDateTime submittedAt) { this.submittedAt = submittedAt; return this; }
+        public TeamRankingResponseBuilder manuallyAdjusted(boolean manuallyAdjusted) { this.manuallyAdjusted = manuallyAdjusted; return this; }
+        public TeamRankingResponseBuilder overrideReason(String overrideReason) { this.overrideReason = overrideReason; return this; }
         public TeamRankingResponse build() {
             TeamRankingResponse r = new TeamRankingResponse();
             r.rank = this.rank; r.teamId = this.teamId; r.teamName = this.teamName;
@@ -65,6 +75,8 @@ public class TeamRankingResponse {
             r.trackId = this.trackId; r.trackName = this.trackName;
             r.criterionBreakdown = this.criterionBreakdown;
             r.submittedAt = this.submittedAt;
+            r.manuallyAdjusted = this.manuallyAdjusted;
+            r.overrideReason = this.overrideReason;
             return r;
         }
     }

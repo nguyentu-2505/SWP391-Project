@@ -4,7 +4,7 @@ import NotificationBell from './NotificationBell';
 import Input from './ui/Input';
 import { 
     LayoutDashboard, Users, Trophy, Layers, MapPin, Bell, Settings,
-    LogOut, HelpCircle, User as UserIcon, Menu, X, Search, MessageSquare
+    LogOut, HelpCircle, User as UserIcon, Menu, X, Search, MessageSquare, Award
 } from 'lucide-react';
 import { Role, getUserRole } from '../services/authUtils';
 import api from '../services/api';
@@ -94,6 +94,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                             <>
                                 <SidebarItem to="/my-team" icon={<Users size={18} />} label="My Team" onClick={closeSidebar} />
                                 <SidebarItem to="/events" icon={<Trophy size={18} />} label="Hackathons" onClick={closeSidebar} />
+                                <SidebarItem to="/certificates" icon={<Award size={18} />} label="Certificates" onClick={closeSidebar} />
                                 <SidebarItem to="/invitations" icon={<Bell size={18} />} label="Invitations" onClick={closeSidebar} />
                                 <SidebarItem to="/my-mentorship-requests" icon={<HelpCircle size={18} />} label="Mentorship Sessions" onClick={closeSidebar} />
                             </>
@@ -122,6 +123,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                         )}
 
                         {/* COMMON MENU FOR ALL LOGGED IN USERS */}
+                        <SidebarItem to="/certificates" icon={<Award size={18} />} label="Certificates" onClick={closeSidebar} />
                         <SidebarItem to="/profile" icon={<UserIcon size={18} />} label="Profile" onClick={closeSidebar} />
                         <SidebarItem to="/notifications" icon={<Bell size={18} />} label="Notifications" onClick={closeSidebar} />
                     </div>
@@ -152,6 +154,8 @@ const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
                 const activeEvent = events.find((e: any) => e.status === 'REGISTRATION' || e.status === 'IN_PROGRESS');
                 if (activeEvent) {
                     setEventName(activeEvent.name);
+                } else {
+                    setEventName('');
                 }
             } catch (err) {
                 console.error("Failed to load active event", err);

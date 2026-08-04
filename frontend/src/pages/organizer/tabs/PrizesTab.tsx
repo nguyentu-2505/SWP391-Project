@@ -350,11 +350,11 @@ const PrizesTab: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Certificate (e.g. Certificate of Excellence)</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Honor / Certificate (e.g. Honor Certificate)</label>
                             <input
                                 value={form.certificate}
                                 onChange={e => setForm(f => ({ ...f, certificate: e.target.value }))}
-                                placeholder="e.g. Certificate of Excellence"
+                                placeholder="e.g. Honor Certificate / Certificate of Excellence"
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white"
                             />
                         </div>

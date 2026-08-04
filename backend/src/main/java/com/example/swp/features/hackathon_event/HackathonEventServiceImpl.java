@@ -80,7 +80,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                     "Registration time must be before the event starts.");
         }
 
-        // Validate: minTeamSize <= maxTeamSize (nếu có)
+        // Validate: minTeamSize <= maxTeamSize
         if (request.getMinTeamSize() != null && request.getMaxTeamSize() != null
                 && request.getMinTeamSize() > request.getMaxTeamSize()) {
             throw new IllegalArgumentException("Minimum team size cannot be greater than maximum team size.");

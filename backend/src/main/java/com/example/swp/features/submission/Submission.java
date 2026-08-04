@@ -47,8 +47,7 @@ public class Submission {
     @Column(name = "version")
     private int version;
 
-    @CreationTimestamp
-    @Column(name = "submitted_at", updatable = false)
+    @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
     
     public Long getId() { return id; }
