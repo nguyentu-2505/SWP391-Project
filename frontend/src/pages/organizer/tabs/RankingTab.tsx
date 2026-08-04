@@ -30,7 +30,9 @@ interface OverrideModalState {
     teamId: number | null;
     teamName: string;
     currentRank: number;
-    newRank: string;
+    trackPeers: TeamRanking[];   // other teams in same track (for dropdown)
+    swapWithTeamId: number | ''; // team to swap rank with
+    swapWithRank: number;        // that team's rank
     reason: string;
 }
 
@@ -46,7 +48,8 @@ const RankingTab: React.FC = () => {
 
     // Override modal state
     const [overrideModal, setOverrideModal] = useState<OverrideModalState>({
-        open: false, teamId: null, teamName: '', currentRank: 0, newRank: '', reason: ''
+        open: false, teamId: null, teamName: '', currentRank: 0,
+        trackPeers: [], swapWithTeamId: '', swapWithRank: 0, reason: ''
     });
     const [overrideLoading, setOverrideLoading] = useState(false);
 
@@ -86,39 +89,44 @@ const RankingTab: React.FC = () => {
         fetchRankings();
     }, [selectedRoundId]);
 
-    // Open override modal
+    // Open override modal — pass peers in same track for dropdown
     const openOverrideModal = (team: TeamRanking) => {
+        // Get all teams in same track, excluding this team, only non-adjusted
+        const peers = rankings
+            .filter(r => r.trackId === team.trackId && r.teamId !== team.teamId && !r.manuallyAdjusted)
+            .sort((a, b) => a.rank - b.rank);
         setOverrideModal({
             open: true,
             teamId: team.teamId,
             teamName: team.teamName,
             currentRank: team.rank,
-            newRank: String(team.rank),
+            trackPeers: peers,
+            swapWithTeamId: peers.length > 0 ? peers[0].teamId : '',
+            swapWithRank: peers.length > 0 ? peers[0].rank : 0,
             reason: ''
         });
     };
 
-    // Submit override
+    // Submit override — overrideRank = the selected peer's rank (swap target)
     const handleOverrideSubmit = async () => {
         if (!overrideModal.teamId || !selectedRoundId) return;
         if (!overrideModal.reason.trim()) {
             toast.error('Reason is required!');
             return;
         }
-        const newRankNum = Number(overrideModal.newRank);
-        if (!newRankNum || newRankNum < 1) {
-            toast.error('New rank must be at least 1!');
+        if (!overrideModal.swapWithTeamId || !overrideModal.swapWithRank) {
+            toast.error('Please select a team to swap with!');
             return;
         }
         setOverrideLoading(true);
         try {
             await api.post(`/rankings/round/${selectedRoundId}/override`, {
                 teamId: overrideModal.teamId,
-                overrideRank: newRankNum,
+                overrideRank: overrideModal.swapWithRank,  // move to selected team's rank
                 reason: overrideModal.reason.trim()
             });
-            toast.success(`⚠️ Rank override applied for "${overrideModal.teamName}"!`);
-            setOverrideModal({ open: false, teamId: null, teamName: '', currentRank: 0, newRank: '', reason: '' });
+            toast.success(`⚠️ "${overrideModal.teamName}" swapped to rank #${overrideModal.swapWithRank}!`);
+            setOverrideModal({ open: false, teamId: null, teamName: '', currentRank: 0, trackPeers: [], swapWithTeamId: '', swapWithRank: 0, reason: '' });
             await fetchRankings();
         } catch {
             toast.error('Failed to apply rank override.');
@@ -436,35 +444,85 @@ const RankingTab: React.FC = () => {
 
                         {/* Body */}
                         <div className="px-6 py-5 space-y-4">
-                            <p className="text-sm text-gray-600">
-                                You are manually overriding the rank for{' '}
-                                <span className="font-bold text-gray-900">"{overrideModal.teamName}"</span>.
-                                This action will be recorded in the Audit Log.
-                            </p>
-
-                            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-700">
-                                ⚠️ Current auto rank: <strong>#{overrideModal.currentRank}</strong> — Use with caution. A <strong>reason is required</strong>.
+                            {/* Info */}
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="text-2xl font-bold text-amber-500">#{overrideModal.currentRank}</div>
+                                <div>
+                                    <p className="text-sm font-bold text-gray-900">{overrideModal.teamName}</p>
+                                    <p className="text-xs text-gray-500">Current rank — will be swapped</p>
+                                </div>
                             </div>
 
+                            {/* Swap target dropdown */}
                             <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1">New Rank *</label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={overrideModal.newRank}
-                                    onChange={e => setOverrideModal(s => ({ ...s, newRank: e.target.value }))}
-                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
-                                    placeholder="e.g. 1"
-                                />
+                                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                                    Swap position with <span className="text-red-500">*</span>
+                                </label>
+                                {overrideModal.trackPeers.length === 0 ? (
+                                    <p className="text-xs text-gray-400 italic">No other teams available to swap with.</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {overrideModal.trackPeers.map(peer => (
+                                            <label
+                                                key={peer.teamId}
+                                                className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                                    overrideModal.swapWithTeamId === peer.teamId
+                                                        ? 'border-amber-400 bg-amber-50'
+                                                        : 'border-gray-200 bg-white hover:border-amber-200 hover:bg-amber-50/50'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="swapTarget"
+                                                    value={peer.teamId}
+                                                    checked={overrideModal.swapWithTeamId === peer.teamId}
+                                                    onChange={() => setOverrideModal(s => ({
+                                                        ...s,
+                                                        swapWithTeamId: peer.teamId,
+                                                        swapWithRank: peer.rank
+                                                    }))}
+                                                    className="accent-amber-500"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-bold text-gray-800">
+                                                            #{peer.rank}
+                                                        </span>
+                                                        <span className="text-sm text-gray-700">{peer.teamName}</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400">Score: {Number(peer.finalScore).toFixed(2)}</p>
+                                                </div>
+                                                {overrideModal.swapWithTeamId === peer.teamId && (
+                                                    <span className="text-xs font-semibold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Selected</span>
+                                                )}
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
+                            {/* Arrow preview */}
+                            {overrideModal.swapWithTeamId !== '' && (
+                                <div className="flex items-center gap-2 text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                                    <span className="font-semibold text-gray-700">{overrideModal.teamName}</span>
+                                    <span>#{overrideModal.currentRank}</span>
+                                    <span className="text-blue-500 font-bold">→</span>
+                                    <span className="text-green-600 font-bold">#{overrideModal.swapWithRank}</span>
+                                    <span className="ml-auto text-gray-400">swap</span>
+                                    <span className="text-blue-500 font-bold">↔</span>
+                                    <span>{overrideModal.trackPeers.find(p => p.teamId === overrideModal.swapWithTeamId)?.teamName}</span>
+                                    <span className="text-green-600 font-bold">→#{overrideModal.currentRank}</span>
+                                </div>
+                            )}
+
+                            {/* Reason */}
                             <div>
                                 <label className="block text-xs font-semibold text-gray-700 mb-1">
                                     Reason <span className="text-red-500">*</span>
                                     <span className="text-gray-400 font-normal ml-1">(required — will be saved in Audit Log)</span>
                                 </label>
                                 <textarea
-                                    rows={3}
+                                    rows={2}
                                     value={overrideModal.reason}
                                     onChange={e => setOverrideModal(s => ({ ...s, reason: e.target.value }))}
                                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
@@ -472,6 +530,7 @@ const RankingTab: React.FC = () => {
                                 />
                             </div>
                         </div>
+
 
                         {/* Footer */}
                         <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50">

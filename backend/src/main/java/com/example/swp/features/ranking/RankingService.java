@@ -229,20 +229,51 @@ public class RankingService {
                 trackRankings.get(i).setRank(i + 1);
             }
 
-            // BƯỚC 6: Áp dụng Admin Override (nếu có)
-            // Override chỉ thay đổi rank hiển thị, không thay đổi điểm số
+            // BƯỚC 6: Áp dụng Admin Override với SWAP LOGIC
+            // Khi đội A được override lên rank X:
+            //   → Đội B đang ở rank X (tự động) sẽ bị đẩy xuống rank cũ của đội A
+            //   → Chỉ áp dụng swap cho đội KHÔNG CÓ override riêng (auto rank)
+            // Ví dụ: 4 đội, override đội rank 4 → rank 3
+            //   → Đội rank 3 (auto) tự động xuống rank 4
+
+            // Map: autoRank → response (chỉ lấy những đội chưa có override)
+            Map<Integer, TeamRankingResponse> autoRankMap = new java.util.HashMap<>();
             for (TeamRankingResponse r : trackRankings) {
-                RankOverride override = overridesByTeamId.get(r.getTeamId());
-                if (override != null) {
-                    r.setRank(override.getOverrideRank());
-                    r.setManuallyAdjusted(true);
-                    r.setOverrideReason(override.getReason());
-                    log.info("Applied manual rank override: teamId={}, newRank={}, reason={}",
-                            r.getTeamId(), override.getOverrideRank(), override.getReason());
+                if (!overridesByTeamId.containsKey(r.getTeamId())) {
+                    autoRankMap.put(r.getRank(), r);
                 }
             }
 
-            // Sắp xếp lại sau khi áp dụng override để đảm bảo thứ tự đúng
+            // Áp dụng override và thu thập rank cũ của những đội bị override
+            List<Integer> freedAutoRanks = new java.util.ArrayList<>();
+            for (TeamRankingResponse r : trackRankings) {
+                RankOverride override = overridesByTeamId.get(r.getTeamId());
+                if (override != null) {
+                    int oldAutoRank = r.getRank(); // rank tự động trước override
+                    freedAutoRanks.add(oldAutoRank); // rank này sẽ được nhường cho đội bị đẩy
+                    r.setRank(override.getOverrideRank());
+                    r.setManuallyAdjusted(true);
+                    r.setOverrideReason(override.getReason());
+                    log.info("Applied manual rank override: teamId={}, autoRank={} → overrideRank={}, reason={}",
+                            r.getTeamId(), oldAutoRank, override.getOverrideRank(), override.getReason());
+                }
+            }
+
+            // Xác định những rank bị "chiếm" bởi override (cần được fill lại)
+            // → Đội auto đang ở rank đó phải nhường chỗ, lấy rank freed từ đội bị override
+            java.util.Iterator<Integer> freedIter = freedAutoRanks.iterator();
+            for (RankOverride override : overridesByTeamId.values()) {
+                int occupiedRank = override.getOverrideRank();
+                TeamRankingResponse displaced = autoRankMap.get(occupiedRank);
+                if (displaced != null && freedIter.hasNext()) {
+                    int assignedRank = freedIter.next();
+                    log.info("Swap: team '{}' displaced from rank {} → assigned rank {}",
+                            displaced.getTeamName(), occupiedRank, assignedRank);
+                    displaced.setRank(assignedRank);
+                }
+            }
+
+            // Sắp xếp lại sau khi áp dụng swap để đảm bảo thứ tự đúng
             trackRankings.sort(Comparator.comparingInt(TeamRankingResponse::getRank));
             finalRankings.addAll(trackRankings);
         }
