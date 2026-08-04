@@ -19,8 +19,10 @@ interface TeamRanking {
     trackId: number;
     trackName: string;
     finalScore: number;
+    submittedAt?: string;
     manuallyAdjusted?: boolean;
     overrideReason?: string;
+    criterionBreakdown?: { criterionId: number; criterionName: string; averageScore: number; weight: number }[];
 }
 
 interface OverrideModalState {
@@ -40,6 +42,7 @@ const RankingTab: React.FC = () => {
     const [loadingRounds, setLoadingRounds] = useState(true);
     const [loadingRankings, setLoadingRankings] = useState(false);
     const [selectedTrackId, setSelectedTrackId] = useState<number | 'all'>('all');
+    const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
 
     // Override modal state
     const [overrideModal, setOverrideModal] = useState<OverrideModalState>({
@@ -182,12 +185,23 @@ const RankingTab: React.FC = () => {
 
     const rankIcons = ['🥇', '🥈', '🥉'];
 
-    const renderRankingTable = (trackRankings: TeamRanking[], trackName?: string) => (
+    const renderRankingTable = (trackRankings: TeamRanking[], trackName?: string) => {
+        // Detect tied scores to highlight tie-breaker column
+        const scores = trackRankings.map(r => Number(r.finalScore));
+        const hasTies = scores.some((s, i) => scores.some((s2, j) => i !== j && Math.abs(s - s2) < 0.001));
+
+        return (
         <div key={trackName || 'unassigned'} className="mb-8">
             {trackName && (
                 <h3 className="text-lg font-bold text-gray-800 mb-3 px-1 border-l-4 border-blue-500 pl-3">
                     {trackName} Track
                 </h3>
+            )}
+            {hasTies && (
+                <div className="mb-3 flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    <AlertTriangle size={13} />
+                    <span><strong>Tied scores detected.</strong> Tie-breaker: criterion weights → submission time (earlier = better rank). Click a row to see score breakdown.</span>
+                </div>
             )}
             <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -197,66 +211,111 @@ const RankingTab: React.FC = () => {
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Final Score</th>
+                            <th className={`px-4 py-3 text-center text-xs font-medium uppercase ${hasTies ? 'text-amber-600' : 'text-gray-500'}`}>
+                                {hasTies ? '⏱ Submitted At' : 'Submitted At'}
+                            </th>
                             <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Override</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 bg-white">
-                        {trackRankings.map((r, idx) => (
-                            <tr key={r.teamId} className={`${r.manuallyAdjusted ? 'bg-amber-50' : idx < 3 ? '' : ''} hover:bg-gray-50 transition-colors`}>
-                                <td className="px-4 py-3 text-sm">
-                                    <div className="flex items-center gap-2">
-                                        {idx < 3
-                                            ? <span className="text-lg">{rankIcons[idx]}</span>
-                                            : <span className="text-gray-500">#{r.rank}</span>
-                                        }
-                                        {r.manuallyAdjusted && (
-                                            <span title={`Override reason: ${r.overrideReason}`}
-                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 cursor-help">
-                                                <AlertTriangle size={10} /> Adjusted
-                                            </span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900 font-semibold">
-                                    {r.teamName}
-                                    {r.manuallyAdjusted && r.overrideReason && (
-                                        <p className="text-xs font-normal text-amber-600 mt-0.5 italic">
-                                            "{r.overrideReason}"
-                                        </p>
+                        {trackRankings.map((r, idx) => {
+                            const isExpanded = expandedTeamId === r.teamId;
+                            const isTied = scores.filter(s => Math.abs(s - Number(r.finalScore)) < 0.001).length > 1;
+                            return (
+                                <React.Fragment key={r.teamId}>
+                                    <tr
+                                        className={`${r.manuallyAdjusted ? 'bg-amber-50' : ''} hover:bg-gray-50 transition-colors cursor-pointer`}
+                                        onClick={() => setExpandedTeamId(isExpanded ? null : r.teamId)}
+                                        title="Click to see score breakdown"
+                                    >
+                                        <td className="px-4 py-3 text-sm">
+                                            <div className="flex items-center gap-2">
+                                                {idx < 3
+                                                    ? <span className="text-lg">{rankIcons[idx]}</span>
+                                                    : <span className="text-gray-500">#{r.rank}</span>
+                                                }
+                                                {r.manuallyAdjusted && (
+                                                    <span title={`Override reason: ${r.overrideReason}`}
+                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 cursor-help">
+                                                        <AlertTriangle size={10} /> Adjusted
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-900 font-semibold">
+                                            {r.teamName}
+                                            {r.manuallyAdjusted && r.overrideReason && (
+                                                <p className="text-xs font-normal text-amber-600 mt-0.5 italic">
+                                                    "{r.overrideReason}"
+                                                </p>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-500">{r.projectName || '—'}</td>
+                                        <td className="px-4 py-3 text-sm text-right font-mono font-bold text-blue-700">
+                                            {Number(r.finalScore).toFixed(2)}
+                                        </td>
+                                        <td className={`px-4 py-3 text-xs text-center font-mono ${
+                                            isTied && hasTies ? 'text-amber-700 font-semibold' : 'text-gray-400'
+                                        }`}>
+                                            {r.submittedAt
+                                                ? new Date(r.submittedAt).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+                                                : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <div className="flex items-center justify-center gap-1" onClick={e => e.stopPropagation()}>
+                                                {r.manuallyAdjusted ? (
+                                                    <button
+                                                        onClick={() => handleRemoveOverride(r)}
+                                                        title="Remove override — restore auto ranking"
+                                                        className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 border border-gray-200 transition-colors cursor-pointer"
+                                                    >
+                                                        <RotateCcw size={12} /> Restore
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => openOverrideModal(r)}
+                                                        title="Manually override this team's rank"
+                                                        className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-white text-gray-500 hover:bg-amber-50 hover:text-amber-700 border border-gray-200 hover:border-amber-300 transition-colors cursor-pointer"
+                                                    >
+                                                        <Edit2 size={12} /> Override
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {/* Expandable Score Breakdown Row */}
+                                    {isExpanded && r.criterionBreakdown && r.criterionBreakdown.length > 0 && (
+                                        <tr className="bg-blue-50">
+                                            <td colSpan={6} className="px-6 py-3">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">Score Breakdown — {r.teamName}</span>
+                                                    {isTied && <span className="text-xs text-amber-600 font-medium">(Tie-breaker: higher weighted score wins)</span>}
+                                                </div>
+                                                <div className="flex flex-wrap gap-3">
+                                                    {[...r.criterionBreakdown]
+                                                        .sort((a, b) => b.weight - a.weight)
+                                                        .map(c => (
+                                                        <div key={c.criterionId} className="bg-white border border-blue-100 rounded-lg px-3 py-2 text-xs min-w-[120px]">
+                                                            <div className="font-semibold text-gray-700 truncate">{c.criterionName}</div>
+                                                            <div className="flex justify-between items-center mt-1 gap-3">
+                                                                <span className="text-gray-400">Weight: <strong>{c.weight}%</strong></span>
+                                                                <span className="font-bold text-blue-700">{c.averageScore.toFixed(2)}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                        </tr>
                                     )}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-500">{r.projectName || '—'}</td>
-                                <td className="px-4 py-3 text-sm text-right font-mono font-bold text-blue-700">
-                                    {Number(r.finalScore).toFixed(2)}
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                    <div className="flex items-center justify-center gap-1">
-                                        {r.manuallyAdjusted ? (
-                                            <button
-                                                onClick={() => handleRemoveOverride(r)}
-                                                title="Remove override — restore auto ranking"
-                                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 border border-gray-200 transition-colors cursor-pointer"
-                                            >
-                                                <RotateCcw size={12} /> Restore
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => openOverrideModal(r)}
-                                                title="Manually override this team's rank"
-                                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-white text-gray-500 hover:bg-amber-50 hover:text-amber-700 border border-gray-200 hover:border-amber-300 transition-colors cursor-pointer"
-                                            >
-                                                <Edit2 size={12} /> Override
-                                            </button>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                                </React.Fragment>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
         </div>
-    );
+        );
+    };
 
     return (
         <div>

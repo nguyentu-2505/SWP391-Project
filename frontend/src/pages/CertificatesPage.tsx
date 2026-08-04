@@ -94,19 +94,28 @@ const CertificatesPage: React.FC = () => {
             const events = Array.isArray(eventsRes.data?.data) ? eventsRes.data.data : 
                            Array.isArray(eventsRes.data) ? eventsRes.data : [];
 
-            // STRICT BUSINESS RULE: Certificates are ONLY issued for COMPLETED events!
-            const completedEvents = events.filter((e: any) => !e.isDeleted && e.status === 'COMPLETED');
+            // BUSINESS RULE: Certificates issued for:
+            // 1. Events with status COMPLETED (organizer explicitly marked done), OR
+            // 2. Events whose endTime has already passed (event over, organizer may not have clicked Complete yet)
+            // This prevents the page being always empty when organizer forgets to click Complete.
+            const now = new Date();
+            const eligibleEvents = events.filter((e: any) => {
+                if (e.isDeleted) return false;
+                if (e.status === 'COMPLETED') return true;
+                // Also include PUBLISHED/ONGOING events that have ended by endTime
+                if (e.endTime && new Date(e.endTime) < now) return true;
+                return false;
+            });
 
             const certList: CertificateData[] = [];
-            const now = new Date();
             const formattedDate = now.toLocaleDateString('en-GB', {
                 day: '2-digit',
                 month: 'long',
                 year: 'numeric'
             });
 
-            // 3. Query teams and members from database ONLY for COMPLETED events
-            for (const ev of completedEvents) {
+            // 3. Query teams and members from database for eligible events
+            for (const ev of eligibleEvents) {
                 try {
                     const teamRes = await api.get(`/teams/event/${ev.id}`);
                     const teams = Array.isArray(teamRes.data?.data) ? teamRes.data.data : 
