@@ -14,6 +14,7 @@ import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.user.Role;
 import com.example.swp.features.audit_log.AuditLogService;
+import com.example.swp.features.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class JudgeAssignmentService {
     private final TrackRepository trackRepository;
     private final TrackMentorRepository trackMentorRepository;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     public JudgeAssignmentResponse assignJudge(AssignJudgeRequest request) {
         User judge = userRepository.findById(request.getJudgeId())
@@ -94,6 +96,17 @@ public class JudgeAssignmentService {
             "Assigned judge " + judge.getUsername() + " to round " + round.getName(),
             round.getHackathonEvent().getId()
         );
+
+        String trackName = track != null ? track.getName() : "All Tracks";
+        notificationService.createNotification(
+            judge,
+            "Judge Assignment",
+            "You have been assigned to grade " + trackName + " in round '" + round.getName() + "'.",
+            "JUDGE_ASSIGNMENT",
+            "ROUND",
+            round.getId()
+        );
+
         return mapToResponse(savedAssignment);
     }
 
