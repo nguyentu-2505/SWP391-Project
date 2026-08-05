@@ -30,6 +30,8 @@ const HackathonEventPage: React.FC = () => {
   const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 3, maxTeamSize: 5, organizerId: undefined });
   const [selectedEvent, setSelectedEvent] = useState<HackathonEvent | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateSortOrder, setDateSortOrder] = useState('NEWEST');
 
   useEffect(() => {
     fetchEvents();
@@ -105,7 +107,9 @@ const HackathonEventPage: React.FC = () => {
         registrationEnd: selectedEvent.registrationEnd,
         minTeamSize: selectedEvent.minTeamSize,
         maxTeamSize: selectedEvent.maxTeamSize,
-        organizerId: selectedEvent.organizerId,
+        rules: selectedEvent.rules,
+        imageUrl: selectedEvent.imageUrl,
+        organizerId: selectedEvent.organizerId
       };
       await HackathonEventService.updateHackathonEvent(selectedEvent.id, updateRequest);
       fetchEvents();
@@ -114,21 +118,25 @@ const HackathonEventPage: React.FC = () => {
       toast.success('Event updated successfully', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to update hackathon event:', error);
-      const errMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message;
-      toast.error('Failed to update event: ' + errMsg, { id: loadingToast });
+      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Failed to update event: ' + errorMessage, { id: loadingToast });
     }
   };
 
-  const handleStatusChange = async (id: number, newStatus: string) => {
+  const handleStatusChange = async (eventId: number, newStatus: string) => {
     const loadingToast = toast.loading('Updating status...');
     try {
-      await HackathonEventService.updateHackathonEventStatus(id, newStatus);
+      if (newStatus === 'PUBLISHED') {
+        await api.put(`/hackathon-events/${eventId}/publish`);
+      } else {
+        await HackathonEventService.updateHackathonEventStatus(eventId, newStatus);
+      }
       fetchEvents();
-      toast.success('Status updated successfully', { id: loadingToast });
+      toast.success(`Event status updated to ${newStatus}`, { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to update status:', error);
-      const errMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message;
-      toast.error('Failed to update status: ' + errMsg, { id: loadingToast });
+      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Failed to update status: ' + errorMessage, { id: loadingToast });
     }
   };
 
@@ -141,7 +149,7 @@ const HackathonEventPage: React.FC = () => {
               onClick={() => handleStatusChange(eventId, 'PUBLISHED')}
               className="px-2 py-1 bg-green-600 text-white text-[10px] font-bold rounded-lg hover:bg-green-700 transition-colors cursor-pointer shadow-sm"
             >
-              Publish
+              Publish Event
             </button>
             <button
               onClick={() => handleStatusChange(eventId, 'CANCELLED')}
@@ -156,7 +164,7 @@ const HackathonEventPage: React.FC = () => {
           <div className="flex gap-1.5 mt-2 flex-wrap">
             <button
               onClick={() => handleStatusChange(eventId, 'IN_PROGRESS')}
-              className="px-2 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer shadow-sm"
+              className="px-2 py-1 bg-[#0284c7] text-white text-[10px] font-bold rounded-lg hover:bg-sky-700 transition-colors cursor-pointer shadow-sm"
             >
               Start Event
             </button>
@@ -173,9 +181,9 @@ const HackathonEventPage: React.FC = () => {
           <div className="flex gap-1.5 mt-2 flex-wrap">
             <button
               onClick={() => handleStatusChange(eventId, 'COMPLETED')}
-              className="px-2 py-1 bg-teal-600 text-white text-[10px] font-bold rounded-lg hover:bg-teal-700 transition-colors cursor-pointer shadow-sm"
+              className="px-2 py-1 bg-purple-600 text-white text-[10px] font-bold rounded-lg hover:bg-purple-700 transition-colors cursor-pointer shadow-sm"
             >
-              Complete
+              Complete Event
             </button>
             <button
               onClick={() => handleStatusChange(eventId, 'CANCELLED')}
@@ -217,12 +225,23 @@ const HackathonEventPage: React.FC = () => {
   };
 
   const filteredEvents = events.filter(event => {
-    return statusFilter ? event.status === statusFilter : true;
+    const matchesStatus = statusFilter ? event.status === statusFilter : true;
+    const matchesSearch = !searchQuery || 
+                          event.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                          (event.organizerName && event.organizerName.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesStatus && matchesSearch;
+  }).sort((a, b) => {
+    const timeA = new Date(a.startTime).getTime();
+    const timeB = new Date(b.startTime).getTime();
+    if (dateSortOrder === 'NEWEST') return timeB - timeA;
+    if (dateSortOrder === 'OLDEST') return timeA - timeB;
+    return 0;
   });
 
   return (
     <div className="container mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Calendar className="text-blue-600" />
@@ -231,7 +250,17 @@ const HackathonEventPage: React.FC = () => {
           <p className="text-gray-500 text-sm mt-1">Manage hackathon events, schedules and descriptions.</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Search Box */}
+          <input
+            type="text"
+            placeholder="Search event name, organizer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-52"
+          />
+
+          {/* Status Filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -243,6 +272,16 @@ const HackathonEventPage: React.FC = () => {
             <option value="IN_PROGRESS">In Progress</option>
             <option value="COMPLETED">Completed</option>
             <option value="CANCELLED">Cancelled</option>
+          </select>
+
+          {/* Date Sort Filter */}
+          <select
+            value={dateSortOrder}
+            onChange={(e) => setDateSortOrder(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="NEWEST">Date: Newest First</option>
+            <option value="OLDEST">Date: Oldest First</option>
           </select>
 
           <Authorizable allowedRoles={[Role.ADMIN]}>

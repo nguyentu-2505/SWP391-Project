@@ -10,6 +10,7 @@ import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import CertificatesPage from './pages/CertificatesPage';
+import CertificateVerifyPage from './pages/CertificateVerifyPage';
 import NotificationsPage from './pages/NotificationsPage';
 import HelpCenterPage from './pages/HelpCenterPage';
 import AdminMentorProfilePage from './pages/admin/AdminMentorProfilePage';
@@ -90,6 +91,9 @@ function App() {
             <Route path="/events/:slug" element={<EventDetailPage />} />
             <Route path="/leaderboard/round/:roundId" element={<PublicLeaderboardPage />} />
           </Route>
+
+          {/* PUBLIC: Shareable Certificate Verify Page (no login needed) */}
+          <Route path="/verify/:certId" element={<CertificateVerifyPage />} />
 
           {/* Protected Routes with main app Layout */}
           <Route element={<PrivateRoute />}>

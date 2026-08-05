@@ -404,12 +404,13 @@ VALUES
 INSERT INTO hackathon_event (name, slug, description, status, registration_start, registration_end, start_time, end_time, max_team_size, min_team_size, rules, organizer_id)
 VALUES
 
-    -- event id=1: đang diễn ra
+    -- event id=1: đang diễn ra (Đã cập nhật theo yêu cầu)
     (N'FPT Hackathon 2026',   'fpt-hackathon-2026',   N'Cuộc thi khởi nghiệp công nghệ dành cho sinh viên FPT toàn quốc',
      'IN_PROGRESS',
-     DATEADD(day, -15, GETDATE()), DATEADD(day, -1, GETDATE()),
-     GETDATE(), DATEADD(day, 30, GETDATE()),
+     DATEADD(minute, -10, GETDATE()), DATEADD(minute, -5, GETDATE()),
+     GETDATE(), DATEADD(minute, 30, GETDATE()),
      5, 2, N'Mỗi đội 2-5 thành viên. Nộp bài qua GitHub. Không sử dụng code có sẵn.', 2),
+
     -- event id=2: nháp
     (N'FPTU Innovation Challenge', 'fptu-innovation-2026', N'Thử thách đổi mới sáng tạo lần 2 – chủ đề GreenTech',
      'DRAFT',
@@ -453,13 +454,12 @@ INSERT INTO event_registration (event_id, user_id, status) VALUES
 -- 5.5 round (3 rounds cho event 1, 2 rounds cho event 2)
 -- -----------------------------------------------
 INSERT INTO round (name, description, start_time, end_time, hackathon_event_id, submission_deadline, advancement_slots, round_order, grading_end_time, grading_ended) VALUES
-                                                                                                                                                                          -- event 1
+                                                                                                                                                                          -- event 1 (Đã cập nhật theo yêu cầu)
                                                                                                                                                                           (N'Vòng Ý tưởng',       N'Nộp bản mô tả ý tưởng và kế hoạch thực hiện',
-                                                                                                                                                                           GETDATE(), DATEADD(day, 7, GETDATE()),  1, DATEADD(day, 6, GETDATE()), 10, 1, NULL, 0),   -- round id=1
+                                                                                                                                                                           GETDATE(), DATEADD(minute, 1, GETDATE()),  1, DATEADD(minute, 1, GETDATE()), 3, 1, DATEADD(minute, 5, GETDATE()), 0),   -- round id=1
                                                                                                                                                                           (N'Vòng Prototype',     N'Demo sản phẩm prototype và trình bày kỹ thuật',
-                                                                                                                                                                           DATEADD(day, 8, GETDATE()), DATEADD(day, 20, GETDATE()), 1, DATEADD(day, 19, GETDATE()), 5, 2, NULL, 0),   -- round id=2
-                                                                                                                                                                          (N'Vòng Chung kết',     N'Thuyết trình trước hội đồng giám khảo',
-                                                                                                                                                                           DATEADD(day, 21, GETDATE()), DATEADD(day, 30, GETDATE()), 1, DATEADD(day, 29, GETDATE()), NULL, 3, NULL, 0), -- round id=3
+                                                                                                                                                                           DATEADD(minute, 6, GETDATE()), DATEADD(minute, 7, GETDATE()), 1, DATEADD(minute, 6, GETDATE()), 1, 2, DATEADD(minute, 9, GETDATE()), 0),   -- round id=2
+
                                                                                                                                                                           -- event 2
                                                                                                                                                                           (N'Vòng Sơ loại',       N'Nộp đề xuất giải pháp GreenTech',
                                                                                                                                                                            DATEADD(day, 30, GETDATE()), DATEADD(day, 45, GETDATE()), 2, DATEADD(day, 44, GETDATE()), 8, 1, NULL, 0),   -- round id=4
@@ -478,14 +478,23 @@ INSERT INTO criterion (name, description, max_score, weight, hackathon_event_id)
 -- 5.7 team (3 teams cho event 1)
 -- -----------------------------------------------
 INSERT INTO team (name, project_name, project_description, track_id, event_id, status) VALUES
-                                                                                           (N'Team Alpha',   N'SmartStudy AI',     N'Ứng dụng AI hỗ trợ sinh viên lập kế hoạch học tập cá nhân hóa',               1, 1, 'ACTIVE'),        -- team id=1
-                                                                                           (N'Team Beta',    N'CampusConnect',     N'Nền tảng web kết nối sinh viên, câu lạc bộ và sự kiện trong trường',           2, 1, 'ACTIVE'),        -- team id=2
-                                                                                            (N'Team Gamma',   N'HealthBot',         N'Chatbot AI tư vấn sức khỏe tâm lý cho sinh viên',                                1, 1, 'ACTIVE'),
-                                                                                            (N'Team Delta',   N'SmartFarm IoT',     N'Hệ thống tưới tiêu và giám sát cây trồng thông minh qua IoT',                    3, 1, 'ACTIVE'),
-                                                                                            (N'Team Epsilon', N'EduPlatform',       N'Nền tảng học trực tuyến tương tác thời gian thực với WebRTC',                    2, 1, 'ACTIVE');
+                                                                                           (N'Team Alpha',   N'SmartStudy AI',     N'Ứng dụng AI hỗ trợ sinh viên lập kế hoạch học tập cá nhân hóa',               1, 1, 'FINALIZED'),        -- team id=1
+                                                                                           (N'Team Beta',    N'CampusConnect',     N'Nền tảng web kết nối sinh viên, câu lạc bộ và sự kiện trong trường',           1, 1, 'FINALIZED'),        -- team id=2
+                                                                                           (N'Team Gamma',   N'HealthBot',         N'Chatbot AI tư vấn sức khỏe tâm lý cho sinh viên',                                1, 1, 'FINALIZED'),
+                                                                                           (N'Team Delta',   N'SmartFarm IoT',     N'Hệ thống tưới tiêu và giám sát cây trồng thông minh qua IoT',                    1, 1, 'FINALIZED'),
+                                                                                           (N'Team Epsilon', N'EduPlatform',       N'Nền tảng học trực tuyến tương tác thời gian thực với WebRTC',                    1, 1, 'FINALIZED');
+
 
 -- -----------------------------------------------
--- 5.8 track_mentor (phân công mentor/judge cho track)
+-- 5.8 prize (Thêm 3 dữ liệu vào table prize - Đã cập nhật theo yêu cầu)
+-- -----------------------------------------------
+INSERT INTO prize (name, description, hackathon_event_id, track_id, winning_team_id, rank, cash, has_cup, has_certificate, cup, certificate, currency) VALUES
+                                                                                                                                                           (N'Giải Nhất', N'Giải nhất chung cuộc của track 1', 1, 1, NULL, 1, 15000000.00, 1, 1, N'Cúp Vàng', N'Giấy chứng nhận Giải Nhất', 'VND'),
+                                                                                                                                                           (N'Giải Nhì', N'Giải nhì chung cuộc của track 1', 1, 1, NULL, 2, 8000000.00, 1, 1, N'Cúp Bạc', N'Giấy chứng nhận Giải Nhì', 'VND'),
+                                                                                                                                                           (N'Giải Ba', N'Giải ba chung cuộc của track 1', 1, 1, NULL, 3, 5000000.00, 1, 1, N'Cúp Đồng', N'Giấy chứng nhận Giải Ba', 'VND');
+
+-- -----------------------------------------------
+-- 5.9 track_mentor (phân công mentor/judge cho track)
 -- -----------------------------------------------
 INSERT INTO track_mentor (track_id, user_id, event_id, assigned_by) VALUES
                                                                         (1, 6, 1, 2),   -- mentor1 → track AI, assigned by organizer1
@@ -493,7 +502,7 @@ INSERT INTO track_mentor (track_id, user_id, event_id, assigned_by) VALUES
                                                                         (1, 4, 1, 2);   -- judge1  → track AI, assigned by organizer1
 
 -- -----------------------------------------------
--- 5.9 team_member (phân bổ 3 students vào 3 teams)
+-- 5.10 team_member (phân bổ 3 students vào 3 teams)
 -- -----------------------------------------------
 INSERT INTO team_member (team_id, user_id, is_leader) VALUES
                                                           (1, 8, 1),  -- student1 là leader Team Alpha

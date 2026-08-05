@@ -306,6 +306,14 @@ public class TeamServiceImpl implements TeamService {
             team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
             throw new IllegalStateException("Cannot finalize team when the event is completed or cancelled.");
         }
+        
+        if (team.getEvent().getStatus() == com.example.swp.features.hackathon_event.HackathonStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Cannot finalize team after the event has already started.");
+        }
+
+        if (team.getEvent().getRegistrationEnd() != null && LocalDateTime.now().isAfter(team.getEvent().getRegistrationEnd())) {
+            throw new IllegalStateException("Registration period has ended. You can no longer finalize the team.");
+        }
 
         if (team.getEvent().getEndTime() != null && LocalDateTime.now().isAfter(team.getEvent().getEndTime())) {
             throw new IllegalStateException("The event has ended. You can no longer finalize teams.");

@@ -12,6 +12,8 @@ import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.hackathon_event.HackathonEventRepository;
 import com.example.swp.features.hackathon_event.HackathonStatus;
+import com.example.swp.features.notification.NotificationService;
+import com.example.swp.features.team_member.TeamMember;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class RoundAdvancementService {
     private final AuditLogService auditLogService;
     private final UserRepository userRepository;
     private final HackathonEventRepository hackathonEventRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public String advanceTeams(Long fromRoundId) {
@@ -83,6 +86,25 @@ public class RoundAdvancementService {
                     "0",
                     "Event completed. Final round: " + fromRound.getName() + " has ended. Final scores populated."
             );
+            
+            // Notify all members of all teams in the event
+            List<User> allEventParticipants = teamRepository.findByEventId(event.getId()).stream()
+                    .flatMap(team -> team.getTeamMembers().stream())
+                    .map(TeamMember::getUser)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            if (!allEventParticipants.isEmpty()) {
+                notificationService.createNotifications(
+                        allEventParticipants,
+                        "Event Completed!",
+                        "The hackathon event '" + event.getName() + "' has completed. Thank you for participating!",
+                        "EVENT_UPDATE",
+                        "EVENT",
+                        event.getId()
+                );
+            }
+
             return "Final round completed. Hackathon event marked as COMPLETED. Final scores updated.";
         }
 
@@ -129,6 +151,20 @@ public class RoundAdvancementService {
                     team.setDisqualifiedAt(LocalDateTime.now());
                     team.setDisqualifiedBy(currentUser);
                     teamRepository.save(team);
+                    
+                    // Notify disqualified team members
+                    List<User> eliminatedMembers = team.getTeamMembers().stream()
+                            .map(TeamMember::getUser).collect(Collectors.toList());
+                    if (!eliminatedMembers.isEmpty()) {
+                        notificationService.createNotifications(
+                                eliminatedMembers,
+                                "Team Eliminated",
+                                "Your team '" + team.getName() + "' has been eliminated after round '" + fromRound.getName() + "'.",
+                                "TEAM_UPDATE",
+                                "TEAM",
+                                team.getId()
+                        );
+                    }
                 }
             }
         }
@@ -154,6 +190,23 @@ public class RoundAdvancementService {
                 "0",
                 "Advanced Teams: [" + teamIdsStr + "] to Round " + toRound.getId()
         );
+
+        // Notify advanced team members
+        for (TeamRoundAdvancement adv : advancements) {
+            List<User> advancedMembers = adv.getTeam().getTeamMembers().stream()
+                    .map(TeamMember::getUser).collect(Collectors.toList());
+            if (!advancedMembers.isEmpty()) {
+                notificationService.createNotifications(
+                        advancedMembers,
+                        "Round Advanced!",
+                        "Congratulations! Your team '" + adv.getTeam().getName() + "' has advanced to '" + toRound.getName() + "'.",
+                        "TEAM_UPDATE",
+                        "TEAM",
+                        adv.getTeam().getId()
+                );
+            }
+        }
+
         return "Teams advanced successfully to the next round.";
     }
 

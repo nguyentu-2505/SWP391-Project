@@ -8,6 +8,8 @@ export interface AuditLog {
     action: string;
     timestamp: string;
     details: string;
+    oldValue?: string;
+    newValue?: string;
 }
 
 const getAllAuditLogs = async (page: number = 0, size: number = 100): Promise<AuditLog[]> => {

@@ -128,6 +128,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                     .demoUrl(request.getDemoUrl())
                     .reportUrl(request.getReportUrl())
                     .version(1)
+                    .submittedAt(LocalDateTime.now()) // Ghi nhận thời điểm nộp bài lần đầu
                     .build();
         }
 

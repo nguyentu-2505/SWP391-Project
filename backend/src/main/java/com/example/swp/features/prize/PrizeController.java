@@ -32,6 +32,13 @@ public class PrizeController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{prizeId}/unassign")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<PrizeResponse> unassignPrizeFromTeam(@PathVariable Long prizeId) {
+        PrizeResponse response = prizeService.unassignPrizeFromTeam(prizeId);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/event/{hackathonEventId}")
     public ResponseEntity<List<PrizeResponse>> getPrizesByEvent(@PathVariable Long hackathonEventId) {
         List<PrizeResponse> responses = prizeService.getPrizesByEvent(hackathonEventId);

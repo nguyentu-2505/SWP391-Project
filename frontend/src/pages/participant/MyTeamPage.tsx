@@ -39,6 +39,14 @@ interface HackathonEvent {
     endTime?: string;
 }
 
+interface Prize {
+    id: number;
+    name: string;
+    description: string;
+    rank: number;
+    winningTeamId?: number;
+}
+
 const MyTeamPage: React.FC = () => {
     useParams<{ slug: string }>();
     const navigate = useNavigate();
@@ -46,6 +54,7 @@ const MyTeamPage: React.FC = () => {
     const [events, setEvents] = useState<HackathonEvent[]>([]);
     const [selectedEventId, setSelectedEventId] = useState<number | ''>('');
     const [team, setTeam] = useState<TeamDetails | null>(null);
+    const [teamPrizes, setTeamPrizes] = useState<Prize[]>([]);
     
     const [loadingEvents, setLoadingEvents] = useState(true);
     const [loadingTeam, setLoadingTeam] = useState(false);
@@ -98,6 +107,15 @@ const MyTeamPage: React.FC = () => {
             const response = await api.get(`/teams/my-team/event/${selectedEventId}`);
             const teamData = response.data.data;
             setTeam(teamData);
+            
+            try {
+                const prizeRes = await api.get(`/prizes/event/${selectedEventId}`);
+                const allPrizes: Prize[] = prizeRes.data;
+                const myPrizes = allPrizes.filter(p => p.winningTeamId === teamData.id);
+                setTeamPrizes(myPrizes);
+            } catch (prizeErr) {
+                console.error("Failed to fetch prizes", prizeErr);
+            }
             
             const username = getDecodedToken()?.sub;
             const isLeader = teamData.members.some((m: any) => m.username === username && m.isLeader);
@@ -390,6 +408,29 @@ const MyTeamPage: React.FC = () => {
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Prizes Display */}
+                            {teamPrizes.length > 0 && (
+                                <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-6 shadow-sm mt-4">
+                                    <h3 className="text-lg font-bold text-yellow-800 flex items-center gap-2 mb-4">
+                                        <Crown size={24} className="text-yellow-600 fill-yellow-600" />
+                                        Congratulations! You've Won:
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {teamPrizes.map(prize => (
+                                            <div key={prize.id} className="bg-white/80 rounded-lg p-4 border border-yellow-100 flex items-start gap-3">
+                                                <div className="bg-yellow-100 text-yellow-700 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0">
+                                                    #{prize.rank}
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-slate-800">{prize.name}</h4>
+                                                    {prize.description && <p className="text-sm text-slate-600 mt-1">{prize.description}</p>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Actions area based on team status */}
                             <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-3">

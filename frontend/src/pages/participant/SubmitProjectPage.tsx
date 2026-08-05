@@ -41,6 +41,8 @@ const SubmitProjectPage: React.FC = () => {
     const [repoError, setRepoError] = useState('');
     const [demoError, setDemoError] = useState('');
     const [reportError, setReportError] = useState('');
+    
+    const [existingSubmission, setExistingSubmission] = useState<any>(null);
 
 
     useEffect(() => {
@@ -61,6 +63,7 @@ const SubmitProjectPage: React.FC = () => {
 
                 // Auto detect active round based on current date
                 const now = new Date();
+                let detectedRoundId = '';
                 const active = fetchedRounds.find((r: any) => {
                     if (r.gradingEnded) return false;
                     const start = new Date(r.startTime);
@@ -71,8 +74,26 @@ const SubmitProjectPage: React.FC = () => {
                 });
                 if (active) {
                     setRoundId(active.id);
+                    detectedRoundId = active.id;
                 } else {
                     setRoundId('');
+                }
+                
+                // Fetch team submissions
+                try {
+                    const submissionsRes = await api.get(`/submissions/team/${teamRes.data.data.id}`);
+                    const submissions = submissionsRes.data.data ?? submissionsRes.data;
+                    if (submissions && submissions.length > 0 && detectedRoundId) {
+                        const currentSubmission = submissions.find((s: any) => s.roundId === detectedRoundId);
+                        if (currentSubmission) {
+                            setExistingSubmission(currentSubmission);
+                            setRepositoryUrl(currentSubmission.repositoryUrl || '');
+                            setDemoUrl(currentSubmission.demoUrl || '');
+                            setReportUrl(currentSubmission.reportUrl || '');
+                        }
+                    }
+                } catch (subErr) {
+                    console.error('Failed to fetch team submissions:', subErr);
                 }
             } catch (err: any) {
                 console.error(err);
@@ -300,6 +321,18 @@ const SubmitProjectPage: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Existing Submission Banner */}
+                        {existingSubmission && (
+                            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3 text-green-800">
+                                <CheckCircle2 className="mt-0.5 shrink-0" size={20} />
+                                <div>
+                                    <p className="text-sm font-bold uppercase tracking-wider text-green-700">Submission Registered ({activeRound.name})</p>
+                                    <p className="font-medium text-sm mt-1">You have already submitted your project for this round. You can update your links below and re-submit if needed.</p>
+                                    <p className="text-xs mt-1 text-green-600">Last submitted at: {new Date(existingSubmission.submittedAt).toLocaleString()}</p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Repository URL */}
                         <div>
                             <label htmlFor="repoUrl" className="block text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5">
@@ -390,21 +423,22 @@ const SubmitProjectPage: React.FC = () => {
                             </div>
                         )}
 
-                        <div className="pt-4 border-t border-slate-100 flex justify-end">
+                        {/* Submit Button */}
+                        <div className="pt-4 border-t border-outline-variant flex justify-end">
                             <button
                                 type="submit"
-                                disabled={submitting || !myTeam || rounds.length === 0}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 px-6 rounded-lg font-bold text-sm text-white bg-primary-container hover:bg-[#d9611b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-container disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
+                                disabled={submitting}
+                                className="px-6 py-2.5 bg-primary-container text-on-primary-container font-semibold rounded-lg hover:bg-primary hover:text-on-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
                                 {submitting ? (
                                     <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                        Submitting...
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
+                                        {existingSubmission ? 'Updating...' : 'Submitting...'}
                                     </>
                                 ) : (
                                     <>
-                                        <Send size={16} />
-                                        Submit Project
+                                        <Send size={18} />
+                                        {existingSubmission ? 'Update Submission' : 'Submit Project'}
                                     </>
                                 )}
                             </button>
