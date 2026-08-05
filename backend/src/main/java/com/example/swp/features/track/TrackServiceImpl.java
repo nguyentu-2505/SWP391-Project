@@ -8,9 +8,11 @@ import com.example.swp.features.track.dto.response.TrackMentorResponse;
 import com.example.swp.features.track.dto.response.TrackResponse;
 import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.user.Role;
+import com.example.swp.features.user.Role;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.judge_assignment.JudgeAssignmentRepository;
+import com.example.swp.features.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +34,7 @@ public class TrackServiceImpl implements TrackService {
     private final UserRepository userRepository;                 // NEW
     private final AuditLogService auditLogService;               // NEW
     private final JudgeAssignmentRepository judgeAssignmentRepository;
+    private final NotificationService notificationService;
 
     // ── Existing methods – UNCHANGED ──────────────────────────────────────────
 
@@ -136,6 +139,15 @@ public class TrackServiceImpl implements TrackService {
             null,
             "Assigned mentor " + mentor.getUsername(),
             track.getHackathonEvent().getId()
+        );
+
+        notificationService.createNotification(
+            mentor,
+            "Mentor Assignment",
+            "You have been assigned as a mentor for track '" + track.getName() + "'.",
+            "MENTOR_ASSIGNMENT",
+            "TRACK",
+            track.getId()
         );
 
         return mapToMentorResponse(saved);
