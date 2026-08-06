@@ -2,21 +2,20 @@ package com.example.swp.features.team_member;
 
 import com.example.swp.features.team.Team;
 import com.example.swp.features.user.User;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "team_member", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"team_id", "user_id"})
-})
+@Table(name = "team_member")
 public class TeamMember {
 
     @Id
@@ -32,7 +31,6 @@ public class TeamMember {
     private User user;
 
     @Column(name = "is_leader")
-    @JsonProperty("isLeader")
     private boolean isLeader;
 
     public Team getTeam() { return team; }
@@ -58,3 +56,4 @@ public class TeamMember {
         }
     }
 }
+

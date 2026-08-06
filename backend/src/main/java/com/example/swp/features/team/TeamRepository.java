@@ -12,12 +12,12 @@ import org.springframework.lang.NonNull;
 public interface TeamRepository extends JpaRepository<Team, Long> {
     Optional<Team> findByNameAndEventId(String name, Long eventId);
     
-    @EntityGraph(attributePaths = {"teamMembers", "teamMembers.user"})
+    @EntityGraph(attributePaths = {"teamMembers", "teamMembers.user", "track", "event"})
     List<Team> findByTrackId(Long trackId);
     
-    @EntityGraph(attributePaths = {"teamMembers", "teamMembers.user"})
+    @EntityGraph(attributePaths = {"teamMembers", "teamMembers.user", "track", "event"})
     List<Team> findByEventId(Long eventId);
 
-    @EntityGraph(attributePaths = {"teamMembers", "teamMembers.user"})
+    @EntityGraph(attributePaths = {"teamMembers", "teamMembers.user", "track", "event"})
     @NonNull Optional<Team> findById(@NonNull Long id);
 }

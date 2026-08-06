@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class NotificationService {
@@ -71,6 +72,26 @@ public class NotificationService {
         sseEmitterService.pushNotification(user.getId(), mapToResponse(saved));
         long unreadCount = notificationRepository.countByUserIdAndIsReadFalse(user.getId());
         sseEmitterService.pushUnreadCount(user.getId(), unreadCount);
+    }
+
+    public void createNotifications(java.util.List<User> users, String title, String message, String type, String refType, Long refId) {
+        java.util.List<Notification> notifications = users.stream().map(user -> Notification.builder()
+                .user(user)
+                .title(title)
+                .message(message)
+                .type(type)
+                .referenceType(refType)
+                .referenceId(refId)
+                .isRead(false)
+                .build()).collect(java.util.stream.Collectors.toList());
+        
+        java.util.List<Notification> savedList = notificationRepository.saveAll(notifications);
+
+        for (Notification saved : savedList) {
+            sseEmitterService.pushNotification(saved.getUser().getId(), mapToResponse(saved));
+            long unreadCount = notificationRepository.countByUserIdAndIsReadFalse(saved.getUser().getId());
+            sseEmitterService.pushUnreadCount(saved.getUser().getId(), unreadCount);
+        }
     }
 
     private User getCurrentUser() {

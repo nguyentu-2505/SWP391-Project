@@ -1,14 +1,16 @@
 package com.example.swp.features.user;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -105,6 +107,9 @@ public class User {
     public void setTemporary(boolean temporary) { this.temporary = temporary; }
     
     public boolean isProfileComplete() {
-        return fptStudentId != null && !fptStudentId.trim().isEmpty();
+        return fptStudentId != null && !fptStudentId.trim().isEmpty()
+                && fullName != null && !fullName.trim().isEmpty()
+                && phone != null && !phone.trim().isEmpty()
+                && schoolName != null && !schoolName.trim().isEmpty();
     }
 }

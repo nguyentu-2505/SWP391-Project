@@ -3,20 +3,24 @@ package com.example.swp.features.submission;
 import com.example.swp.features.round.Round;
 import com.example.swp.features.team.Team;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "submission")
+@Table(name = "submission", uniqueConstraints = {
+    @UniqueConstraint(name = "uq_team_round", columnNames = {"team_id", "round_id"})
+})
 public class Submission {
 
     @Id
@@ -43,8 +47,7 @@ public class Submission {
     @Column(name = "version")
     private int version;
 
-    @CreationTimestamp
-    @Column(name = "submitted_at", updatable = false)
+    @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
     
     public Long getId() { return id; }

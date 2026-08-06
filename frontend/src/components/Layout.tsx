@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, NavLink, useLocation } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 import Input from './ui/Input';
 import { 
     LayoutDashboard, Users, Trophy, Layers, MapPin, Bell, Settings,
-    LogOut, HelpCircle, User as UserIcon, Menu, X, Search
+    LogOut, HelpCircle, User as UserIcon, Menu, X, Search, MessageSquare, Award
 } from 'lucide-react';
 import { Role, getUserRole } from '../services/authUtils';
+import api from '../services/api';
 
 const SidebarItem: React.FC<{ to: string, icon: React.ReactNode, label: string, onClick?: () => void }> = ({ to, icon, label, onClick }) => {
     const location = useLocation();
@@ -83,6 +84,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                                 <SidebarItem to="/hackathon-events" icon={<Trophy size={18} />} label="Hackathons" onClick={closeSidebar} />
                                 <SidebarItem to="/teams" icon={<Users size={18} />} label="All Teams" onClick={closeSidebar} />
                                 <SidebarItem to="/admin/audit-logs" icon={<Layers size={18} />} label="Audit Logs" onClick={closeSidebar} />
+                                <SidebarItem to="/support-tickets" icon={<MessageSquare size={18} />} label="Support Tickets" onClick={closeSidebar} />
                                 <SidebarItem to="/admin/preferences" icon={<Settings size={18} />} label="System Settings" onClick={closeSidebar} />
                             </>
                         )}
@@ -92,8 +94,9 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                             <>
                                 <SidebarItem to="/my-team" icon={<Users size={18} />} label="My Team" onClick={closeSidebar} />
                                 <SidebarItem to="/events" icon={<Trophy size={18} />} label="Hackathons" onClick={closeSidebar} />
+                                <SidebarItem to="/certificates" icon={<Award size={18} />} label="Certificates" onClick={closeSidebar} />
                                 <SidebarItem to="/invitations" icon={<Bell size={18} />} label="Invitations" onClick={closeSidebar} />
-                                <SidebarItem to="/mentors" icon={<MapPin size={18} />} label="Mentors" onClick={closeSidebar} />
+                                <SidebarItem to="/my-mentorship-requests" icon={<HelpCircle size={18} />} label="Mentorship Sessions" onClick={closeSidebar} />
                             </>
                         )}
 
@@ -101,20 +104,18 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                         {role === Role.ORGANIZER && (
                             <>
                                 <SidebarItem to="/organizer/events" icon={<Trophy size={18} />} label="My Events" onClick={closeSidebar} />
-                                <SidebarItem to="/teams" icon={<Users size={18} />} label="Teams" onClick={closeSidebar} />
-                                <SidebarItem to="/submissions" icon={<Layers size={18} />} label="Submissions" onClick={closeSidebar} />
                             </>
                         )}
 
                         {/* JUDGE MENU */}
-                        {role === Role.JUDGE && (
+                        {(role === Role.JUDGE || role === Role.GUEST_JUDGE) && (
                             <>
                                 <SidebarItem to="/judge/dashboard" icon={<LayoutDashboard size={18} />} label="Scoring Dashboard" onClick={closeSidebar} />
                             </>
                         )}
 
                         {/* MENTOR MENU */}
-                        {role === Role.MENTOR && (
+                        {(role === Role.MENTOR || role === Role.JUDGE) && (
                             <>
                                 <SidebarItem to="/mentor/dashboard" icon={<LayoutDashboard size={18} />} label="Mentor Dashboard" onClick={closeSidebar} />
                                 <SidebarItem to="/mentor/requests" icon={<Bell size={18} />} label="Session Requests" onClick={closeSidebar} />
@@ -122,6 +123,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                         )}
 
                         {/* COMMON MENU FOR ALL LOGGED IN USERS */}
+                        <SidebarItem to="/certificates" icon={<Award size={18} />} label="Certificates" onClick={closeSidebar} />
                         <SidebarItem to="/profile" icon={<UserIcon size={18} />} label="Profile" onClick={closeSidebar} />
                         <SidebarItem to="/notifications" icon={<Bell size={18} />} label="Notifications" onClick={closeSidebar} />
                     </div>
@@ -142,6 +144,26 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
 };
 
 const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
+    const [eventName, setEventName] = useState<string>('');
+
+    useEffect(() => {
+        const fetchEvent = async () => {
+            try {
+                const response = await api.get('/hackathon-events');
+                const events = response.data.data;
+                const activeEvent = events.find((e: any) => e.status === 'REGISTRATION' || e.status === 'IN_PROGRESS');
+                if (activeEvent) {
+                    setEventName(activeEvent.name);
+                } else {
+                    setEventName('');
+                }
+            } catch (err) {
+                console.error("Failed to load active event", err);
+            }
+        };
+        fetchEvent();
+    }, []);
+
     return (
         <header className="flex items-center justify-between w-full h-16 px-4 md:px-8 bg-white border-b border-neutral-border sticky top-0 z-10 shadow-sm">
             <div className="flex items-center gap-4 flex-1">
@@ -152,11 +174,12 @@ const Header: React.FC<{ toggleSidebar: () => void }> = ({ toggleSidebar }) => {
                     <Menu size={20} />
                 </button>
                 <div className="hidden md:block w-full max-w-md">
-                    <Input 
-                        placeholder="Search..." 
-                        leftIcon={<Search size={16} />}
-                        className="bg-neutral-base border-none h-10"
-                    />
+                    {eventName && (
+                        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-brand-navy font-semibold w-fit">
+                            <Trophy size={18} className="text-brand-orange" />
+                            {eventName}
+                        </div>
+                    )}
                 </div>
             </div>
             <div className="flex items-center gap-3 md:gap-4">
@@ -180,7 +203,7 @@ const Layout: React.FC = () => {
             <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
             <div className="flex flex-col flex-grow md:ml-64 transition-all duration-300 w-full min-w-0">
                 <Header toggleSidebar={() => setSidebarOpen(true)} />
-                <main className="flex-grow p-4 md:p-8 overflow-x-hidden">
+                <main className="flex-grow p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full overflow-x-hidden animate-fade-in">
                     <Outlet />
                 </main>
             </div>

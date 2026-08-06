@@ -17,4 +17,7 @@ public interface HackathonEventService {
     HackathonEventResponse updateHackathonEvent(Long id, UpdateHackathonEventRequest request);
     void deleteHackathonEvent(Long id);
     HackathonEventResponse updateHackathonEventStatus(Long id, HackathonStatus newStatus);
+    HackathonEventResponse getHackathonEventById(Long id);
+    HackathonEventResponse cloneEvent(Long id);
+    com.example.swp.features.hackathon_event.dto.response.HackathonEventAnalyticsResponse getEventAnalytics(Long eventId);
 }

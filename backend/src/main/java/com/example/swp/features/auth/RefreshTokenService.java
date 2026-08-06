@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class RefreshTokenService {

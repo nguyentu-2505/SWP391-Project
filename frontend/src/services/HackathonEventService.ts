@@ -7,10 +7,15 @@ export interface HackathonEvent {
     name: string;
     description: string;
     slug: string;
+    status: string;
     startTime: string;
     endTime: string;
     registrationStart?: string;
     registrationEnd?: string;
+    minTeamSize: number;
+    maxTeamSize: number;
+    organizerId?: number;
+    organizerName?: string;
 }
 
 export interface CreateHackathonEventRequest {
@@ -20,6 +25,9 @@ export interface CreateHackathonEventRequest {
     endTime: string;
     registrationStart?: string;
     registrationEnd?: string;
+    minTeamSize?: number;
+    maxTeamSize?: number;
+    organizerId?: number;
 }
 
 export interface UpdateHackathonEventRequest {
@@ -29,10 +37,20 @@ export interface UpdateHackathonEventRequest {
     endTime?: string;
     registrationStart?: string;
     registrationEnd?: string;
+    minTeamSize?: number;
+    maxTeamSize?: number;
+    organizerId?: number;
 }
 
 const createHackathonEvent = async (event: CreateHackathonEventRequest): Promise<HackathonEvent> => {
-    const response = await api.post(API_URL, event);
+    const payload = {
+        ...event,
+        startTime: event.startTime === "" ? null : event.startTime,
+        endTime: event.endTime === "" ? null : event.endTime,
+        registrationStart: event.registrationStart === "" ? null : event.registrationStart,
+        registrationEnd: event.registrationEnd === "" ? null : event.registrationEnd,
+    };
+    const response = await api.post(API_URL, payload);
     return response.data.data;
 };
 
@@ -61,7 +79,19 @@ const getHackathonEventBySlug = async (slug: string): Promise<HackathonEvent> =>
 };
 
 const updateHackathonEvent = async (id: number, event: UpdateHackathonEventRequest): Promise<HackathonEvent> => {
-    const response = await api.put(`${API_URL}/${id}`, event);
+    const payload = {
+        ...event,
+        startTime: event.startTime === "" ? null : event.startTime,
+        endTime: event.endTime === "" ? null : event.endTime,
+        registrationStart: event.registrationStart === "" ? null : event.registrationStart,
+        registrationEnd: event.registrationEnd === "" ? null : event.registrationEnd,
+    };
+    const response = await api.put(`${API_URL}/${id}`, payload);
+    return response.data.data;
+};
+
+const updateHackathonEventStatus = async (id: number, status: string): Promise<HackathonEvent> => {
+    const response = await api.patch(`${API_URL}/${id}/status?status=${status}`);
     return response.data.data;
 };
 
@@ -75,5 +105,6 @@ export const HackathonEventService = {
     getAllEventsForAdmin,
     getHackathonEventBySlug,
     updateHackathonEvent,
+    updateHackathonEventStatus,
     deleteHackathonEvent,
 };

@@ -82,21 +82,19 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
+                                "/swagger-ui.html")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/hackathon-events/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/CategoryCustomers/**").permitAll()
                         .requestMatchers("/api/v1/rankings/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/support-tickets").permitAll()
                         .requestMatchers("/error").permitAll()
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
-                        .successHandler(oAuth2AuthenticationSuccessHandler)
-                );
+                        .successHandler(oAuth2AuthenticationSuccessHandler));
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
 
         return http.build();
     }

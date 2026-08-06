@@ -3,15 +3,17 @@ package com.example.swp.features.mentorship_request;
 import com.example.swp.features.team.Team;
 import com.example.swp.features.user.User;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -43,6 +45,15 @@ public class MentorshipRequest {
 
     private LocalDateTime resolvedAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String answer;
+
+    @Column(columnDefinition = "TEXT")
+    private String rejectReason;
+
+    @Version
+    private Integer version;
+
     public Long getId() { return id; }
     public Team getTeam() { return team; }
     public User getMentor() { return mentor; }
@@ -54,6 +65,12 @@ public class MentorshipRequest {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getResolvedAt() { return resolvedAt; }
     public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
+    public String getAnswer() { return answer; }
+    public void setAnswer(String answer) { this.answer = answer; }
+    public String getRejectReason() { return rejectReason; }
+    public void setRejectReason(String rejectReason) { this.rejectReason = rejectReason; }
+    public Integer getVersion() { return version; }
+    public void setVersion(Integer version) { this.version = version; }
 
     public static MentorshipRequestBuilder builder() { return new MentorshipRequestBuilder(); }
     public static class MentorshipRequestBuilder {
@@ -65,6 +82,8 @@ public class MentorshipRequest {
         private MentorshipRequestStatus status;
         private LocalDateTime createdAt;
         private LocalDateTime resolvedAt;
+        private String answer;
+        private String rejectReason;
 
         public MentorshipRequestBuilder id(Long id) { this.id = id; return this; }
         public MentorshipRequestBuilder team(Team team) { this.team = team; return this; }
@@ -74,12 +93,16 @@ public class MentorshipRequest {
         public MentorshipRequestBuilder status(MentorshipRequestStatus status) { this.status = status; return this; }
         public MentorshipRequestBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
         public MentorshipRequestBuilder resolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; return this; }
+        public MentorshipRequestBuilder answer(String answer) { this.answer = answer; return this; }
+        public MentorshipRequestBuilder rejectReason(String rejectReason) { this.rejectReason = rejectReason; return this; }
         public MentorshipRequest build() {
             MentorshipRequest m = new MentorshipRequest();
             m.id = this.id; m.team = this.team; m.mentor = this.mentor;
             m.title = this.title; m.description = this.description; m.status = this.status;
             m.createdAt = this.createdAt; m.resolvedAt = this.resolvedAt;
+            m.answer = this.answer; m.rejectReason = this.rejectReason;
             return m;
         }
     }
 }
+

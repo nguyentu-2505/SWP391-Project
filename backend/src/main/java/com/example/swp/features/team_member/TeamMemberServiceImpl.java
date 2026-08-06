@@ -1,5 +1,7 @@
 package com.example.swp.features.team_member;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.team.Team;
 import com.example.swp.features.team.TeamRepository;
@@ -16,6 +18,7 @@ import com.example.swp.features.hackathon_event.HackathonStatus;
 import com.example.swp.features.audit_log.AuditLogService;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class TeamMemberServiceImpl implements TeamMemberService {
@@ -26,11 +29,16 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     private final AuditLogService auditLogService;
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public TeamMemberResponse addTeamMember(AddTeamMemberRequest request) {
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new com.example.swp.exception.BadRequestException("Cannot modify members in a disqualified team.");
+        }
 
         if (team.getEvent().getStatus() != HackathonStatus.PUBLISHED) {
             throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
@@ -80,6 +88,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         TeamMember member = teamMemberRepository.findById(teamMemberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team member not found"));
                 
+        if (member.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new com.example.swp.exception.BadRequestException("Cannot modify members in a disqualified team.");
+        }
+
         if (member.getTeam().getEvent().getStatus() != HackathonStatus.PUBLISHED) {
             throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
         }
@@ -109,6 +121,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
 
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new com.example.swp.exception.BadRequestException("Cannot modify members in a disqualified team.");
+        }
+
         if (team.getEvent().getStatus() != HackathonStatus.PUBLISHED) {
             throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
         }
@@ -128,17 +144,17 @@ public class TeamMemberServiceImpl implements TeamMemberService {
                 .orElseThrow(() -> new ResourceNotFoundException("User is not a member of this team"));
 
         if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
-            long currentSize = teamMemberRepository.countByTeamId(team.getId());
-            Integer minSize = team.getEvent().getMinTeamSize();
-            if (minSize != null && (currentSize - 1) < minSize) {
-                if (!isCurrentUserAdmin) {
-                    throw new com.example.swp.exception.BadRequestException("Cannot kick member: Team is finalized and would fall below the minimum team size.");
-                } else {
-                    auditLogService.logAction("FORCE_KICK_MEMBER", "TEAM", team.getId(), null, "Admin " + currentUser.getUsername() + " forced member removal on FINALIZED team");
-                }
+            if (!isCurrentUserAdmin) {
+                throw new com.example.swp.exception.BadRequestException("Cannot kick member from a finalized team.");
+            } else {
+                auditLogService.logAction("FORCE_KICK_MEMBER", "TEAM", team.getId(), null, "Admin " + currentUser.getUsername() + " forced member removal on FINALIZED team");
             }
         }
 
+        // Explicitly remove from parent collection to prevent Hibernate cascade re-saving and trigger orphanRemoval
+        if (team.getTeamMembers() != null) {
+            team.getTeamMembers().remove(memberToKick);
+        }
         teamMemberRepository.delete(memberToKick);
     }
 
@@ -150,6 +166,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("You are not a member of this team"));
 
+        if (member.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new com.example.swp.exception.BadRequestException("Cannot leave a disqualified team.");
+        }
+
         if (member.getTeam().getEvent().getStatus() != HackathonStatus.PUBLISHED) {
             throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
         }
@@ -160,11 +180,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
 
         Team team = member.getTeam();
         if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
-            long currentSize = teamMemberRepository.countByTeamId(team.getId());
-            Integer minSize = team.getEvent().getMinTeamSize();
-            if (minSize != null && (currentSize - 1) < minSize) {
-                throw new com.example.swp.exception.BadRequestException("Cannot leave team: Team is finalized and would fall below the minimum team size.");
-            }
+            throw new com.example.swp.exception.BadRequestException("Cannot leave a finalized team.");
         }
 
         teamMemberRepository.delete(member);
@@ -178,12 +194,20 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         TeamMember currentLeader = teamMemberRepository.findByTeamIdAndUserId(request.getTeamId(), currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("You are not a member of this team"));
 
+        if (currentLeader.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new com.example.swp.exception.BadRequestException("Cannot transfer leadership in a disqualified team.");
+        }
+
         if (currentLeader.getTeam().getEvent().getStatus() != HackathonStatus.PUBLISHED) {
             throw new com.example.swp.exception.BadRequestException("Team modifications are only allowed during the registration phase.");
         }
 
         if (!currentLeader.isLeader()) {
             throw new com.example.swp.exception.BadRequestException("Only the current leader can transfer leadership");
+        }
+
+        if (currentLeader.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
+            throw new com.example.swp.exception.BadRequestException("Cannot transfer leadership in a finalized team.");
         }
 
         TeamMember newLeader = teamMemberRepository.findByTeamIdAndUserId(request.getTeamId(), request.getNewLeaderUserId())

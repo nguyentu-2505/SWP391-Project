@@ -4,6 +4,7 @@ import com.example.swp.common.ApiResponse;
 import com.example.swp.features.hackathon_event.dto.request.CreateHackathonEventRequest;
 import com.example.swp.features.hackathon_event.dto.request.UpdateHackathonEventRequest;
 import com.example.swp.features.hackathon_event.dto.response.HackathonEventResponse;
+import com.example.swp.features.hackathon_event.dto.response.HackathonEventAnalyticsResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,7 +24,7 @@ public class HackathonEventController {
     private final HackathonEventService hackathonEventService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<HackathonEventResponse>> createHackathonEvent(@Valid @RequestBody CreateHackathonEventRequest request) {
         HackathonEventResponse response = hackathonEventService.createHackathonEvent(request);
         return new ResponseEntity<>(ApiResponse.success(response, "Hackathon event created successfully."), HttpStatus.CREATED);
@@ -55,6 +56,12 @@ public class HackathonEventController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/id/{id}")
+    public ResponseEntity<ApiResponse<HackathonEventResponse>> getHackathonEventById(@PathVariable Long id) {
+        HackathonEventResponse response = hackathonEventService.getHackathonEventById(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<ApiResponse<HackathonEventResponse>> updateHackathonEvent(@PathVariable Long id, @Valid @RequestBody UpdateHackathonEventRequest request) {
@@ -74,5 +81,19 @@ public class HackathonEventController {
     public ResponseEntity<ApiResponse<HackathonEventResponse>> updateHackathonEventStatus(@PathVariable Long id, @RequestParam HackathonStatus status) {
         HackathonEventResponse response = hackathonEventService.updateHackathonEventStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success(response, "Hackathon event status updated successfully."));
+    }
+
+    @PostMapping("/{id}/clone")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<HackathonEventResponse>> cloneEvent(@PathVariable Long id) {
+        HackathonEventResponse response = hackathonEventService.cloneEvent(id);
+        return new ResponseEntity<>(ApiResponse.success(response, "Hackathon event cloned successfully."), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}/analytics")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<HackathonEventAnalyticsResponse>> getEventAnalytics(@PathVariable Long id) {
+        HackathonEventAnalyticsResponse response = hackathonEventService.getEventAnalytics(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
-import { Users, Crown, Search, ChevronLeft, ChevronRight, Ban, Trash2, X } from 'lucide-react';
+import { Users, Crown, Search, ChevronLeft, ChevronRight, Ban, Trash2, X, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ExportService } from '../../../services/ExportService';
 import Skeleton from '../../../components/Skeleton';
 import EmptyState from '../../../components/EmptyState';
 
@@ -19,15 +20,34 @@ interface Team {
     trackName: string;
     status: string;
     members: TeamMemberInfo[];
+    currentRoundName?: string;
+    currentRoundOrder?: number;
+}
+
+interface Round {
+    id: number;
+    name: string;
+    roundOrder: number;
+}
+
+interface Track {
+    id: number;
+    name: string;
 }
 
 const TeamsTab: React.FC = () => {
     const { eventId } = useParams<{ eventId: string }>();
     const [teams, setTeams] = useState<Team[]>([]);
+    const [rounds, setRounds] = useState<Round[]>([]);
+    const [tracks, setTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [page, setPage] = useState(0);
     const size = 10;
+
+    const [selectedRoundId, setSelectedRoundId] = useState<number | string>('ALL');
+    const [selectedTrackId, setSelectedTrackId] = useState<number | string>('ALL');
+    const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
 
     const [disqualifyTeamId, setDisqualifyTeamId] = useState<number | null>(null);
     const [disqualifyReason, setDisqualifyReason] = useState('');
@@ -46,24 +66,47 @@ const TeamsTab: React.FC = () => {
         }
     };
 
+    const fetchFiltersData = async () => {
+        if (!eventId) return;
+        try {
+            const [roundsRes, tracksRes] = await Promise.all([
+                api.get(`/rounds/hackathon/${eventId}`),
+                api.get(`/tracks/hackathon/${eventId}`)
+            ]);
+            setRounds(roundsRes.data.data);
+            setTracks(tracksRes.data.data);
+        } catch (err) {
+            console.error('Failed to load filter data:', err);
+        }
+    };
+
     useEffect(() => {
         fetchTeams();
+        fetchFiltersData();
     }, [eventId]);
 
     // Client-side filtering and pagination
     const filteredTeams = useMemo(() => {
-        return teams.filter(t => 
-            t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            (t.projectName && t.projectName.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-    }, [teams, searchTerm]);
+        return teams.filter(t => {
+            const matchesSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                (t.projectName && t.projectName.toLowerCase().includes(searchTerm.toLowerCase()));
+            
+            const matchesTrack = selectedTrackId === 'ALL' || t.trackName === tracks.find(tr => tr.id === Number(selectedTrackId))?.name;
+            
+            const matchesRound = selectedRoundId === 'ALL' || t.currentRoundName === rounds.find(r => r.id === Number(selectedRoundId))?.name;
+            
+            const matchesStatus = selectedStatus === 'ALL' || t.status === selectedStatus;
+            
+            return matchesSearch && matchesTrack && matchesRound && matchesStatus;
+        });
+    }, [teams, searchTerm, selectedTrackId, selectedRoundId, selectedStatus, tracks, rounds]);
 
     const totalPages = Math.ceil(filteredTeams.length / size) || 1;
     
-    // Reset to page 0 when search changes
+    // Reset to page 0 when filters or search change
     useEffect(() => {
         setPage(0);
-    }, [searchTerm]);
+    }, [searchTerm, selectedTrackId, selectedRoundId, selectedStatus]);
 
     const paginatedTeams = useMemo(() => {
         const start = page * size;
@@ -114,27 +157,101 @@ const TeamsTab: React.FC = () => {
                     <h2 className="text-xl font-semibold text-gray-800">Registered Teams</h2>
                     <span className="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{teams.length}</span>
                 </div>
-                
-                {/* Search Bar */}
-                <div className="relative md:ml-auto w-full md:w-64">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search size={16} className="text-gray-400" />
+
+                <div className="flex flex-1 items-center gap-4 justify-end">
+                    {/* Search Bar */}
+                    <div className="relative w-full md:w-64">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search size={16} className="text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search teams or projects..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Search teams or projects..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full"
-                    />
+                    <button
+                        onClick={() => ExportService.exportTeamsCsv()}
+                        className="flex items-center shrink-0 gap-1.5 px-3 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        <Download size={16} /> Export CSV
+                    </button>
                 </div>
+            </div>
+
+            {/* Filter Menu */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm flex flex-wrap gap-4 items-center">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Filter By:
+                </div>
+                
+                {/* Track Filter */}
+                <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">Track</label>
+                    <select
+                        value={selectedTrackId}
+                        onChange={(e) => setSelectedTrackId(e.target.value)}
+                        className="bg-white border border-gray-200 text-gray-800 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                    >
+                        <option value="ALL">All Tracks</option>
+                        {tracks.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Round Filter */}
+                <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">Round</label>
+                    <select
+                        value={selectedRoundId}
+                        onChange={(e) => setSelectedRoundId(e.target.value)}
+                        className="bg-white border border-gray-200 text-gray-800 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                    >
+                        <option value="ALL">All Rounds</option>
+                        {rounds.map(r => (
+                            <option key={r.id} value={r.id}>{r.name} (Round {r.roundOrder})</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">Status</label>
+                    <select
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        className="bg-white border border-gray-200 text-gray-800 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                    >
+                        <option value="ALL">All Statuses</option>
+                        <option value="ACTIVE">Active (In Registration)</option>
+                        <option value="FINALIZED">Finalized</option>
+                        <option value="DISQUALIFIED">Disqualified</option>
+                    </select>
+                </div>
+
+                {/* Reset Filters button */}
+                {(selectedTrackId !== 'ALL' || selectedRoundId !== 'ALL' || selectedStatus !== 'ALL') && (
+                    <button
+                        onClick={() => {
+                            setSelectedTrackId('ALL');
+                            setSelectedRoundId('ALL');
+                            setSelectedStatus('ALL');
+                        }}
+                        className="self-end px-3 py-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer text-xs"
+                    >
+                        Clear Filters
+                    </button>
+                )}
             </div>
 
             {filteredTeams.length === 0 ? (
                 <EmptyState 
                     icon={<Users size={40} className="text-gray-300" />}
-                    title={searchTerm ? "No matching teams" : "No teams yet"}
-                    description={searchTerm ? `No teams match "${searchTerm}"` : "No teams have been created for this event yet."}
+                    title={searchTerm || selectedTrackId !== 'ALL' || selectedRoundId !== 'ALL' || selectedStatus !== 'ALL' ? "No matching teams" : "No teams yet"}
+                    description={searchTerm || selectedTrackId !== 'ALL' || selectedRoundId !== 'ALL' || selectedStatus !== 'ALL' ? "No teams match your filter criteria." : "No teams have been created for this event yet."}
                 />
             ) : (
                 <>
@@ -164,6 +281,11 @@ const TeamsTab: React.FC = () => {
                                                 {team.trackName && (
                                                     <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full font-medium">
                                                         {team.trackName}
+                                                    </span>
+                                                )}
+                                                {team.currentRoundName && (
+                                                    <span className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-medium">
+                                                        Round: {team.currentRoundName}
                                                     </span>
                                                 )}
                                             </div>

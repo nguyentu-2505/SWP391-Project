@@ -1,5 +1,7 @@
 package com.example.swp.features.notification;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.swp.features.notification.dto.response.NotificationResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,20 +16,21 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * === TẠI SAO CHỌN SSE THAY VÌ WEBSOCKET? ===
  *
- * | Tiêu chí           | Short Polling        | SSE                  | WebSocket            |
+ * | Tiêu chí | Short Polling | SSE | WebSocket |
  * |---------------------|----------------------|----------------------|----------------------|
- * | Hướng giao tiếp     | Client → Server      | Server → Client      | Hai chiều            |
- * | Overhead            | Cao (request/30s)    | Thấp (1 connection)  | Thấp (1 connection)  |
- * | Độ phức tạp         | Đơn giản             | Trung bình           | Cao                  |
- * | Tự động reconnect   | N/A                  | ✅ Có sẵn            | ❌ Phải tự implement |
- * | Dùng HTTP chuẩn     | ✅                   | ✅                   | ❌ (upgrade protocol)|
- * | Phù hợp cho         | Cập nhật ít          | Push notification    | Chat, game           |
+ * | Hướng giao tiếp | Client → Server | Server → Client | Hai chiều |
+ * | Overhead | Cao (request/30s) | Thấp (1 connection) | Thấp (1 connection) |
+ * | Độ phức tạp | Đơn giản | Trung bình | Cao |
+ * | Tự động reconnect | N/A | ✅ Có sẵn | ❌ Phải tự implement |
+ * | Dùng HTTP chuẩn | ✅ | ✅ | ❌ (upgrade protocol)|
+ * | Phù hợp cho | Cập nhật ít | Push notification | Chat, game |
  *
  * Notification chỉ cần MỘT CHIỀU (server → client) → SSE là lựa chọn tối ưu.
  *
  * === CƠ CHẾ HOẠT ĐỘNG ===
  *
- * 1. Client gọi GET /api/v1/notifications/stream → nhận SseEmitter (HTTP connection giữ mở)
+ * 1. Client gọi GET /api/v1/notifications/stream → nhận SseEmitter (HTTP
+ * connection giữ mở)
  * 2. Khi có notification mới → server push event qua connection đã mở
  * 3. Client nhận event real-time, KHÔNG cần polling
  * 4. Nếu connection đứt → browser tự động reconnect (EventSource API)
@@ -41,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Service
+@Transactional
 @SuppressWarnings("null")
 public class SseEmitterService {
 
@@ -48,11 +52,14 @@ public class SseEmitterService {
      * Map lưu trữ connection SSE của từng user.
      * Key: userId, Value: SseEmitter (HTTP connection đang mở)
      *
-     * ConcurrentHashMap đảm bảo thread-safe khi nhiều user subscribe/unsubscribe đồng thời.
+     * ConcurrentHashMap đảm bảo thread-safe khi nhiều user subscribe/unsubscribe
+     * đồng thời.
      */
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
-    /** Thời gian timeout cho SSE connection: 30 phút. Sau đó client tự reconnect. */
+    /**
+     * Thời gian timeout cho SSE connection: 30 phút. Sau đó client tự reconnect.
+     */
     private static final long SSE_TIMEOUT = 30 * 60 * 1000L;
 
     /**
@@ -104,9 +111,10 @@ public class SseEmitterService {
 
     /**
      * Push notification real-time đến user qua SSE.
-     * Nếu user không online (không có connection) → bỏ qua im lặng (notification đã lưu DB rồi).
+     * Nếu user không online (không có connection) → bỏ qua im lặng (notification đã
+     * lưu DB rồi).
      *
-     * @param userId  ID user nhận notification
+     * @param userId       ID user nhận notification
      * @param notification Notification response để push
      */
     public void pushNotification(Long userId, NotificationResponse notification) {
@@ -134,7 +142,8 @@ public class SseEmitterService {
      */
     public void pushUnreadCount(Long userId, long count) {
         SseEmitter emitter = emitters.get(userId);
-        if (emitter == null) return;
+        if (emitter == null)
+            return;
 
         try {
             emitter.send(SseEmitter.event()

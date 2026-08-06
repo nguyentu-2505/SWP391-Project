@@ -18,8 +18,11 @@ public class CreateScoreRequest {
     @Valid
     private List<ScoreCriterion> scores;
 
+    private Boolean isFinalized = false;
+
     public Long getSubmissionId() { return submissionId; }
     public List<ScoreCriterion> getScores() { return scores; }
+    public Boolean getIsFinalized() { return isFinalized; }
 
     @Data
     public static class ScoreCriterion {

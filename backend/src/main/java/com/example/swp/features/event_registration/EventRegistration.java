@@ -3,15 +3,17 @@ package com.example.swp.features.event_registration;
 import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.user.User;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -68,3 +70,4 @@ public class EventRegistration {
         }
     }
 }
+

@@ -41,6 +41,8 @@ const ScoringPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [canScore, setCanScore] = useState(true);
+    const [gradingMessage, setGradingMessage] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -50,16 +52,15 @@ const ScoringPage: React.FC = () => {
                 const submissionData = subRes.data.data;
                 setSubmission(submissionData);
 
-                // Fetch criteria: try eventSlug first, fallback to default criteria
+                // Fetch criteria: assuming hackathon event ID 1 for now
                 let critData = [];
                 try {
-                    if (submissionData && submissionData.eventSlug) {
-                        const critRes = await api.get(`/criteria/event/${submissionData.eventSlug}`);
-                        critData = critRes.data.data ?? [];
-                    } else {
-                        // Fallback to default criteria if backend doesn't provide eventSlug
-                        const critRes = await api.get(`/criteria/default`);
-                        critData = critRes.data.data ?? [];
+                    const critRes = await api.get(`/criteria/event/1`);
+                    critData = critRes.data.data ?? [];
+                    
+                    if (critData.length === 0) {
+                        const defaultRes = await api.get(`/criteria/default`);
+                        critData = defaultRes.data.data ?? [];
                     }
                 } catch (critErr) {
                     console.error("Failed to load criteria", critErr);
@@ -69,11 +70,42 @@ const ScoringPage: React.FC = () => {
                 
                 setCriteria(critData);
                 
-                const initialScores = critData.map((c: Criterion) => ({
-                    criterionId: c.id,
-                    scoreValue: 0,
-                    comment: ''
-                }));
+                // Fetch round to check deadlines
+                try {
+                    const roundRes = await api.get(`/rounds/${submissionData.roundId}`);
+                    const roundData = roundRes.data.data;
+                    const now = new Date();
+                    const roundEnd = roundData.endTime ? new Date(roundData.endTime) : null;
+                    const gradEnd = roundData.gradingEndTime ? new Date(roundData.gradingEndTime) : null;
+                    
+                    if (roundEnd && now < roundEnd) {
+                        setCanScore(false);
+                        setGradingMessage(`Grading has not started. The round ends at ${roundEnd.toLocaleString()}.`);
+                    } else if ((gradEnd && now > gradEnd) || roundData.gradingEnded) {
+                        setCanScore(false);
+                        setGradingMessage('The grading period has ended for this round.');
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch round data", e);
+                }
+                
+                // Fetch existing scores
+                let existingScores: any[] = [];
+                try {
+                    const existingRes = await api.get(`/scores/my-scores/submission/${submissionId}`);
+                    existingScores = existingRes.data.data || [];
+                } catch (e) {
+                    console.error("Failed to load existing scores", e);
+                }
+
+                const initialScores = critData.map((c: Criterion) => {
+                    const existing = existingScores.find((s: any) => s.criterionId === c.id);
+                    return {
+                        criterionId: c.id,
+                        scoreValue: existing ? existing.scoreValue : 0,
+                        comment: existing && existing.comment ? existing.comment : ''
+                    };
+                });
                 setScores(initialScores);
                 
             } catch (err) {
@@ -95,7 +127,7 @@ const ScoringPage: React.FC = () => {
         setScores(prev => prev.map(s => s.criterionId === criterionId ? { ...s, comment } : s));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent, isFinalized: boolean) => {
         e.preventDefault();
         
         // Basic validation
@@ -109,9 +141,11 @@ const ScoringPage: React.FC = () => {
         try {
             await api.post('/scores', {
                 submissionId: Number(submissionId),
-                scores: scores
+                scores: scores,
+                isFinalized: isFinalized,
+                finalized: isFinalized
             });
-            toast.success('Scores submitted successfully!');
+            toast.success(isFinalized ? 'Scores submitted successfully!' : 'Draft saved successfully!');
             navigate('/judge/dashboard');
         } catch (err: any) {
             toast.error(err.response?.data?.error?.message || 'Failed to submit scores.');
@@ -196,7 +230,7 @@ const ScoringPage: React.FC = () => {
                     <p className="text-amber-800 font-medium">No evaluation criteria found for this event.</p>
                 </div>
             ) : (
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={(e) => e.preventDefault()}>
                     <div className="space-y-6 mb-8">
                         {criteria.map((c, index) => {
                             const currentScore = scores.find(s => s.criterionId === c.id)?.scoreValue ?? 0;
@@ -235,9 +269,10 @@ const ScoringPage: React.FC = () => {
                                                     min="0"
                                                     max={c.maxScore}
                                                     required
+                                                    disabled={!canScore}
                                                     value={currentScore}
                                                     onChange={(e) => handleScoreChange(c.id, parseInt(e.target.value) || 0)}
-                                                    className={`w-20 text-center text-2xl font-bold bg-transparent border-b-2 focus:outline-none focus:border-blue-500 transition-colors ${scoreColor}`}
+                                                    className={`w-20 text-center text-2xl font-bold bg-transparent border-b-2 focus:outline-none focus:border-blue-500 transition-colors ${scoreColor} ${!canScore ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 />
                                                 <span className="text-gray-400 font-medium text-lg">/ {c.maxScore}</span>
                                             </div>
@@ -251,8 +286,9 @@ const ScoringPage: React.FC = () => {
                                             min="0"
                                             max={c.maxScore}
                                             value={currentScore}
+                                            disabled={!canScore}
                                             onChange={(e) => handleScoreChange(c.id, parseInt(e.target.value) || 0)}
-                                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                            className={`w-full h-2 bg-gray-200 rounded-lg appearance-none accent-blue-600 ${!canScore ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                                             style={{
                                                 background: `linear-gradient(to right, ${percentage >= 80 ? '#22c55e' : percentage >= 50 ? '#eab308' : '#f97316'} ${percentage}%, #e5e7eb ${percentage}%)`
                                             }}
@@ -271,7 +307,8 @@ const ScoringPage: React.FC = () => {
                                             placeholder={`What did the team do well regarding ${c.name}? Where can they improve?`}
                                             value={scores.find(s => s.criterionId === c.id)?.comment ?? ''}
                                             onChange={(e) => handleCommentChange(c.id, e.target.value)}
-                                            className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none bg-gray-50 hover:bg-white transition-colors"
+                                            disabled={!canScore}
+                                            className={`w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none bg-gray-50 transition-colors ${!canScore ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white'}`}
                                             rows={2}
                                         />
                                     </div>
@@ -279,11 +316,26 @@ const ScoringPage: React.FC = () => {
                             );
                         })}
                     </div>
+                    {!canScore && (
+                        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-xl mb-6 font-medium text-center shadow-sm">
+                            <AlertCircle size={20} className="inline mr-2 mb-1" />
+                            {gradingMessage}
+                        </div>
+                    )}
                     
-                    <div className="sticky bottom-6 z-10 bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-200 flex justify-end">
+                    <div className="sticky bottom-6 z-10 bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-200 flex justify-end gap-3">
                         <button 
-                            type="submit" 
-                            disabled={submitting} 
+                            type="button" 
+                            disabled={submitting || !canScore} 
+                            onClick={(e) => handleSubmit(e, false)}
+                            className="flex items-center justify-center py-3 px-6 text-gray-700 bg-white border border-gray-300 rounded-xl font-bold shadow-sm hover:bg-gray-50 hover:shadow disabled:opacity-50 transition-all w-full md:w-auto"
+                        >
+                            {submitting ? 'Saving...' : 'Save Draft'}
+                        </button>
+                        <button 
+                            type="button" 
+                            disabled={submitting || !canScore}
+                            onClick={(e) => handleSubmit(e, true)}
                             className="flex items-center justify-center py-3 px-8 text-white bg-blue-600 rounded-xl font-bold shadow-sm hover:bg-blue-700 hover:shadow disabled:opacity-50 transition-all w-full md:w-auto"
                         >
                             {submitting ? (

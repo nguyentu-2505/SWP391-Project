@@ -8,8 +8,11 @@ import com.example.swp.features.track.dto.response.TrackMentorResponse;
 import com.example.swp.features.track.dto.response.TrackResponse;
 import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.user.Role;
+import com.example.swp.features.user.Role;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
+import com.example.swp.features.judge_assignment.JudgeAssignmentRepository;
+import com.example.swp.features.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class TrackServiceImpl implements TrackService {
@@ -29,13 +33,26 @@ public class TrackServiceImpl implements TrackService {
     private final TrackMentorRepository trackMentorRepository;  // NEW
     private final UserRepository userRepository;                 // NEW
     private final AuditLogService auditLogService;               // NEW
+    private final JudgeAssignmentRepository judgeAssignmentRepository;
+    private final NotificationService notificationService;
 
     // ── Existing methods – UNCHANGED ──────────────────────────────────────────
 
     @Override
     public TrackResponse createTrack(CreateTrackRequest request) {
         HackathonEvent hackathonEvent = hackathonEventRepository.findById(request.getHackathonEventId())
-                .orElseThrow(() -> new RuntimeException("Hackathon event not found")); // Replace with custom exception
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found with id: " + request.getHackathonEventId()));
+
+        if (hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT 
+                && hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot create track: Configurations can only be added to events in DRAFT or PUBLISHED status.");
+        }
+
+        boolean nameExists = trackRepository.findByHackathonEventId(hackathonEvent.getId()).stream()
+                .anyMatch(t -> t.getName().equalsIgnoreCase(request.getName().trim()));
+        if (nameExists) {
+            throw new com.example.swp.exception.BadRequestException("Bảng đấu với tên này đã tồn tại trong cuộc thi.");
+        }
 
         Track newTrack = Track.builder()
                 .name(request.getName())
@@ -44,6 +61,7 @@ public class TrackServiceImpl implements TrackService {
                 .build();
 
         Track savedTrack = trackRepository.save(newTrack);
+        auditLogService.logAction("CREATE_TRACK", "TRACK", savedTrack.getId(), null, "Created track " + savedTrack.getName(), hackathonEvent.getId());
         return mapToResponse(savedTrack);
     }
 
@@ -80,7 +98,7 @@ public class TrackServiceImpl implements TrackService {
             throw new AccessDeniedException("Guest judges cannot be assigned as track mentors.");
         }
 
-        // Validation: only MENTOR or JUDGE (internal) roles can mentor tracks
+        // Validation: only MENTOR or JUDGE roles can mentor tracks
         if (mentor.getRole() != Role.MENTOR && mentor.getRole() != Role.JUDGE) {
             throw new IllegalArgumentException(
                 "Only users with MENTOR or JUDGE role can be assigned as track mentors. " +
@@ -93,6 +111,14 @@ public class TrackServiceImpl implements TrackService {
             throw new IllegalStateException(
                 "User '" + mentor.getUsername() + "' is already assigned as mentor for this track."
             );
+        }
+
+        // Conflict check: mentor cannot be a judge for this track or event-wide
+        if (judgeAssignmentRepository.existsByJudgeIdAndTrackId(mentor.getId(), trackId)) {
+            throw new IllegalStateException("User is already assigned to grade submissions for this track.");
+        }
+        if (judgeAssignmentRepository.existsByJudgeIdAndRoundHackathonEventIdAndTrackIdIsNull(mentor.getId(), track.getHackathonEvent().getId())) {
+            throw new IllegalStateException("User is already assigned as an event-wide judge, so they cannot mentor a specific track.");
         }
 
         User assigner = getCurrentUser();
@@ -111,7 +137,17 @@ public class TrackServiceImpl implements TrackService {
             "TRACK",
             trackId,
             null,
-            "Assigned mentor " + mentor.getUsername()
+            "Assigned mentor " + mentor.getUsername(),
+            track.getHackathonEvent().getId()
+        );
+
+        notificationService.createNotification(
+            mentor,
+            "Mentor Assignment",
+            "You have been assigned as a mentor for track '" + track.getName() + "'.",
+            "MENTOR_ASSIGNMENT",
+            "TRACK",
+            track.getId()
         );
 
         return mapToMentorResponse(saved);
@@ -134,7 +170,8 @@ public class TrackServiceImpl implements TrackService {
             "TRACK",
             trackId,
             "Mentor " + assignment.getMentor().getUsername(),
-            null
+            null,
+            assignment.getEvent().getId()
         );
     }
 
@@ -151,6 +188,90 @@ public class TrackServiceImpl implements TrackService {
         return trackMentorRepository.findByTrackId(trackId).stream()
                 .map(this::mapToMentorResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void deleteTrack(Long id) {
+        Track track = trackRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Track not found: " + id));
+
+        HackathonEvent event = track.getHackathonEvent();
+        
+        // Security check
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean isOwner = event.getOrganizer() != null && event.getOrganizer().getId().equals(currentUser.getId());
+        boolean isAdmin = "ADMIN".equals(currentUser.getRole().name());
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("Only the organizer or admin can delete this track.");
+        }
+
+        // Check if event status is DRAFT
+        if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT) {
+            throw new IllegalStateException("Không thể xóa bảng đấu: Chỉ sự kiện ở trạng thái DRAFT mới được phép xóa bảng đấu.");
+        }
+
+        trackMentorRepository.deleteByTrackId(id);
+        trackRepository.delete(track);
+
+        auditLogService.logAction("DELETE_TRACK", "Track", id, "Track name: " + track.getName(), null, event.getId());
+    }
+
+    @Override
+    @Transactional
+    public TrackResponse updateTrack(Long id, com.example.swp.features.track.dto.request.CreateTrackRequest request) {
+        Track track = trackRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Track not found: " + id));
+
+        HackathonEvent event = track.getHackathonEvent();
+
+        // Security check
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean isOwner = event.getOrganizer() != null && event.getOrganizer().getId().equals(currentUser.getId());
+        boolean isAdmin = "ADMIN".equals(currentUser.getRole().name());
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("Only the organizer or admin can update this track.");
+        }
+
+        // Check if event status is DRAFT
+        if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT) {
+            throw new IllegalStateException("Không thể chỉnh sửa bảng đấu: Chỉ sự kiện ở trạng thái DRAFT mới được phép chỉnh sửa bảng đấu.");
+        }
+
+        boolean nameExists = trackRepository.findByHackathonEventId(event.getId()).stream()
+                .anyMatch(t -> !t.getId().equals(id) && t.getName().equalsIgnoreCase(request.getName().trim()));
+        if (nameExists) {
+            throw new com.example.swp.exception.BadRequestException("Bảng đấu với tên này đã tồn tại trong cuộc thi.");
+        }
+
+        java.util.Map<String, Object> oldMap = new java.util.HashMap<>();
+        oldMap.put("name", track.getName());
+        oldMap.put("description", track.getDescription());
+
+        java.util.Map<String, Object> newMap = new java.util.HashMap<>();
+        newMap.put("name", request.getName());
+        newMap.put("description", request.getDescription());
+
+        String oldValueJson = null;
+        String newValueJson = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            oldValueJson = mapper.writeValueAsString(oldMap);
+            newValueJson = mapper.writeValueAsString(newMap);
+        } catch (Exception e) {
+            // ignore
+        }
+
+        track.setName(request.getName());
+        track.setDescription(request.getDescription());
+
+        Track updatedTrack = trackRepository.save(track);
+        auditLogService.logAction("UPDATE_TRACK", "TRACK", updatedTrack.getId(), oldValueJson, newValueJson, event.getId());
+        return mapToResponse(updatedTrack);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

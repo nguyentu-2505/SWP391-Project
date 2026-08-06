@@ -1,5 +1,7 @@
 package com.example.swp.features.judge_assignment;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.judge_assignment.dto.request.AssignJudgeRequest;
 import com.example.swp.features.judge_assignment.dto.response.JudgeAssignmentResponse;
@@ -11,6 +13,8 @@ import com.example.swp.features.track.TrackMentorRepository;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.user.Role;
+import com.example.swp.features.audit_log.AuditLogService;
+import com.example.swp.features.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -19,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class JudgeAssignmentService {
@@ -28,6 +33,8 @@ public class JudgeAssignmentService {
     private final RoundRepository roundRepository;
     private final TrackRepository trackRepository;
     private final TrackMentorRepository trackMentorRepository;
+    private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     public JudgeAssignmentResponse assignJudge(AssignJudgeRequest request) {
         User judge = userRepository.findById(request.getJudgeId())
@@ -52,30 +59,16 @@ public class JudgeAssignmentService {
                 throw new IllegalArgumentException("Track does not belong to the hackathon event of this round.");
             }
 
-            // Conflict of interest check
             if (trackMentorRepository.existsByTrackIdAndMentorId(track.getId(), judge.getId())) {
-                throw new IllegalStateException(
-                    "Judge '" + judge.getUsername() + "' is currently assigned as mentor for this track " +
-                    "and cannot judge submissions in the same track (conflict of interest)."
-                );
+                throw new IllegalStateException("User is already assigned as a mentor for this track, so they cannot be assigned to grade it.");
             }
 
             if (assignmentRepository.existsByJudgeIdAndRoundIdAndTrackId(judge.getId(), round.getId(), track.getId())) {
                 throw new IllegalStateException("Judge is already assigned to this track in this round.");
             }
         } else {
-            // Conflict of interest check for all tracks in round
-            Long eventId = round.getHackathonEvent().getId();
-            List<com.example.swp.features.track.TrackMentor> mentorTracks = trackMentorRepository.findByMentorId(judge.getId());
-            boolean hasMentorConflictInEvent = mentorTracks.stream()
-                    .anyMatch(tm -> tm.getTrack().getHackathonEvent() != null && 
-                                    tm.getTrack().getHackathonEvent().getId().equals(eventId));
-            
-            if (hasMentorConflictInEvent) {
-                throw new IllegalStateException(
-                    "Judge '" + judge.getUsername() + "' is assigned as mentor for one or more tracks in this hackathon. " +
-                    "Cannot assign to judge all tracks in this round. Please assign specific tracks instead."
-                );
+            if (trackMentorRepository.existsByEventIdAndMentorId(round.getHackathonEvent().getId(), judge.getId())) {
+                throw new IllegalStateException("User is already assigned as a mentor for one or more tracks in this event, so they cannot be assigned as an event-wide judge.");
             }
 
             if (assignmentRepository.existsByJudgeIdAndRoundIdAndTrackIdIsNull(judge.getId(), round.getId())) {
@@ -90,9 +83,30 @@ public class JudgeAssignmentService {
                 .round(round)
                 .track(track)
                 .organizer(assigner)
+                .status(JudgeAssignmentStatus.ASSIGNED)
+                .assignedAt(java.time.LocalDateTime.now())
                 .build();
         
         JudgeAssignment savedAssignment = assignmentRepository.save(assignment);
+        auditLogService.logAction(
+            "ASSIGN_JUDGE",
+            "JUDGE_ASSIGNMENT",
+            savedAssignment.getId(),
+            null,
+            "Assigned judge " + judge.getUsername() + " to round " + round.getName(),
+            round.getHackathonEvent().getId()
+        );
+
+        String trackName = track != null ? track.getName() : "All Tracks";
+        notificationService.createNotification(
+            judge,
+            "Judge Assignment",
+            "You have been assigned to grade " + trackName + " in round '" + round.getName() + "'.",
+            "JUDGE_ASSIGNMENT",
+            "ROUND",
+            round.getId()
+        );
+
         return mapToResponse(savedAssignment);
     }
 
@@ -113,11 +127,25 @@ public class JudgeAssignmentService {
             .collect(Collectors.toList());
     }
 
+    public List<JudgeAssignmentResponse> getAssignmentsForEvent(Long eventId) {
+        return assignmentRepository.findByRoundHackathonEventId(eventId).stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+
     @org.springframework.transaction.annotation.Transactional
     public void unassignJudge(Long assignmentId) {
         JudgeAssignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found"));
         assignmentRepository.delete(assignment);
+        auditLogService.logAction(
+            "UNASSIGN_JUDGE",
+            "JUDGE_ASSIGNMENT",
+            assignmentId,
+            "Judge " + assignment.getJudge().getUsername(),
+            null,
+            assignment.getRound().getHackathonEvent().getId()
+        );
     }
 
     private User getCurrentUser() {

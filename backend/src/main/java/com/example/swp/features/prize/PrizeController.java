@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/prizes")
+@RequestMapping("/api/v1/prizes")
 @RequiredArgsConstructor
 public class PrizeController {
 
@@ -29,6 +29,13 @@ public class PrizeController {
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<PrizeResponse> assignPrizeToTeam(@PathVariable Long prizeId, @RequestBody AssignPrizeRequest request) {
         PrizeResponse response = prizeService.assignPrizeToTeam(prizeId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{prizeId}/unassign")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<PrizeResponse> unassignPrizeFromTeam(@PathVariable Long prizeId) {
+        PrizeResponse response = prizeService.unassignPrizeFromTeam(prizeId);
         return ResponseEntity.ok(response);
     }
 

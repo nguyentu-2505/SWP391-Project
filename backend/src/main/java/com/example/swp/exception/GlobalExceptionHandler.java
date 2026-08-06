@@ -73,6 +73,14 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLockingFailure(org.springframework.orm.ObjectOptimisticLockingFailureException ex) {
+        return new ResponseEntity<>(
+                ApiResponse.error("CONFLICT", "This request was already modified by another user. Please refresh and try again."),
+                HttpStatus.CONFLICT
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleAllExceptions(Exception ex, WebRequest request) {
         return new ResponseEntity<>(

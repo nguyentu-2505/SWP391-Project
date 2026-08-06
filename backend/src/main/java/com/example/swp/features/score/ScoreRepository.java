@@ -31,4 +31,7 @@ public interface ScoreRepository extends JpaRepository<Score, Long> {
     @Modifying
     @Query("UPDATE Score s SET s.isFinalized = true WHERE s.submission.id IN (SELECT sub.id FROM Submission sub WHERE sub.round.id = :roundId)")
     void finalizeScoresByRound(Long roundId);
+
+    @Query("SELECT s FROM Score s JOIN FETCH s.judge JOIN FETCH s.submission sub JOIN FETCH s.criterion WHERE sub.round.id = :roundId AND s.judge.id = :judgeId")
+    List<Score> findByRoundIdAndJudgeId(Long roundId, Long judgeId);
 }

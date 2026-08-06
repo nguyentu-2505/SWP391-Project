@@ -22,11 +22,15 @@ public interface TrackMentorRepository extends JpaRepository<TrackMentor, Long> 
      * "Is this user already a mentor for this track?"
      */
     boolean existsByTrackIdAndMentorId(Long trackId, Long mentorId);
+    
+    boolean existsByEventIdAndMentorId(Long eventId, Long mentorId);
 
     /**
      * Used to remove a specific mentor from a track.
      */
     java.util.Optional<TrackMentor> findByTrackIdAndMentorId(Long trackId, Long mentorId);
+
+    void deleteByTrackId(Long trackId);
 
     /**
      * Returns all track IDs where the given user is assigned as mentor

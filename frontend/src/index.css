@@ -116,7 +116,7 @@
   --color-on-error-container: #93000a;
 
   /* Brand semantic tags */
-  --color-brand-orange: #f36f21;
+  --color-brand-orange: #f97316; /* Modern premium HSL-tailored orange */
   --color-brand-navy: #0f172a;
 
   --color-neutral-base: #f8fafc;
@@ -125,12 +125,12 @@
   --color-neutral-divider: #f1f5f9;
 
   /* Custom active/disqualified/pending values from Brand guide */
-  --color-status-active-bg: #e6f4ea;
-  --color-status-active-text: #137333;
-  --color-status-disqualified-bg: #fce8e6;
-  --color-status-disqualified-text: #c5221f;
-  --color-status-pending-bg: #fef7e0;
-  --color-status-pending-text: #b06000;
+  --color-status-active-bg: #ecfdf5; /* Soft emerald */
+  --color-status-active-text: #059669; /* Emerald 600 */
+  --color-status-disqualified-bg: #fff1f2; /* Soft rose */
+  --color-status-disqualified-text: #e11d48; /* Rose 600 */
+  --color-status-pending-bg: #fef3c7; /* Soft amber */
+  --color-status-pending-text: #d97706; /* Amber 600 */
 
   /* Border Radius */
   --radius-default: 0.25rem;
@@ -167,12 +167,68 @@ html {
   border: 1px solid rgba(226, 232, 240, 1);
 }
 
-/* Custom transitions */
 .transition-soft {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Skeleton Loading Animation Pulse */
+/* Hide scrollbars globally across all pages, elements & containers while retaining mousewheel/touch scrolling */
+::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html, body, div, main, section, article, table, aside {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hover-interactive {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hover-interactive:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px -4px rgba(249, 115, 22, 0.35);
+}
+.hover-interactive:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.card-interactive {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.card-interactive:hover {
+  transform: translateY(-4px);
+  border-color: rgba(249, 115, 22, 0.3);
+  box-shadow: 0 12px 30px -10px rgba(15, 23, 42, 0.15);
+}
+
+/* Slide Up Fade In Page Transition */
+@keyframes fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Note: NO position: relative here so fixed modal overlays like fixed inset-0 remain position: fixed */
+.animate-fade-in {
+  animation: fade-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Skeleton Loading Animation Shimmer & Pulse */
 @keyframes skeleton-pulse {
   0%, 100% {
     background-color: #f1f5f9;
@@ -184,4 +240,116 @@ html {
 
 .animate-skeleton {
   animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-effect::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 20%,
+    rgba(255, 255, 255, 0.2) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: skeleton-shimmer 2s infinite;
+  content: '';
+}
+
+/* Button micro-interactions */
+button:not(:disabled),
+.btn:not(:disabled),
+a.hover-interactive {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+button:not(:disabled):hover,
+.btn:not(:disabled):hover,
+a.hover-interactive:hover {
+  transform: translateY(-1px) scale(1.01);
+}
+
+button:not(:disabled):active,
+.btn:not(:disabled):active,
+a.hover-interactive:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Springy scale-in animation for all Modals */
+div[role="dialog"] {
+  animation: modal-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Sidebar navigation item sliding micro-animation */
+a[class*="SidebarItem"]:hover,
+a[class*="NavLink"]:hover {
+  transform: translateX(4px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Radar Pulse indicator */
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.radar-dot {
+  animation: radar-pulse 2s infinite;
+  display: inline-block;
+}
+
+/* Gradient wave animated progress bar */
+@keyframes progress-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.progress-wave {
+  background: linear-gradient(270deg, #f97316, #ef4444, #f97316);
+  background-size: 200% 200%;
+  animation: progress-shimmer 2.5s ease infinite;
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.35);
 }

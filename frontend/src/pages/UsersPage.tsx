@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { UserService, User, PageResponse } from '../services/UserService';
-import { Users, Loader2, CheckCircle, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { UserService, User } from '../services/UserService';
+import { Users, CheckCircle, Search, ChevronLeft, ChevronRight, Plus, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EmptyState from '../components/EmptyState';
 import Skeleton from '../components/Skeleton';
@@ -8,6 +8,7 @@ import Modal from '../components/Modal';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { Role } from '../services/authUtils';
+import { ExportService } from '../services/ExportService';
 
 const UsersPage: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -106,6 +107,14 @@ const UsersPage: React.FC = () => {
                         />
                     </div>
                     <Button 
+                        onClick={() => ExportService.exportParticipantsCsv()}
+                        variant="secondary"
+                        leftIcon={<Download size={16} />}
+                        className="whitespace-nowrap bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                    >
+                        Export CSV
+                    </Button>
+                    <Button 
                         onClick={() => setIsCreateModalOpen(true)}
                         leftIcon={<Plus size={16} />}
                         className="whitespace-nowrap"
@@ -127,7 +136,7 @@ const UsersPage: React.FC = () => {
                 />
             ) : (
                 <div className="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden flex flex-col">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-250px)]">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
@@ -256,6 +265,7 @@ const UsersPage: React.FC = () => {
                             <option value={Role.ADMIN}>Admin</option>
                             <option value={Role.ORGANIZER}>Organizer</option>
                             <option value={Role.JUDGE}>Judge</option>
+                            <option value={Role.GUEST_JUDGE}>Guest Judge</option>
                             <option value={Role.MENTOR}>Mentor</option>
                         </select>
                     </div>

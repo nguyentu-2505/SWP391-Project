@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class UserServiceImpl implements UserService {
@@ -90,9 +91,11 @@ public class UserServiceImpl implements UserService {
         }
 
         if (request.getFptStudentId() != null && !request.getFptStudentId().trim().isEmpty()) {
-            if (userRepository.existsByFptStudentId(request.getFptStudentId())) {
+            String trimmedId = request.getFptStudentId().trim();
+            if (userRepository.existsByFptStudentId(trimmedId)) {
                 throw new com.example.swp.exception.BadRequestException("This student ID is already registered.");
             }
+            request.setFptStudentId(trimmedId);
         }
 
         User user = new User();
@@ -170,15 +173,16 @@ public class UserServiceImpl implements UserService {
                 .anyMatch(tm -> tm.getTeam().getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED);
 
         if (request.getFptStudentId() != null) {
-            if (inFinalizedTeam && !request.getFptStudentId().equals(user.getFptStudentId())) {
+            String trimmedId = request.getFptStudentId().trim();
+            if (inFinalizedTeam && !trimmedId.equals(user.getFptStudentId())) {
                 throw new com.example.swp.exception.BadRequestException(
                         "Identity fields cannot be changed after your team registration is finalized.");
             }
-            if (!request.getFptStudentId().trim().isEmpty()
-                    && userRepository.existsByFptStudentIdAndIdNot(request.getFptStudentId(), user.getId())) {
+            if (!trimmedId.isEmpty()
+                    && userRepository.existsByFptStudentIdAndIdNot(trimmedId, user.getId())) {
                 throw new com.example.swp.exception.BadRequestException("This student ID is already registered.");
             }
-            user.setFptStudentId(request.getFptStudentId());
+            user.setFptStudentId(trimmedId);
         }
         if (request.getSchoolName() != null) {
             if (inFinalizedTeam && !request.getSchoolName().equals(user.getSchoolName())) {

@@ -60,4 +60,20 @@ public class TrackController {
         List<TrackMentorResponse> responses = trackService.getMentorsByTrack(trackId);
         return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<Void>> deleteTrack(@PathVariable Long id) {
+        trackService.deleteTrack(id);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(null, "Track deleted successfully."));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<TrackResponse>> updateTrack(
+            @PathVariable Long id,
+            @jakarta.validation.Valid @RequestBody com.example.swp.features.track.dto.request.CreateTrackRequest request) {
+        TrackResponse response = trackService.updateTrack(id, request);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response, "Track updated successfully."));
+    }
 }

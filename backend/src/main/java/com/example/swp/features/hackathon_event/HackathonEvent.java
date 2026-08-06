@@ -52,7 +52,7 @@ public class HackathonEvent {
     private Integer maxTeamSize = 5;
 
     @Builder.Default
-    private Integer minTeamSize = 2;
+    private Integer minTeamSize = 3;
 
     @Lob
     private String rules;

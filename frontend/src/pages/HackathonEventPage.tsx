@@ -1,40 +1,72 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { HackathonEvent, HackathonEventService, CreateHackathonEventRequest, UpdateHackathonEventRequest } from '../services/HackathonEventService';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
-import { Plus, Edit2, Trash2, Calendar, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, Loader2, Eye, Copy } from 'lucide-react';
 import Authorizable from '../components/Authorizable';
 import { Role } from '../services/authUtils';
+import StatusBadge from '../components/StatusBadge';
+import { UserService, User } from '../services/UserService';
+import api from '../services/api';
 
-const formatDateTimeLocal = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return '';
-  try {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return '';
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  } catch {
-    return '';
+const formatDateTimeLocal = (dateString?: string) => {
+  if (!dateString) return '';
+  if (dateString.includes('T')) {
+      return dateString.substring(0, 16);
   }
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  const tzOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
 };
 
 const HackathonEventPage: React.FC = () => {
   const [events, setEvents] = useState<HackathonEvent[]>([]);
+  const [organizers, setOrganizers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '', registrationStart: '', registrationEnd: '' });
+  const [newEvent, setNewEvent] = useState<CreateHackathonEventRequest>({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 3, maxTeamSize: 5, organizerId: undefined });
   const [selectedEvent, setSelectedEvent] = useState<HackathonEvent | null>(null);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateSortOrder, setDateSortOrder] = useState('NEWEST');
 
   useEffect(() => {
     fetchEvents();
+    fetchOrganizers();
   }, []);
+
+  const fetchOrganizers = async () => {
+    try {
+      const data = await UserService.getUsersByRole('ORGANIZER');
+      setOrganizers(data || []);
+    } catch (error) {
+      console.error('Failed to fetch organizers:', error);
+    }
+  };
 
   const fetchEvents = async () => {
     setIsLoading(true);
     try {
       const data = await HackathonEventService.getAllEventsForAdmin();
-      setEvents(data);
+      const sorted = (data || []).sort((a: any, b: any) => {
+          const order: { [key: string]: number } = {
+              'IN_PROGRESS': 1,
+              'PUBLISHED': 2,
+              'DRAFT': 3,
+              'COMPLETED': 4,
+              'CANCELLED': 5
+          };
+          const aOrder = order[a.status] || 99;
+          const bOrder = order[b.status] || 99;
+          if (aOrder !== bOrder) {
+              return aOrder - bOrder;
+          }
+          return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+      });
+      setEvents(sorted);
     } catch (error) {
       console.error('Failed to fetch hackathon events:', error);
       toast.error('Failed to load hackathon events.');
@@ -44,95 +76,26 @@ const HackathonEventPage: React.FC = () => {
   };
 
   const handleCreateEvent = async () => {
-    if (!newEvent.name || !newEvent.startTime || !newEvent.endTime) {
-      toast.error('Please fill in all required fields.');
+    if (!newEvent.name || !newEvent.startTime || !newEvent.endTime || !newEvent.organizerId) {
+      toast.error('Please fill in all required fields (Name, Start, End, Organizer).');
       return;
     }
-
-    const start = new Date(newEvent.startTime);
-    const end = new Date(newEvent.endTime);
-    if (start >= end) {
-      toast.error('Event end time must be after start time.');
-      return;
-    }
-
-    if (newEvent.registrationStart && newEvent.registrationEnd) {
-      const regStart = new Date(newEvent.registrationStart);
-      const regEnd = new Date(newEvent.registrationEnd);
-      if (regStart >= regEnd) {
-        toast.error('Registration end time must be after registration start time.');
-        return;
-      }
-    }
-
-    if (newEvent.registrationStart) {
-      const regStart = new Date(newEvent.registrationStart);
-      if (regStart >= start) {
-        toast.error('Registration start time must be before event start time.');
-        return;
-      }
-    }
-
-    if (newEvent.registrationEnd) {
-      const regEnd = new Date(newEvent.registrationEnd);
-      if (regEnd >= end) {
-        toast.error('Registration end time must be before event end time.');
-        return;
-      }
-    }
-
     const loadingToast = toast.loading('Creating event...');
     try {
       await HackathonEventService.createHackathonEvent(newEvent);
       fetchEvents();
       setIsCreateModalOpen(false);
-      setNewEvent({ name: '', description: '', startTime: '', endTime: '', registrationStart: '', registrationEnd: '' });
+      setNewEvent({ name: '', description: '', startTime: '', endTime: '', minTeamSize: 3, maxTeamSize: 5, organizerId: undefined });
       toast.success('Event created successfully', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to create hackathon event:', error);
-      toast.error('Failed to create event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Failed to create event: ' + errorMessage, { id: loadingToast });
     }
   };
 
   const handleUpdateEvent = async () => {
     if (!selectedEvent) return;
-
-    if (selectedEvent.startTime && selectedEvent.endTime) {
-      const start = new Date(selectedEvent.startTime);
-      const end = new Date(selectedEvent.endTime);
-      if (start >= end) {
-        toast.error('Event end time must be after start time.');
-        return;
-      }
-    }
-
-    if (selectedEvent.registrationStart && selectedEvent.registrationEnd) {
-      const regStart = new Date(selectedEvent.registrationStart);
-      const regEnd = new Date(selectedEvent.registrationEnd);
-      if (regStart >= regEnd) {
-        toast.error('Registration end time must be after registration start time.');
-        return;
-      }
-    }
-
-    if (selectedEvent.registrationStart && selectedEvent.startTime) {
-      const regStart = new Date(selectedEvent.registrationStart);
-      const start = new Date(selectedEvent.startTime);
-      if (regStart >= start) {
-        toast.error('Registration start time must be before event start time.');
-        return;
-      }
-    }
-
-    if (selectedEvent.registrationEnd && selectedEvent.endTime) {
-      const regEnd = new Date(selectedEvent.registrationEnd);
-      const end = new Date(selectedEvent.endTime);
-      if (regEnd >= end) {
-        toast.error('Registration end time must be before event end time.');
-        return;
-      }
-    }
-
     const loadingToast = toast.loading('Updating event...');
     try {
       const updateRequest: UpdateHackathonEventRequest = {
@@ -140,8 +103,13 @@ const HackathonEventPage: React.FC = () => {
         description: selectedEvent.description,
         startTime: selectedEvent.startTime,
         endTime: selectedEvent.endTime,
-        registrationStart: selectedEvent.registrationStart || undefined,
-        registrationEnd: selectedEvent.registrationEnd || undefined,
+        registrationStart: selectedEvent.registrationStart,
+        registrationEnd: selectedEvent.registrationEnd,
+        minTeamSize: selectedEvent.minTeamSize,
+        maxTeamSize: selectedEvent.maxTeamSize,
+        rules: selectedEvent.rules,
+        imageUrl: selectedEvent.imageUrl,
+        organizerId: selectedEvent.organizerId
       };
       await HackathonEventService.updateHackathonEvent(selectedEvent.id, updateRequest);
       fetchEvents();
@@ -150,12 +118,85 @@ const HackathonEventPage: React.FC = () => {
       toast.success('Event updated successfully', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to update hackathon event:', error);
-      toast.error('Failed to update event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Failed to update event: ' + errorMessage, { id: loadingToast });
+    }
+  };
+
+  const handleStatusChange = async (eventId: number, newStatus: string) => {
+    const loadingToast = toast.loading('Updating status...');
+    try {
+      await HackathonEventService.updateHackathonEventStatus(eventId, newStatus);
+      fetchEvents();
+      toast.success(`Event status updated to ${newStatus}`, { id: loadingToast });
+    } catch (error: any) {
+      console.error('Failed to update status:', error);
+      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Failed to update status: ' + errorMessage, { id: loadingToast });
+    }
+  };
+
+  const renderStatusActionButtons = (eventId: number, currentStatus: string) => {
+    switch (currentStatus) {
+      case 'DRAFT':
+        return (
+          <div className="flex gap-1.5 mt-2 flex-wrap">
+            <button
+              onClick={() => handleStatusChange(eventId, 'PUBLISHED')}
+              className="px-2 py-1 bg-green-600 text-white text-[10px] font-bold rounded-lg hover:bg-green-700 transition-colors cursor-pointer shadow-sm"
+            >
+              Publish Event
+            </button>
+            <button
+              onClick={() => handleStatusChange(eventId, 'CANCELLED')}
+              className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        );
+      case 'PUBLISHED':
+        return (
+          <div className="flex gap-1.5 mt-2 flex-wrap">
+            <button
+              onClick={() => handleStatusChange(eventId, 'IN_PROGRESS')}
+              className="px-2 py-1 bg-[#0284c7] text-white text-[10px] font-bold rounded-lg hover:bg-sky-700 transition-colors cursor-pointer shadow-sm"
+            >
+              Start Event
+            </button>
+            <button
+              onClick={() => handleStatusChange(eventId, 'CANCELLED')}
+              className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        );
+      case 'IN_PROGRESS':
+        return (
+          <div className="flex gap-1.5 mt-2 flex-wrap">
+            <button
+              onClick={() => handleStatusChange(eventId, 'COMPLETED')}
+              className="px-2 py-1 bg-purple-600 text-white text-[10px] font-bold rounded-lg hover:bg-purple-700 transition-colors cursor-pointer shadow-sm"
+            >
+              Complete Event
+            </button>
+            <button
+              onClick={() => handleStatusChange(eventId, 'CANCELLED')}
+              className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
   const handleDeleteEvent = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this event?')) return;
+    
     const loadingToast = toast.loading('Deleting event...');
     try {
       await HackathonEventService.deleteHackathonEvent(id);
@@ -163,7 +204,8 @@ const HackathonEventPage: React.FC = () => {
       toast.success('Event deleted successfully', { id: loadingToast });
     } catch (error: any) {
       console.error('Failed to delete hackathon event:', error);
-      toast.error('Failed to delete event: ' + (error.response?.data?.message || error.message), { id: loadingToast });
+      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Failed to delete event: ' + errorMessage, { id: loadingToast });
     }
   };
 
@@ -173,14 +215,29 @@ const HackathonEventPage: React.FC = () => {
       startTime: formatDateTimeLocal(event.startTime),
       endTime: formatDateTimeLocal(event.endTime),
       registrationStart: formatDateTimeLocal(event.registrationStart),
-      registrationEnd: formatDateTimeLocal(event.registrationEnd)
+      registrationEnd: formatDateTimeLocal(event.registrationEnd),
     });
     setIsEditModalOpen(true);
   };
 
+  const filteredEvents = events.filter(event => {
+    const matchesStatus = statusFilter ? event.status === statusFilter : true;
+    const matchesSearch = !searchQuery || 
+                          event.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                          (event.organizerName && event.organizerName.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesStatus && matchesSearch;
+  }).sort((a, b) => {
+    const timeA = new Date(a.startTime).getTime();
+    const timeB = new Date(b.startTime).getTime();
+    if (dateSortOrder === 'NEWEST') return timeB - timeA;
+    if (dateSortOrder === 'OLDEST') return timeA - timeB;
+    return 0;
+  });
+
   return (
     <div className="container mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Calendar className="text-blue-600" />
@@ -189,15 +246,50 @@ const HackathonEventPage: React.FC = () => {
           <p className="text-gray-500 text-sm mt-1">Manage hackathon events, schedules and descriptions.</p>
         </div>
         
-        <Authorizable allowedRoles={[Role.ADMIN, Role.ORGANIZER]}>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors"
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Search Box */}
+          <input
+            type="text"
+            placeholder="Search event name, organizer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-52"
+          />
+
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <Plus size={18} />
-            Create Event
-          </button>
-        </Authorizable>
+            <option value="">All Statuses</option>
+            <option value="DRAFT">Draft</option>
+            <option value="PUBLISHED">Published</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+
+          {/* Date Sort Filter */}
+          <select
+            value={dateSortOrder}
+            onChange={(e) => setDateSortOrder(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="NEWEST">Date: Newest First</option>
+            <option value="OLDEST">Date: Oldest First</option>
+          </select>
+
+          <Authorizable allowedRoles={[Role.ADMIN]}>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <Plus size={18} />
+              Create Event
+            </button>
+          </Authorizable>
+        </div>
       </div>
 
       {isLoading ? (
@@ -219,48 +311,70 @@ const HackathonEventPage: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organizer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {events.map((event) => (
-                  <tr key={event.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{event.id}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{event.name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{event.description}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Authorizable 
-                        allowedRoles={[Role.ADMIN, Role.ORGANIZER]} 
-                        fallback={<span className="text-gray-400 text-xs italic">View Only</span>}
-                      >
-                        <div className="flex space-x-3">
-                          <button
-                            onClick={() => openEditModal(event)}
-                            className="text-blue-600 hover:text-blue-900 transition-colors"
-                            title="Edit"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteEvent(event.id)}
-                            className="text-red-600 hover:text-red-900 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </Authorizable>
+                {filteredEvents.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500 font-medium">
+                      No events found matching the selected status.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredEvents.map((event) => (
+                    <tr key={event.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{event.id}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{event.name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{event.description}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{event.organizerName || 'Unassigned'}</td>
+                      <td className="px-6 py-4 text-sm font-medium">
+                          <StatusBadge status={event.status} />
+                          {renderStatusActionButtons(event.id, event.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <Authorizable 
+                          allowedRoles={[Role.ADMIN, Role.ORGANIZER]} 
+                          fallback={<span className="text-gray-400 text-xs italic">View Only</span>}
+                        >
+                          <div className="flex space-x-3 items-center">
+                            <button
+                              onClick={() => openEditModal(event)}
+                              className="text-blue-600 hover:text-blue-900 transition-colors cursor-pointer"
+                              title="Edit"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                            <Link
+                              to={`/organizer/events/${event.id}/dashboard`}
+                              className="text-green-600 hover:text-green-900 transition-colors"
+                              title="Dashboard"
+                            >
+                              <Eye size={18} />
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteEvent(event.id)}
+                              className="text-red-600 hover:text-red-900 transition-colors cursor-pointer"
+                              title="Delete"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </Authorizable>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
-        <div className="p-6">
+      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} maxWidth="2xl">
+        <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Calendar size={20} className="text-blue-600" />
                 Create New Hackathon Event
@@ -280,36 +394,40 @@ const HackathonEventPage: React.FC = () => {
                 <textarea
                     value={newEvent.description}
                     onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                    rows={3}
+                    rows={2}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                    <input
-                        type="datetime-local"
-                        value={newEvent.startTime}
-                        onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                    <input
-                        type="datetime-local"
-                        value={newEvent.endTime}
-                        onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    />
-                </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Assign Organizer *</label>
+                <select
+                    value={newEvent.organizerId || ''}
+                    onChange={(e) => setNewEvent({ ...newEvent, organizerId: e.target.value ? Number(e.target.value) : undefined })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                    required
+                >
+                    <option value="">-- Select Organizer --</option>
+                    {organizers.map(org => (
+                        <option key={org.id} value={org.id}>{org.username} ({org.email})</option>
+                    ))}
+                </select>
+            </div>
+            {/* Time Rules Hint */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700 space-y-1">
+                <p className="font-semibold">📋 Time configuration rules:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li><b>Registration Start</b> must be before <b>Registration End</b></li>
+                  <li><b>Registration End</b> must be before <b>Event Start Time</b></li>
+                  <li><b>Event Start Time</b> must be before <b>Event End Time</b></li>
+                  <li>Example: Registration Start → Registration End → Event Start → Event End</li>
+                </ul>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
                     <input
                         type="datetime-local"
-                        value={newEvent.registrationStart}
+                        value={newEvent.registrationStart || ''}
                         onChange={(e) => setNewEvent({ ...newEvent, registrationStart: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
@@ -318,8 +436,46 @@ const HackathonEventPage: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
                     <input
                         type="datetime-local"
-                        value={newEvent.registrationEnd}
+                        value={newEvent.registrationEnd || ''}
                         onChange={(e) => setNewEvent({ ...newEvent, registrationEnd: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time *</label>
+                    <input
+                        type="datetime-local"
+                        value={newEvent.startTime}
+                        onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time *</label>
+                    <input
+                        type="datetime-local"
+                        value={newEvent.endTime}
+                        onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Min Team Size</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={newEvent.minTeamSize}
+                        onChange={(e) => setNewEvent({ ...newEvent, minTeamSize: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Team Size</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={newEvent.maxTeamSize}
+                        onChange={(e) => setNewEvent({ ...newEvent, maxTeamSize: Number(e.target.value) })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                 </div>
@@ -343,8 +499,8 @@ const HackathonEventPage: React.FC = () => {
       </Modal>
 
       {selectedEvent && (
-        <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
-          <div className="p-6">
+        <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} maxWidth="2xl">
+          <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Edit2 size={20} className="text-blue-600" />
                 Edit Hackathon Event
@@ -364,13 +520,55 @@ const HackathonEventPage: React.FC = () => {
                 <textarea
                   value={selectedEvent.description}
                   onChange={(e) => setSelectedEvent({ ...selectedEvent, description: e.target.value })}
-                  rows={3}
+                  rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Assign Organizer *</label>
+                <select
+                    value={selectedEvent.organizerId || ''}
+                    onChange={(e) => setSelectedEvent({ ...selectedEvent, organizerId: e.target.value ? Number(e.target.value) : undefined })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                    required
+                >
+                    <option value="">-- Select Organizer --</option>
+                    {organizers.map(org => (
+                        <option key={org.id} value={org.id}>{org.username} ({org.email})</option>
+                    ))}
+                </select>
+              </div>
+              {/* Time Rules Hint */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700 space-y-1">
+                <p className="font-semibold">📋 Time configuration rules:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li><b>Registration Start</b> must be before <b>Registration End</b></li>
+                  <li><b>Registration End</b> must be before <b>Event Start Time</b></li>
+                  <li><b>Event Start Time</b> must be before <b>Event End Time</b></li>
+                  <li>Example: Registration Start → Registration End → Event Start → Event End</li>
+                </ul>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
+                    <input
+                        type="datetime-local"
+                        value={selectedEvent.registrationStart || ''}
+                        onChange={(e) => setSelectedEvent({ ...selectedEvent, registrationStart: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
+                    <input
+                        type="datetime-local"
+                        value={selectedEvent.registrationEnd || ''}
+                        onChange={(e) => setSelectedEvent({ ...selectedEvent, registrationEnd: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Start Time *</label>
                   <input
                     type="datetime-local"
                     value={selectedEvent.startTime}
@@ -379,7 +577,7 @@ const HackathonEventPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event End Time *</label>
                   <input
                     type="datetime-local"
                     value={selectedEvent.endTime}
@@ -387,25 +585,25 @@ const HackathonEventPage: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration Start</label>
-                  <input
-                    type="datetime-local"
-                    value={selectedEvent.registrationStart || ''}
-                    onChange={(e) => setSelectedEvent({ ...selectedEvent, registrationStart: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Min Team Size</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={selectedEvent.minTeamSize}
+                        onChange={(e) => setSelectedEvent({ ...selectedEvent, minTeamSize: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Registration End</label>
-                  <input
-                    type="datetime-local"
-                    value={selectedEvent.registrationEnd || ''}
-                    onChange={(e) => setSelectedEvent({ ...selectedEvent, registrationEnd: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Max Team Size</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={selectedEvent.maxTeamSize}
+                        onChange={(e) => setSelectedEvent({ ...selectedEvent, maxTeamSize: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
                 </div>
               </div>
             </div>

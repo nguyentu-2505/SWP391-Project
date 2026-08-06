@@ -14,4 +14,6 @@ public interface TrackService {
     TrackMentorResponse assignMentor(Long trackId, Long mentorUserId);
     void removeMentor(Long trackId, Long mentorUserId);
     List<TrackMentorResponse> getMentorsByTrack(Long trackId);
+    void deleteTrack(Long id);
+    TrackResponse updateTrack(Long id, com.example.swp.features.track.dto.request.CreateTrackRequest request);
 }

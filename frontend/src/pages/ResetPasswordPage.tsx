@@ -18,11 +18,15 @@ const ResetPasswordPage: React.FC = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/auth/reset-password', { email, otp, newPassword });
+            await api.post('/auth/reset-password', {
+                email: email.trim(),
+                otpCode: otp.trim(),
+                newPassword,
+            });
             toast.success('Password reset successfully! Please log in.');
             navigate('/login');
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to reset password.');
+            toast.error(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to reset password.');
         } finally {
             setLoading(false);
         }

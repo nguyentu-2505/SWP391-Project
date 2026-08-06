@@ -1,5 +1,6 @@
 package com.example.swp.features.auth.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -10,6 +11,7 @@ public class ResetPasswordRequest {
     private String email;
 
     @NotBlank(message = "OTP Code cannot be empty")
+    @JsonAlias("otp")
     private String otpCode;
 
     @NotBlank(message = "New password cannot be empty")

@@ -1,6 +1,5 @@
 package com.example.swp.features.round.dto.request;
 
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -15,11 +14,13 @@ public class CreateRoundRequest {
     private String description;
 
     @NotNull(message = "Start time cannot be null")
-    @FutureOrPresent(message = "Start time must be in the present or future")
     private LocalDateTime startTime;
 
     @NotNull(message = "End time cannot be null")
     private LocalDateTime endTime; // Additional validation for endTime > startTime will be in service layer
+
+    @NotNull(message = "Grading end time cannot be null")
+    private LocalDateTime gradingEndTime;
 
     @NotNull(message = "Hackathon Event ID cannot be null")
     private Long hackathonEventId;
@@ -31,5 +32,6 @@ public class CreateRoundRequest {
     public String getDescription() { return description; }
     public LocalDateTime getStartTime() { return startTime; }
     public LocalDateTime getEndTime() { return endTime; }
+    public LocalDateTime getGradingEndTime() { return gradingEndTime; }
     public Integer getAdvancementSlots() { return advancementSlots; }
 }

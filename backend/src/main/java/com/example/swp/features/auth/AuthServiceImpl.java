@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class AuthServiceImpl implements AuthService {
@@ -92,7 +93,7 @@ public class AuthServiceImpl implements AuthService {
                             .refreshToken(request.getRefreshToken())
                             .build();
                 })
-                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
+                .orElseThrow(() -> new BadRequestException("Refresh token is not in database!"));
     }
 
     @Override
@@ -106,9 +107,24 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Error: Email is already in use!");
         }
 
-        if (request.getFptStudentId() != null && !request.getFptStudentId().trim().isEmpty()) {
+        // Determine school type and validate student ID
+        boolean isFpt = request.getSchoolName() == null || request.getSchoolName().trim().isEmpty();
+
+        if (isFpt) {
+            // FPT student: fptStudentId is required and must be unique
+            if (request.getFptStudentId() == null || request.getFptStudentId().trim().isEmpty()) {
+                throw new BadRequestException("FPT Student ID is required for FPT students.");
+            }
             if (userRepository.existsByFptStudentId(request.getFptStudentId())) {
-                throw new BadRequestException("This student ID is already registered.");
+                throw new BadRequestException("This FPT Student ID is already registered.");
+            }
+        } else {
+            // External student: both studentId and schoolName are required
+            if (request.getFptStudentId() == null || request.getFptStudentId().trim().isEmpty()) {
+                throw new BadRequestException("Student ID is required for external students.");
+            }
+            if (userRepository.existsByFptStudentIdAndSchoolName(request.getFptStudentId(), request.getSchoolName().trim())) {
+                throw new BadRequestException("This Student ID is already registered at " + request.getSchoolName().trim() + ".");
             }
         }
 
@@ -117,6 +133,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFptStudentId(request.getFptStudentId());
+        user.setSchoolName(isFpt ? "FPT University" : request.getSchoolName().trim());
         user.setRole(Role.PARTICIPANT);
         user.setApproved(false);
         user.setVerified(false); // Require OTP verification
@@ -124,6 +141,7 @@ public class AuthServiceImpl implements AuthService {
         String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
         user.setOtpCode(otpCode);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        log.info("Generated Registration OTP for user {}: {}", user.getUsername(), otpCode);
 
         try {
             userRepository.save(user);
@@ -216,6 +234,7 @@ public class AuthServiceImpl implements AuthService {
         String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
         user.setOtpCode(otpCode);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        log.info("Generated Forgot Password OTP for user {}: {}", user.getEmail(), otpCode);
         userRepository.save(user);
 
         String emailBody = "Hello,\n\nYour 6-digit OTP for password reset is: " + otpCode + "\nIt will expire in 5 minutes.\n\nBest regards,\nHackathon Event Notification Team";

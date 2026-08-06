@@ -85,11 +85,26 @@ const EventListPage: React.FC = () => {
     }, []);
 
     const filteredEvents = useMemo(() => {
-        return events.filter(event => {
+        const list = events.filter(event => {
             const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                    event.description.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesStatus = statusFilter ? event.status === statusFilter : true;
             return matchesSearch && matchesStatus;
+        });
+
+        return list.sort((a, b) => {
+            const order: { [key: string]: number } = {
+                'IN_PROGRESS': 1,
+                'PUBLISHED': 2,
+                'COMPLETED': 3,
+                'CANCELLED': 4
+            };
+            const aOrder = order[a.status] || 99;
+            const bOrder = order[b.status] || 99;
+            if (aOrder !== bOrder) {
+                return aOrder - bOrder;
+            }
+            return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
         });
     }, [events, searchTerm, statusFilter]);
 

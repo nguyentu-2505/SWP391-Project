@@ -22,6 +22,7 @@ import com.example.swp.features.hackathon_event.HackathonStatus;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @SuppressWarnings("null")
 public class TeamInvitationService {
 
@@ -45,6 +46,14 @@ public class TeamInvitationService {
             throw new com.example.swp.exception.BadRequestException("Invitations can only be sent during the registration phase.");
         }
 
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+            throw new com.example.swp.exception.BadRequestException("Cannot invite members to a disqualified team.");
+        }
+
+        if (team.getStatus() == com.example.swp.features.team.TeamStatus.FINALIZED) {
+            throw new com.example.swp.exception.BadRequestException("Cannot invite members to a finalized team.");
+        }
+
         teamMemberRepository.findByTeamIdAndUserId(team.getId(), inviter.getId())
                 .filter(tm -> tm.isLeader())
                 .orElseThrow(() -> new IllegalStateException("Only the team leader can invite members."));
@@ -55,14 +64,19 @@ public class TeamInvitationService {
         if (isUserInAnotherTeamInEvent(invitee, team.getEvent().getId())) {
             throw new IllegalStateException("Invitee is already in another team for this hackathon.");
         }
+
+        if (registrationRepository.findByEventAndUser(team.getEvent(), invitee).isEmpty()) {
+            throw new IllegalStateException("Invitee must be registered for this hackathon before they can be invited.");
+        }
         
         long currentSize = teamMemberRepository.countByTeamId(team.getId());
-        if (team.getEvent().getMaxTeamSize() != null && currentSize >= team.getEvent().getMaxTeamSize()) {
-            throw new IllegalStateException("Team is full. Cannot invite more members.");
+        long pendingInvitations = invitationRepository.countByTeamIdAndStatus(team.getId(), InvitationStatus.PENDING);
+        if (team.getEvent().getMaxTeamSize() != null && (currentSize + pendingInvitations) >= team.getEvent().getMaxTeamSize()) {
+            throw new IllegalStateException("Team capacity reached. Current members + pending invitations exceed the maximum team size.");
         }
 
-        invitationRepository.findByTeamIdAndInviteeEmail(team.getId(), request.getInviteeEmail()).ifPresent(i -> {
-            throw new IllegalStateException("Invitation already sent to this user for this team.");
+        invitationRepository.findByTeamIdAndInviteeEmailAndStatus(team.getId(), request.getInviteeEmail(), InvitationStatus.PENDING).ifPresent(i -> {
+            throw new IllegalStateException("A pending invitation has already been sent to this user for this team.");
         });
 
         TeamInvitation invitation = TeamInvitation.builder()
@@ -109,6 +123,9 @@ public class TeamInvitationService {
         }
 
         if (response == InvitationStatus.ACCEPTED) {
+            if (team.getStatus() == com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+                throw new com.example.swp.exception.BadRequestException("Cannot join a disqualified team.");
+            }
             
             if (!invitee.isVerified()) {
                 throw new IllegalStateException("Your account email must be verified before joining a team.");

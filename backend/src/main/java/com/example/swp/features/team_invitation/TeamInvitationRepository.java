@@ -8,7 +8,8 @@ import java.util.Optional;
 
 @Repository
 public interface TeamInvitationRepository extends JpaRepository<TeamInvitation, Long> {
-    Optional<TeamInvitation> findByTeamIdAndInviteeEmail(Long teamId, String inviteeEmail);
+    Optional<TeamInvitation> findByTeamIdAndInviteeEmailAndStatus(Long teamId, String inviteeEmail, InvitationStatus status);
     List<TeamInvitation> findByInviteeEmailAndStatus(String inviteeEmail, InvitationStatus status);
     List<TeamInvitation> findByTeamId(Long teamId);
+    long countByTeamIdAndStatus(Long teamId, InvitationStatus status);
 }

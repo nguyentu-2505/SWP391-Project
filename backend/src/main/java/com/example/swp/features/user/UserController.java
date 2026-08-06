@@ -53,7 +53,7 @@ public class UserController {
     }
     
     @GetMapping("/role/{role}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getUsersByRole(@PathVariable Role role) {
         List<UserResponse> responses = userService.getUsersByRole(role);
         return ResponseEntity.ok(ApiResponse.success(responses));

@@ -1,4 +1,4 @@
-        package com.example.swp.features.event_registration;
+package com.example.swp.features.event_registration;
 
 import com.example.swp.exception.ResourceNotFoundException;
 import com.example.swp.features.event_registration.dto.response.EventRegistrationResponse;
@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class EventRegistrationService {
@@ -43,15 +44,21 @@ public class EventRegistrationService {
         }
 
         if (!currentUser.isProfileComplete()) {
-            throw new com.example.swp.exception.BadRequestException("Please complete your profile before registering for this event.");
+            throw new com.example.swp.exception.BadRequestException(
+                    "Please complete your profile before registering for this event.");
         }
 
         HackathonEvent event = hackathonEventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
 
+        if (event.isDeleted()) {
+            throw new ResourceNotFoundException("Hackathon event not found");
+        }
+
         // Event phải ở trạng thái PUBLISHED mới cho phép đăng ký
         if (event.getStatus() != HackathonStatus.PUBLISHED) {
-            throw new IllegalStateException("Registration for this event is not open. Current status: " + event.getStatus());
+            throw new IllegalStateException(
+                    "Registration for this event is not open. Current status: " + event.getStatus());
         }
 
         // Check registration window
@@ -84,13 +91,12 @@ public class EventRegistrationService {
     }
 
     @Transactional(readOnly = true)
-    public boolean isCurrentUserRegistered(Long eventId) {
+    public boolean isUserRegisteredForEvent(Long eventId) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsername(currentUsername).orElse(null);
-        if (currentUser == null) return false;
-
-        HackathonEvent event = hackathonEventRepository.findById(eventId).orElse(null);
-        if (event == null) return false;
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        HackathonEvent event = hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
 
         return eventRegistrationRepository.findByEventAndUser(event, currentUser).isPresent();
     }

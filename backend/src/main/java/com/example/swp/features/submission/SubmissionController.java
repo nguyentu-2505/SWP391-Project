@@ -41,7 +41,7 @@ public class SubmissionController {
     }
 
     @GetMapping("/round/{roundId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'JUDGE', 'MENTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER', 'JUDGE', 'GUEST_JUDGE', 'MENTOR')")
     public ResponseEntity<ApiResponse<List<SubmissionResponse>>> getSubmissionsByRound(@PathVariable Long roundId) {
         List<SubmissionResponse> responses = submissionService.getSubmissionsByRound(roundId);
         return ResponseEntity.ok(ApiResponse.success(responses));

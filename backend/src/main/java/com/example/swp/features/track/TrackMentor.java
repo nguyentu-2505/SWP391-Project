@@ -3,8 +3,9 @@ package com.example.swp.features.track;
 import com.example.swp.features.hackathon_event.HackathonEvent;
 import com.example.swp.features.user.User;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -16,7 +17,8 @@ import java.time.LocalDateTime;
  * submissions belonging to that same track (conflict of interest).
  * Guest judges (Role.GUEST_JUDGE) are never allowed to be track mentors.
  */
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -84,3 +86,4 @@ public class TrackMentor {
         }
     }
 }
+

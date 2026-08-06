@@ -35,7 +35,7 @@ const NotificationBell: React.FC = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
-    // Poll unread count every 30s
+    // Poll unread count
     const fetchUnreadCount = useCallback(async () => {
         try {
             const count = await NotificationService.getUnreadCount();
@@ -47,8 +47,76 @@ const NotificationBell: React.FC = () => {
 
     useEffect(() => {
         fetchUnreadCount();
-        const interval = setInterval(fetchUnreadCount, 30000);
-        return () => clearInterval(interval);
+
+        const token = localStorage.getItem('accessToken');
+        if (!token) return;
+
+        let eventSource: EventSource | null = null;
+        let reconnectDelay = 3000;
+        let reconnectTimeout: any = null;
+
+        const connect = () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource(`http://localhost:8080/api/v1/notifications/stream?token=${token}`);
+
+            eventSource.addEventListener('NOTIFICATION', (event: MessageEvent) => {
+                try {
+                    const newNotif = JSON.parse(event.data);
+                    setNotifications(prev => {
+                        if (prev.some(n => n.id === newNotif.id)) return prev;
+                        return [newNotif, ...prev];
+                    });
+                    fetchUnreadCount();
+                } catch (e) {
+                    console.error("Failed to parse realtime notification:", e);
+                }
+            });
+
+            eventSource.addEventListener('UNREAD_COUNT', (event: MessageEvent) => {
+                try {
+                    const count = parseInt(event.data, 10);
+                    if (!isNaN(count)) {
+                        setUnreadCount(count);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse unread count:", e);
+                }
+            });
+
+            eventSource.onopen = () => {
+                console.log("Notification SSE connected successfully.");
+                reconnectDelay = 3000;
+            };
+
+            eventSource.onerror = (e) => {
+                console.error("Notification SSE error, retrying in " + reconnectDelay + "ms", e);
+                if (eventSource) {
+                    eventSource.close();
+                }
+                reconnectTimeout = setTimeout(() => {
+                    connect();
+                    reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+                }, reconnectDelay);
+            };
+        };
+
+        connect();
+
+        // Backup polling every 45s in case SSE is blocked
+        const backupInterval = setInterval(fetchUnreadCount, 45000);
+
+        return () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
+            clearInterval(backupInterval);
+        };
     }, [fetchUnreadCount]);
 
     // Fetch full list when dropdown opens
@@ -99,21 +167,57 @@ const NotificationBell: React.FC = () => {
         } catch { /* ignore */ }
     };
 
-    const handleNotificationClick = async (notif: NotificationItem) => {
+    const handleNotificationClick = (notif: NotificationItem) => {
+        console.log("Notification clicked:", notif);
         if (!notif.isRead) {
-            try {
-                await NotificationService.markAsRead(notif.id);
-                setNotifications(prev =>
-                    prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n)
-                );
-                setUnreadCount(prev => Math.max(0, prev - 1));
-            } catch { /* ignore */ }
+            NotificationService.markAsRead(notif.id).catch(console.error);
+            setNotifications(prev =>
+                prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n)
+            );
+            setUnreadCount(prev => Math.max(0, prev - 1));
         }
-        // Navigate to relevant page based on type
-        if (notif.type === 'TEAM_INVITATION' || notif.type === 'INVITATION_ACCEPTED' || notif.type === 'INVITATION_DECLINED') {
-            setOpen(false);
-            navigate('/invitations');
+        
+        const typeStr = notif.type ? notif.type.toUpperCase() : '';
+        switch (typeStr) {
+            case 'TEAM_INVITATION':
+            case 'INVITE':
+            case 'INVITATION_DECLINED':
+            case 'TEAM_INVITATION_REVOKED':
+                console.log("Navigating to /invitations");
+                navigate('/invitations');
+                break;
+            case 'INVITATION_ACCEPTED':
+            case 'TEAM_MEMBER_JOINED':
+            case 'TEAM_DISQUALIFIED':
+            case 'TEAM':
+                console.log("Navigating to /my-team");
+                navigate('/my-team');
+                break;
+            case 'HACKATHON_EVENT':
+            case 'SYSTEM_ALERT':
+                console.log("Navigating to /events");
+                navigate('/events');
+                break;
+            case 'MENTORSHIP_REQUEST':
+                console.log("Navigating to mentorship requests");
+                navigate(typeStr === 'MENTORSHIP_REQUEST' ? '/mentor/requests' : '/my-mentorship-requests');
+                break;
+            case 'MENTORSHIP_ACCEPTED':
+            case 'MENTORSHIP_RESOLVED':
+            case 'MENTORSHIP_REJECTED':
+                console.log("Navigating to /my-mentorship-requests");
+                navigate('/my-mentorship-requests');
+                break;
+            case 'SUPPORT_TICKET_CREATED':
+                console.log("Navigating to /support-tickets");
+                navigate('/support-tickets');
+                break;
+            default:
+                console.log("No specific route for type:", typeStr);
+                break;
         }
+        
+        setOpen(false);
     };
 
     return (
@@ -187,6 +291,19 @@ const NotificationBell: React.FC = () => {
                                 </div>
                             ))
                         )}
+                    </div>
+                    
+                    {/* Footer - View All */}
+                    <div className="border-t border-gray-100 p-2 text-center bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <button
+                            onClick={() => {
+                                setOpen(false);
+                                navigate('/notifications');
+                            }}
+                            className="text-xs font-semibold text-blue-600 hover:text-blue-800 w-full py-1"
+                        >
+                            View all notifications
+                        </button>
                     </div>
                 </div>
             )}

@@ -13,9 +13,12 @@ import com.example.swp.features.user.Role;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.audit_log.AuditLogService;
-import com.example.swp.features.criterion.Criterion;
 import com.example.swp.features.criterion.CriterionRepository;
+import com.example.swp.features.prize.PrizeRepository;
+import com.example.swp.features.submission.SubmissionRepository;
+import com.example.swp.features.hackathon_event.dto.response.HackathonEventAnalyticsResponse;
 import com.github.slugify.Slugify;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("null")
 public class HackathonEventServiceImpl implements HackathonEventService {
@@ -45,6 +49,9 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private final CriterionRepository criterionRepository;
     private final com.example.swp.features.team.TeamRepository teamRepository;
     private final com.example.swp.features.team_member.TeamMemberRepository teamMemberRepository;
+    private final com.example.swp.features.track.TrackRepository trackRepository;
+    private final PrizeRepository prizeRepository;
+    private final SubmissionRepository submissionRepository;
     private final Slugify slugify = Slugify.builder().build();
 
     // ==================== CREATE ====================
@@ -53,6 +60,11 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     @Transactional
     public HackathonEventResponse createHackathonEvent(CreateHackathonEventRequest request) {
         User organizer = getCurrentUser();
+        if (request.getOrganizerId() != null) {
+            organizer = userRepository.findById(request.getOrganizerId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Organizer not found with id: " + request.getOrganizerId()));
+        }
 
         // Validate: endTime phải sau startTime
         validateTimeRange(request.getStartTime(), request.getEndTime(), "Event end time must be after start time.");
@@ -60,22 +72,15 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         // Validate: registration window (nếu có)
         if (request.getRegistrationStart() != null && request.getRegistrationEnd() != null) {
             validateTimeRange(request.getRegistrationStart(), request.getRegistrationEnd(),
-                    "Registration end time must be after registration start time.");
+                    "Registration start time must be before registration end time.");
+        }
+        // Validate: registrationEnd must be before startTime
+        if (request.getRegistrationEnd() != null && request.getStartTime() != null) {
+            validateTimeRange(request.getRegistrationEnd(), request.getStartTime(),
+                    "Registration time must be before the event starts.");
         }
 
-        // Validate: registration start time must be before event start time
-        if (request.getRegistrationStart() != null && request.getStartTime() != null
-                && !request.getRegistrationStart().isBefore(request.getStartTime())) {
-            throw new IllegalArgumentException("Registration start time must be before event start time.");
-        }
-
-        // Validate: registration end time must be before event end time
-        if (request.getRegistrationEnd() != null && request.getEndTime() != null
-                && !request.getRegistrationEnd().isBefore(request.getEndTime())) {
-            throw new IllegalArgumentException("Registration end time must be before event end time.");
-        }
-
-        // Validate: minTeamSize <= maxTeamSize (nếu có)
+        // Validate: minTeamSize <= maxTeamSize
         if (request.getMinTeamSize() != null && request.getMaxTeamSize() != null
                 && request.getMinTeamSize() > request.getMaxTeamSize()) {
             throw new IllegalArgumentException("Minimum team size cannot be greater than maximum team size.");
@@ -93,7 +98,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .endTime(request.getEndTime())
                 .registrationStart(request.getRegistrationStart())
                 .registrationEnd(request.getRegistrationEnd())
-                .minTeamSize(request.getMinTeamSize() != null ? request.getMinTeamSize() : 2)
+                .minTeamSize(request.getMinTeamSize() != null ? request.getMinTeamSize() : 3)
                 .maxTeamSize(request.getMaxTeamSize() != null ? request.getMaxTeamSize() : 5)
                 .rules(request.getRules())
                 .imageUrl(request.getImageUrl())
@@ -102,24 +107,11 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .build();
 
         HackathonEvent savedEvent = hackathonEventRepository.save(event);
-        // Auto-seed default criteria
-        List<Criterion> defaultCriteria = criterionRepository.findByHackathonEventIsNull();
-        if (!defaultCriteria.isEmpty()) {
-            List<Criterion> clonedCriteria = defaultCriteria.stream()
-                    .map(c -> Criterion.builder()
-                            .name(c.getName())
-                            .description(c.getDescription())
-                            .maxScore(c.getMaxScore())
-                            .weight(c.getWeight())
-                            .hackathonEvent(savedEvent)
-                            .build())
-                    .collect(Collectors.toList());
-            criterionRepository.saveAll(clonedCriteria);
-            log.info("Auto-seeded {} default criteria for new event id={}", clonedCriteria.size(), savedEvent.getId());
-        }
 
-        auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent", savedEvent.getId(), null, "Created event: " + savedEvent.getName());
-        log.info("Hackathon event created successfully: id={}, name={} by organizer={}", savedEvent.getId(), savedEvent.getName(), organizer.getUsername());
+        auditLogService.logAction("CREATE_HACKATHON_EVENT", "HackathonEvent", savedEvent.getId(), null,
+                "Created event: " + savedEvent.getName(), savedEvent.getId());
+        log.info("Hackathon event created successfully: id={}, name={} by organizer={}", savedEvent.getId(),
+                savedEvent.getName(), organizer.getUsername());
         return mapToResponse(savedEvent);
     }
 
@@ -129,14 +121,14 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     @Transactional(readOnly = true)
     public Page<HackathonEventResponse> getAllHackathonEvents(Pageable pageable) {
         return hackathonEventRepository.findByIsDeletedFalseAndStatusIn(
-                List.of(HackathonStatus.PUBLISHED, HackathonStatus.IN_PROGRESS), pageable)
+                List.of(HackathonStatus.PUBLISHED, HackathonStatus.IN_PROGRESS, HackathonStatus.COMPLETED), pageable)
                 .map(this::mapToResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<HackathonEventResponse> getAllEventsForAdmin(Pageable pageable) {
-        return hackathonEventRepository.findAll(pageable)
+        return hackathonEventRepository.findByIsDeletedFalse(pageable)
                 .map(this::mapToResponse);
     }
 
@@ -158,6 +150,13 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         return mapToResponse(event);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public HackathonEventResponse getHackathonEventById(Long id) {
+        HackathonEvent event = findEventById(id);
+        return mapToResponse(event);
+    }
+
     // ==================== UPDATE ====================
 
     @Override
@@ -169,8 +168,23 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         // Chỉ cho phép edit khi event ở DRAFT hoặc PUBLISHED
         if (event.getStatus() != HackathonStatus.DRAFT && event.getStatus() != HackathonStatus.PUBLISHED) {
             throw new IllegalStateException(
-                    "Cannot edit event in status: " + event.getStatus() + ". Only DRAFT and PUBLISHED events can be edited.");
+                    "Cannot edit event in status: " + event.getStatus()
+                            + ". Only DRAFT and PUBLISHED events can be edited.");
         }
+
+        java.util.Map<String, Object> oldMap = new java.util.HashMap<>();
+        oldMap.put("name", event.getName());
+        oldMap.put("description", event.getDescription());
+        oldMap.put("startTime", event.getStartTime() != null ? event.getStartTime().toString() : null);
+        oldMap.put("endTime", event.getEndTime() != null ? event.getEndTime().toString() : null);
+        oldMap.put("registrationStart",
+                event.getRegistrationStart() != null ? event.getRegistrationStart().toString() : null);
+        oldMap.put("registrationEnd",
+                event.getRegistrationEnd() != null ? event.getRegistrationEnd().toString() : null);
+        oldMap.put("minTeamSize", event.getMinTeamSize());
+        oldMap.put("maxTeamSize", event.getMaxTeamSize());
+        oldMap.put("rules", event.getRules());
+        oldMap.put("imageUrl", event.getImageUrl());
 
         // Partial update — chỉ update field non-null
         if (request.getName() != null) {
@@ -204,6 +218,12 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         if (request.getImageUrl() != null) {
             event.setImageUrl(request.getImageUrl());
         }
+        if (request.getOrganizerId() != null) {
+            User newOrganizer = userRepository.findById(request.getOrganizerId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Organizer not found with id: " + request.getOrganizerId()));
+            event.setOrganizer(newOrganizer);
+        }
 
         // Validate sau khi merge: endTime > startTime
         validateTimeRange(event.getStartTime(), event.getEndTime(), "Event end time must be after start time.");
@@ -211,19 +231,13 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         // Validate: registration window (nếu cả 2 đều có)
         if (event.getRegistrationStart() != null && event.getRegistrationEnd() != null) {
             validateTimeRange(event.getRegistrationStart(), event.getRegistrationEnd(),
-                    "Registration end time must be after registration start time.");
+                    "Registration start time must be before registration end time.");
         }
 
-        // Validate: registration start time must be before event start time
-        if (event.getRegistrationStart() != null && event.getStartTime() != null
-                && !event.getRegistrationStart().isBefore(event.getStartTime())) {
-            throw new IllegalArgumentException("Registration start time must be before event start time.");
-        }
-
-        // Validate: registration end time must be before event end time
-        if (event.getRegistrationEnd() != null && event.getEndTime() != null
-                && !event.getRegistrationEnd().isBefore(event.getEndTime())) {
-            throw new IllegalArgumentException("Registration end time must be before event end time.");
+        // Validate registrationEnd must be before startTime
+        if (event.getRegistrationEnd() != null && event.getStartTime() != null) {
+            validateTimeRange(event.getRegistrationEnd(), event.getStartTime(),
+                    "Registration time must be before the event starts.");
         }
 
         // Validate: minTeamSize <= maxTeamSize
@@ -232,9 +246,33 @@ public class HackathonEventServiceImpl implements HackathonEventService {
             throw new IllegalArgumentException("Minimum team size cannot be greater than maximum team size.");
         }
 
+        java.util.Map<String, Object> newMap = new java.util.HashMap<>();
+        newMap.put("name", event.getName());
+        newMap.put("description", event.getDescription());
+        newMap.put("startTime", event.getStartTime() != null ? event.getStartTime().toString() : null);
+        newMap.put("endTime", event.getEndTime() != null ? event.getEndTime().toString() : null);
+        newMap.put("registrationStart",
+                event.getRegistrationStart() != null ? event.getRegistrationStart().toString() : null);
+        newMap.put("registrationEnd",
+                event.getRegistrationEnd() != null ? event.getRegistrationEnd().toString() : null);
+        newMap.put("minTeamSize", event.getMinTeamSize());
+        newMap.put("maxTeamSize", event.getMaxTeamSize());
+        newMap.put("rules", event.getRules());
+        newMap.put("imageUrl", event.getImageUrl());
+
+        String oldValueJson = null;
+        String newValueJson = null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            oldValueJson = mapper.writeValueAsString(oldMap);
+            newValueJson = mapper.writeValueAsString(newMap);
+        } catch (Exception e) {
+            // ignore
+        }
+
         HackathonEvent updatedEvent = hackathonEventRepository.save(event);
         auditLogService.logAction("UPDATE_HACKATHON_EVENT", "HackathonEvent",
-                updatedEvent.getId(), null, "Updated event: " + updatedEvent.getName());
+                updatedEvent.getId(), oldValueJson, newValueJson, updatedEvent.getId());
         log.info("Hackathon event updated: id={}, name='{}'", updatedEvent.getId(), updatedEvent.getName());
 
         return mapToResponse(updatedEvent);
@@ -252,18 +290,137 @@ public class HackathonEventServiceImpl implements HackathonEventService {
 
         // Validate state machine transition
         if (!currentStatus.canTransitionTo(newStatus)) {
+            String hint = buildTransitionHint(currentStatus, newStatus);
             throw new IllegalStateException(String.format(
-                    "Cannot transition from %s to %s. Allowed transitions: %s",
-                    currentStatus, newStatus, currentStatus.getAllowedTransitions()));
+                    "Cannot transition status from %s to %s. %s",
+                    currentStatus, newStatus, hint));
         }
 
-        // Validate that tracks and rounds exist before publishing
-        if (newStatus == HackathonStatus.PUBLISHED) {
-            if (event.getTracks() == null || event.getTracks().isEmpty()) {
-                throw new IllegalStateException("Cannot publish event: At least one track must be configured first.");
+        // Validate single active event constraint
+        if (newStatus == HackathonStatus.PUBLISHED || newStatus == HackathonStatus.IN_PROGRESS) {
+            boolean hasActiveEvent = hackathonEventRepository.existsByStatusInAndIsDeletedFalseAndIdNot(
+                    List.of(HackathonStatus.PUBLISHED, HackathonStatus.IN_PROGRESS), id);
+            if (hasActiveEvent) {
+                throw new IllegalStateException(
+                        "Cannot activate this event: Another event is currently active (PUBLISHED or IN_PROGRESS). " +
+                                "Only one event can take place at any given time.");
             }
-            if (event.getRounds() == null || event.getRounds().isEmpty()) {
-                throw new IllegalStateException("Cannot publish event: At least one round must be configured first.");
+        }
+
+        // Validate registration times before publishing
+        if (newStatus == HackathonStatus.PUBLISHED) {
+            if (event.getRegistrationStart() == null || event.getRegistrationEnd() == null) {
+                throw new IllegalStateException("Cannot publish event: Registration Start and End times must be set.");
+            }
+            if (event.getRegistrationEnd().isBefore(event.getRegistrationStart())) {
+                throw new IllegalStateException(
+                        "Cannot publish event: Registration End time must be after Start time.");
+            }
+
+            // Check if tracks exist
+            boolean hasTracks = !trackRepository.findByHackathonEventId(event.getId()).isEmpty();
+            if (!hasTracks) {
+                throw new IllegalStateException("Cannot publish event: Event must have at least one Track.");
+            }
+
+            // Check if rounds exist
+            boolean hasRounds = !roundRepository.findByHackathonEventId(event.getId()).isEmpty();
+            if (!hasRounds) {
+                throw new IllegalStateException("Cannot publish event: Event must have at least one Round.");
+            }
+
+            // Check if criteria exist and sum of weights is exactly 100%
+            List<com.example.swp.features.criterion.Criterion> criteria = criterionRepository
+                    .findByHackathonEventId(event.getId());
+            if (criteria.isEmpty()) {
+                throw new IllegalStateException(
+                        "Cannot publish event: Event must have at least one scoring criterion.");
+            }
+            int totalWeight = criteria.stream().mapToInt(com.example.swp.features.criterion.Criterion::getWeight).sum();
+            if (totalWeight != 100) {
+                throw new IllegalStateException(
+                        "Cannot publish event: Total criteria weight must be exactly 100% (currently " + totalWeight
+                                + "%).");
+            }
+        }
+
+        if (newStatus == HackathonStatus.IN_PROGRESS) {
+            // 1. Scan and disqualify teams that do not meet minTeamSize requirement
+            List<com.example.swp.features.team.Team> eventTeams = teamRepository.findByEventId(event.getId());
+            int disqualifiedCount = 0;
+            for (com.example.swp.features.team.Team team : eventTeams) {
+                if (team.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
+                    long currentSize = teamMemberRepository.countByTeamId(team.getId());
+                    int minTeamSize = event.getMinTeamSize() != null ? event.getMinTeamSize() : 3;
+                    if (currentSize < minTeamSize) {
+                        team.setStatus(com.example.swp.features.team.TeamStatus.DISQUALIFIED);
+                        team.setDisqualificationReason("Not enough members (" + currentSize + "/" + minTeamSize
+                                + ") when registration closed.");
+                        team.setDisqualifiedAt(java.time.LocalDateTime.now());
+                        teamRepository.save(team);
+                        disqualifiedCount++;
+                    }
+                }
+            }
+            log.info("Disqualified {} teams for not meeting minTeamSize when starting the event.", disqualifiedCount);
+
+            // 2. Validate tracks and disqualify teams in invalid tracks
+            List<com.example.swp.features.round.Round> rounds = roundRepository.findByHackathonEventId(event.getId());
+            int minTrackTeamSize = 2; // Default minimum
+            if (rounds != null && !rounds.isEmpty()) {
+                com.example.swp.features.round.Round firstRound = rounds.stream()
+                        .filter(r -> r.getRoundOrder() == 1)
+                        .findFirst()
+                        .orElse(null);
+                if (firstRound != null && firstRound.getAdvancementSlots() != null) {
+                    minTrackTeamSize = Math.max(2, firstRound.getAdvancementSlots());
+                }
+            }
+            List<com.example.swp.features.track.Track> tracks = trackRepository.findByHackathonEventId(event.getId());
+            for (com.example.swp.features.track.Track track : tracks) {
+                List<com.example.swp.features.team.Team> trackTeams = teamRepository.findByTrackId(track.getId()).stream()
+                        .filter(t -> t.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED)
+                        .collect(Collectors.toList());
+                long trackTeamCount = trackTeams.size();
+                
+                boolean shouldDisqualifyTrack = false;
+                String reason = "";
+                if (trackTeamCount == 1) {
+                    shouldDisqualifyTrack = true;
+                    reason = "Track '" + track.getName() + "' only has 1 active team. A track must either be empty (0 teams) or have enough teams to compete.";
+                } else if (trackTeamCount > 1 && trackTeamCount < minTrackTeamSize) {
+                    shouldDisqualifyTrack = true;
+                    reason = "Track '" + track.getName() + "' has " + trackTeamCount + " active teams, but requires at least " + minTrackTeamSize + " (based on 1st round advancement slots).";
+                }
+
+                if (shouldDisqualifyTrack) {
+                    for (com.example.swp.features.team.Team t : trackTeams) {
+                        t.setStatus(com.example.swp.features.team.TeamStatus.DISQUALIFIED);
+                        t.setDisqualificationReason(reason);
+                        t.setDisqualifiedAt(java.time.LocalDateTime.now());
+                        teamRepository.save(t);
+                    }
+                    log.info("Disqualified {} teams in track '{}' due to insufficient teams.", trackTeamCount, track.getName());
+                }
+            }
+
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            // Automatically adjust timeline dates to match the manual start
+            if (event.getRegistrationEnd() == null || event.getRegistrationEnd().isAfter(now)) {
+                event.setRegistrationEnd(now);
+            }
+            event.setStartTime(now);
+
+            // Adjust first round start time to now so submissions can begin immediately
+            if (rounds != null) {
+                for (com.example.swp.features.round.Round round : rounds) {
+                    if (round.getRoundOrder() == 1) {
+                        if (round.getStartTime() == null || round.getStartTime().isAfter(now)) {
+                            round.setStartTime(now);
+                            roundRepository.save(round);
+                        }
+                    }
+                }
             }
         }
 
@@ -274,8 +431,9 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         if (currentStatus == HackathonStatus.DRAFT && newStatus == HackathonStatus.PUBLISHED) {
             List<User> participants = userRepository.findByRole(Role.PARTICIPANT);
             String notiTitle = "🎉 Hackathon Mới: " + updatedEvent.getName();
-            String notiMessage = "Hackathon " + updatedEvent.getName() + " đã chính thức mở đăng ký. Nhanh tay đăng ký tham gia ngay!";
-            
+            String notiMessage = "Hackathon " + updatedEvent.getName()
+                    + " đã chính thức mở đăng ký. Nhanh tay đăng ký tham gia ngay!";
+
             for (User participant : participants) {
                 notificationService.createNotification(
                         participant,
@@ -283,32 +441,14 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                         notiMessage,
                         "SYSTEM_ALERT",
                         "HACKATHON_EVENT",
-                        updatedEvent.getId()
-                );
+                        updatedEvent.getId());
             }
-            log.info("Sent notifications to {} participants for newly published event id={}", participants.size(), updatedEvent.getId());
+            log.info("Sent notifications to {} participants for newly published event id={}", participants.size(),
+                    updatedEvent.getId());
         }
 
-        // NẾU EVENT CHUYỂN SANG IN_PROGRESS -> QUÉT VÀ LOẠI CÁC TEAM KHÔNG ĐỦ MIN_TEAM_SIZE
-        if (currentStatus == HackathonStatus.PUBLISHED && newStatus == HackathonStatus.IN_PROGRESS) {
-            List<com.example.swp.features.team.Team> eventTeams = teamRepository.findByEventId(updatedEvent.getId());
-            int disqualifiedCount = 0;
-            for (com.example.swp.features.team.Team team : eventTeams) {
-                if (team.getStatus() != com.example.swp.features.team.TeamStatus.DISQUALIFIED) {
-                    long currentSize = teamMemberRepository.countByTeamId(team.getId());
-                    if (currentSize < updatedEvent.getMinTeamSize()) {
-                        team.setStatus(com.example.swp.features.team.TeamStatus.DISQUALIFIED);
-                        team.setDisqualificationReason("Not enough members (" + currentSize + "/" + updatedEvent.getMinTeamSize() + ") when registration closed.");
-                        team.setDisqualifiedAt(java.time.LocalDateTime.now());
-                        teamRepository.save(team);
-                        disqualifiedCount++;
-                    }
-                }
-            }
-            log.info("Transition to IN_PROGRESS: Disqualified {} teams for not meeting minTeamSize={}", disqualifiedCount, updatedEvent.getMinTeamSize());
-        }
-
-        // NẾU EVENT COMPLETED -> PUBLISH EVENT ĐỂ GỬI NOTIFICATION KẾT QUẢ TOP 1-2-3 (ASYNC)
+        // NẾU EVENT COMPLETED -> PUBLISH EVENT ĐỂ GỬI NOTIFICATION KẾT QUẢ TOP 1-2-3
+        // (ASYNC)
         if (currentStatus == HackathonStatus.IN_PROGRESS && newStatus == HackathonStatus.COMPLETED) {
             // Tính ranking trong transaction (data consistency)
             List<TeamRankingResponse> top3 = List.of();
@@ -328,7 +468,8 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         }
 
         auditLogService.logAction("UPDATE_HACKATHON_EVENT_STATUS", "HackathonEvent",
-                updatedEvent.getId(), "status: " + currentStatus.name(), "status: " + newStatus.name());
+                updatedEvent.getId(), "status: " + currentStatus.name(), "status: " + newStatus.name(),
+                updatedEvent.getId());
         log.info("Hackathon event status changed: id={}, {} → {}", id, currentStatus, newStatus);
 
         return mapToResponse(updatedEvent);
@@ -342,17 +483,25 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         HackathonEvent event = findEventById(id);
         requireOrganizerOrAdmin(event);
 
-        // Không cho phép xóa event đang diễn ra
+        // Only allow deleting events in DRAFT or CANCELLED status
+        if (event.getStatus() == HackathonStatus.PUBLISHED) {
+            throw new IllegalStateException(
+                    "Cannot delete event in PUBLISHED status. Please cancel the event first.");
+        }
         if (event.getStatus() == HackathonStatus.IN_PROGRESS) {
             throw new IllegalStateException(
-                    "Cannot delete an event that is currently IN_PROGRESS. Cancel it first.");
+                    "Cannot delete event in IN_PROGRESS status. Please cancel the event first.");
+        }
+        if (event.getStatus() == HackathonStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "Cannot delete event in COMPLETED status.");
         }
 
         event.setDeleted(true);
         hackathonEventRepository.save(event);
 
         auditLogService.logAction("DELETE_HACKATHON_EVENT", "HackathonEvent",
-                event.getId(), "isDeleted: false", "isDeleted: true");
+                event.getId(), "isDeleted: false", "isDeleted: true", event.getId());
         log.info("Hackathon event soft-deleted: id={}, name='{}'", event.getId(), event.getName());
     }
 
@@ -373,8 +522,12 @@ public class HackathonEventServiceImpl implements HackathonEventService {
      * Kiểm tra quyền: chỉ organizer của event hoặc ADMIN mới được thao tác.
      */
     private void requireOrganizerOrAdmin(HackathonEvent event) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || "system".equals(auth.getName())) {
+            return; // Allow scheduled tasks
+        }
         User currentUser = getCurrentUser();
-        boolean isOwner = event.getOrganizer().getId().equals(currentUser.getId());
+        boolean isOwner = event.getOrganizer() != null && event.getOrganizer().getId().equals(currentUser.getId());
         boolean isAdmin = "ADMIN".equals(currentUser.getRole().name());
         if (!isOwner && !isAdmin) {
             throw new AccessDeniedException("Only the organizer or admin can perform this action.");
@@ -396,7 +549,7 @@ public class HackathonEventServiceImpl implements HackathonEventService {
     private String generateUniqueSlug(String baseSlug) {
         String slug = baseSlug;
         int counter = 1;
-        while (hackathonEventRepository.findBySlugAndIsDeletedFalse(slug).isPresent()) {
+        while (hackathonEventRepository.existsBySlug(slug)) {
             slug = baseSlug + "-" + counter;
             counter++;
         }
@@ -422,7 +575,156 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 .organizerName(event.getOrganizer() != null ? event.getOrganizer().getUsername() : null)
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
-                .allowedStatusTransitions(event.getStatus().getAllowedTransitions())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public HackathonEventResponse cloneEvent(Long id) {
+        HackathonEvent original = hackathonEventRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found with id: " + id));
+
+        // Generate a unique slug
+        String baseName = "Copy of " + original.getName();
+        String candidateSlug = slugify.slugify(baseName);
+        int counter = 1;
+        while (hackathonEventRepository.existsBySlug(candidateSlug)) {
+            candidateSlug = slugify.slugify(baseName + "-" + counter);
+            counter++;
+        }
+
+        // Clone event itself
+        HackathonEvent cloned = new HackathonEvent();
+        cloned.setName(baseName + (counter > 1 ? " (" + (counter - 1) + ")" : ""));
+        cloned.setSlug(candidateSlug);
+        cloned.setDescription(original.getDescription());
+        cloned.setStatus(HackathonStatus.DRAFT);
+        cloned.setRegistrationStart(original.getRegistrationStart());
+        cloned.setRegistrationEnd(original.getRegistrationEnd());
+        cloned.setStartTime(original.getStartTime());
+        cloned.setEndTime(original.getEndTime());
+        cloned.setMinTeamSize(original.getMinTeamSize());
+        cloned.setMaxTeamSize(original.getMaxTeamSize());
+        cloned.setRules(original.getRules());
+        cloned.setImageUrl(original.getImageUrl());
+        cloned.setOrganizer(original.getOrganizer());
+
+        HackathonEvent savedEvent = hackathonEventRepository.save(cloned);
+
+        // Map original tracks to cloned tracks
+        java.util.Map<Long, com.example.swp.features.track.Track> trackMap = new java.util.HashMap<>();
+        List<com.example.swp.features.track.Track> originalTracks = trackRepository
+                .findByHackathonEventId(original.getId());
+        for (com.example.swp.features.track.Track t : originalTracks) {
+            com.example.swp.features.track.Track ct = new com.example.swp.features.track.Track();
+            ct.setName(t.getName());
+            ct.setDescription(t.getDescription());
+            ct.setHackathonEvent(savedEvent);
+            com.example.swp.features.track.Track savedTrack = trackRepository.save(ct);
+            trackMap.put(t.getId(), savedTrack);
+        }
+
+        // Clone Rounds
+        List<com.example.swp.features.round.Round> originalRounds = roundRepository
+                .findByHackathonEventId(original.getId());
+        for (com.example.swp.features.round.Round r : originalRounds) {
+            com.example.swp.features.round.Round cr = new com.example.swp.features.round.Round();
+            cr.setName(r.getName());
+            cr.setDescription(r.getDescription());
+            cr.setStartTime(r.getStartTime());
+            cr.setEndTime(r.getEndTime());
+            cr.setRoundOrder(r.getRoundOrder());
+            cr.setAdvancementSlots(r.getAdvancementSlots());
+            cr.setHackathonEvent(savedEvent);
+            roundRepository.save(cr);
+        }
+
+        // Clone Criteria
+        List<com.example.swp.features.criterion.Criterion> originalCriteria = criterionRepository
+                .findByHackathonEventId(original.getId());
+        for (com.example.swp.features.criterion.Criterion c : originalCriteria) {
+            com.example.swp.features.criterion.Criterion cc = new com.example.swp.features.criterion.Criterion();
+            cc.setName(c.getName());
+            cc.setDescription(c.getDescription());
+            cc.setWeight(c.getWeight());
+            cc.setMaxScore(c.getMaxScore());
+            cc.setHackathonEvent(savedEvent);
+            criterionRepository.save(cc);
+        }
+
+        // Clone Prizes
+        List<com.example.swp.features.prize.Prize> originalPrizes = prizeRepository
+                .findByHackathonEventId(original.getId());
+        for (com.example.swp.features.prize.Prize p : originalPrizes) {
+            com.example.swp.features.prize.Prize cp = new com.example.swp.features.prize.Prize();
+            cp.setName(p.getName());
+            cp.setDescription(p.getDescription());
+            cp.setRank(p.getRank());
+            cp.setHackathonEvent(savedEvent);
+            if (p.getTrack() != null && trackMap.containsKey(p.getTrack().getId())) {
+                cp.setTrack(trackMap.get(p.getTrack().getId()));
+            }
+            prizeRepository.save(cp);
+        }
+
+        auditLogService.logAction("CLONE_EVENT", "HACKATHON_EVENT", savedEvent.getId(), savedEvent.getName(),
+                "Cloned from event ID: " + original.getId(), savedEvent.getId());
+
+        return mapToResponse(savedEvent);
+    }
+
+    private String buildTransitionHint(HackathonStatus from, HackathonStatus to) {
+        // Specific, actionable hints for each invalid transition
+        if (from == HackathonStatus.DRAFT && to == HackathonStatus.IN_PROGRESS) {
+            return "Sự kiện đang ở trạng thái DRAFT chưa thể chuyển thẳng sang IN_PROGRESS. Vui lòng PUBLISH sự kiện trước, sau đó mới chuyển sang IN_PROGRESS.";
+        }
+        if (from == HackathonStatus.DRAFT && to == HackathonStatus.COMPLETED) {
+            return "Sự kiện đang ở DRAFT không thể kết thúc. Cần đi qua: DRAFT → PUBLISHED → IN_PROGRESS → COMPLETED.";
+        }
+        if (from == HackathonStatus.PUBLISHED && to == HackathonStatus.COMPLETED) {
+            return "Sự kiện đang ở PUBLISHED chưa thể kết thúc. Vui lòng chuyển sang IN_PROGRESS trước, rồi mới COMPLETED.";
+        }
+        if (from == HackathonStatus.IN_PROGRESS && to == HackathonStatus.PUBLISHED) {
+            return "Sự kiện đang diễn ra (IN_PROGRESS) không thể quay lại trạng thái PUBLISHED.";
+        }
+        if (from == HackathonStatus.IN_PROGRESS && to == HackathonStatus.DRAFT) {
+            return "Sự kiện đang diễn ra không thể quay lại DRAFT.";
+        }
+        if (from == HackathonStatus.COMPLETED) {
+            return "Sự kiện đã kết thúc (COMPLETED) là trạng thái cuối cùng, không thể thay đổi thêm.";
+        }
+        if (from == HackathonStatus.CANCELLED) {
+            return "Sự kiện đã bị hủy (CANCELLED) là trạng thái cuối cùng, không thể thay đổi thêm.";
+        }
+        return String.format(
+                "Luồng hợp lệ: DRAFT → PUBLISHED → IN_PROGRESS → COMPLETED. Từ %s chỉ có thể chuyển sang: %s.",
+                from, from.getAllowedTransitions());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public HackathonEventAnalyticsResponse getEventAnalytics(Long eventId) {
+        hackathonEventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found"));
+
+        List<com.example.swp.features.team.Team> teams = teamRepository.findByEventId(eventId);
+        long totalTeams = teams.size();
+        long totalParticipants = teams.stream()
+                .filter(t -> t.getTeamMembers() != null)
+                .mapToInt(t -> t.getTeamMembers().size())
+                .sum();
+
+        long totalSubmissions = submissionRepository.findByEventId(eventId).size();
+
+        java.util.Map<String, Long> teamsPerTrack = teams.stream()
+                .filter(t -> t.getTrack() != null)
+                .collect(Collectors.groupingBy(t -> t.getTrack().getName(), Collectors.counting()));
+
+        return HackathonEventAnalyticsResponse.builder()
+                .totalTeams(totalTeams)
+                .totalParticipants(totalParticipants)
+                .totalSubmissions(totalSubmissions)
+                .teamsPerTrack(teamsPerTrack)
                 .build();
     }
 }

@@ -30,4 +30,40 @@ public class RoundController {
         List<RoundResponse> responses = roundService.getRoundsByHackathonEvent(hackathonEventId);
         return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(responses));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<com.example.swp.common.ApiResponse<RoundResponse>> getRoundById(@PathVariable Long id) {
+        RoundResponse response = roundService.getRoundById(id);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<Void>> deleteRound(@PathVariable Long id) {
+        roundService.deleteRound(id);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(null, "Round deleted successfully."));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<RoundResponse>> updateRound(
+            @PathVariable Long id,
+            @jakarta.validation.Valid @RequestBody com.example.swp.features.round.dto.request.CreateRoundRequest request) {
+        RoundResponse response = roundService.updateRound(id, request);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response, "Round updated successfully."));
+    }
+
+    @PostMapping("/{id}/end-grading")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<RoundResponse>> endGrading(@PathVariable Long id) {
+        RoundResponse response = roundService.endGrading(id);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response, "Grading period ended early successfully."));
+    }
+
+    @GetMapping("/{id}/grading-progress")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<List<com.example.swp.features.round.dto.GradingProgressDto>>> getGradingProgress(@PathVariable Long id) {
+        List<com.example.swp.features.round.dto.GradingProgressDto> response = roundService.getGradingProgress(id);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response));
+    }
 }

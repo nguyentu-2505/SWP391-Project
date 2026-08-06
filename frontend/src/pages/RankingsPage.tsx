@@ -59,6 +59,16 @@ const RankingsPage: React.FC = () => {
         return <span className="text-gray-400 font-bold ml-1">{rank}</span>;
     };
 
+    const selectedRound = rounds.find(r => r.id === selectedRoundId);
+    const isGradingActive = selectedRound ? (() => {
+        if (selectedRound.gradingEnded) return false;
+        if (!selectedRound.gradingEndTime) return false;
+        const now = new Date();
+        const gradingEnd = new Date(selectedRound.gradingEndTime);
+        const roundEnd = new Date(selectedRound.endTime);
+        return now >= roundEnd && now < gradingEnd;
+    })() : false;
+
     return (
         <div className="container mx-auto">
             <div className="mb-6 flex justify-between items-center">
@@ -85,6 +95,12 @@ const RankingsPage: React.FC = () => {
             {loading ? (
                 <div className="flex justify-center items-center py-20">
                     <Loader2 className="animate-spin text-blue-600" size={32} />
+                </div>
+            ) : isGradingActive ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+                    <Trophy className="mx-auto h-12 w-12 text-amber-500 animate-pulse mb-3" />
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">Grading is currently in progress for this round</h3>
+                    <p className="text-sm text-gray-500">The leaderboard for round {selectedRound?.name} will be automatically displayed after the grading period ends.</p>
                 </div>
             ) : rankings.length === 0 ? (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
