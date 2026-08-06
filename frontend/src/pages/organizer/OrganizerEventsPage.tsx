@@ -217,6 +217,22 @@ const OrganizerEventsPage: React.FC = () => {
         }
     };
 
+    const handleCloneEvent = async (eventId: number) => {
+        const confirmClone = window.confirm("Are you sure you want to clone this event? All rounds and criteria will be copied to a new DRAFT event.");
+        if (!confirmClone) return;
+
+        const loadingToast = toast.loading('Cloning event...');
+        try {
+            await HackathonEventService.cloneHackathonEvent(eventId);
+            await fetchMyEvents();
+            toast.success('Event cloned successfully!', { id: loadingToast });
+        } catch (error: any) {
+            console.error('Failed to clone hackathon event:', error);
+            const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+            toast.error('Failed to clone event: ' + errorMessage, { id: loadingToast });
+        }
+    };
+
     const openEditModal = (event: HackathonEvent) => {
         setSelectedEvent({
             ...event,
@@ -317,6 +333,14 @@ const OrganizerEventsPage: React.FC = () => {
                                                     >
                                                         <Edit2 size={14} />
                                                         Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleCloneEvent(event.id)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+                                                        title="Clone Event"
+                                                    >
+                                                        <Copy size={14} />
+                                                        Clone
                                                     </button>
                                                     <Link
                                                         to={`/organizer/events/${event.id}/dashboard`}
