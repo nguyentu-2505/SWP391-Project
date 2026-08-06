@@ -99,6 +99,11 @@ const deleteHackathonEvent = async (id: number): Promise<void> => {
     await api.delete(`${API_URL}/${id}`);
 };
 
+const cloneHackathonEvent = async (id: number): Promise<HackathonEvent> => {
+    const response = await api.post(`${API_URL}/${id}/clone`);
+    return response.data.data;
+};
+
 export const HackathonEventService = {
     createHackathonEvent,
     getHackathonEvents,
@@ -107,4 +112,5 @@ export const HackathonEventService = {
     updateHackathonEvent,
     updateHackathonEventStatus,
     deleteHackathonEvent,
+    cloneHackathonEvent,
 };

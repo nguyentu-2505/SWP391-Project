@@ -11,7 +11,13 @@ export interface Ranking {
 
 const getRankingForRound = async (roundId: number): Promise<Ranking[]> => {
     const response = await api.get(`${API_URL}/round/${roundId}`);
-    return response.data;
+    const data = response.data?.data ?? response.data ?? [];
+    return data.map((item: any) => ({
+        teamId: item.teamId,
+        teamName: item.teamName,
+        totalScore: item.finalScore ?? 0,
+        rank: item.rank
+    }));
 };
 
 export const RankingService = {

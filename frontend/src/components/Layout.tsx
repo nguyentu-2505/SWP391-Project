@@ -86,6 +86,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                                 <SidebarItem to="/admin/audit-logs" icon={<Layers size={18} />} label="Audit Logs" onClick={closeSidebar} />
                                 <SidebarItem to="/support-tickets" icon={<MessageSquare size={18} />} label="Support Tickets" onClick={closeSidebar} />
                                 <SidebarItem to="/admin/preferences" icon={<Settings size={18} />} label="System Settings" onClick={closeSidebar} />
+                                <SidebarItem to="/certificates" icon={<Award size={18} />} label="Certificates" onClick={closeSidebar} />
                             </>
                         )}
 
@@ -104,6 +105,7 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                         {role === Role.ORGANIZER && (
                             <>
                                 <SidebarItem to="/organizer/events" icon={<Trophy size={18} />} label="My Events" onClick={closeSidebar} />
+                                <SidebarItem to="/certificates" icon={<Award size={18} />} label="Certificates" onClick={closeSidebar} />
                             </>
                         )}
 
@@ -123,7 +125,6 @@ const Sidebar: React.FC<{ isOpen: boolean, closeSidebar: () => void }> = ({ isOp
                         )}
 
                         {/* COMMON MENU FOR ALL LOGGED IN USERS */}
-                        <SidebarItem to="/certificates" icon={<Award size={18} />} label="Certificates" onClick={closeSidebar} />
                         <SidebarItem to="/profile" icon={<UserIcon size={18} />} label="Profile" onClick={closeSidebar} />
                         <SidebarItem to="/notifications" icon={<Bell size={18} />} label="Notifications" onClick={closeSidebar} />
                     </div>
