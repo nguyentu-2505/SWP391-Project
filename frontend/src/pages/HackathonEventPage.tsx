@@ -126,11 +126,7 @@ const HackathonEventPage: React.FC = () => {
   const handleStatusChange = async (eventId: number, newStatus: string) => {
     const loadingToast = toast.loading('Updating status...');
     try {
-      if (newStatus === 'PUBLISHED') {
-        await api.put(`/hackathon-events/${eventId}/publish`);
-      } else {
-        await HackathonEventService.updateHackathonEventStatus(eventId, newStatus);
-      }
+      await HackathonEventService.updateHackathonEventStatus(eventId, newStatus);
       fetchEvents();
       toast.success(`Event status updated to ${newStatus}`, { id: loadingToast });
     } catch (error: any) {
