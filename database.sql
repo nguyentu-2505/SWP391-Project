@@ -334,6 +334,21 @@ CREATE TABLE password_reset_token (
 );
 GO
 
+-- Bảng rank_override (Can thiệp thứ hạng thủ công)
+CREATE TABLE rank_override (
+                               id            BIGINT IDENTITY(1,1) PRIMARY KEY,
+                               round_id      BIGINT NOT NULL,
+                               team_id       BIGINT NOT NULL,
+                               override_rank INT NOT NULL,
+                               reason        NVARCHAR(500) NOT NULL,
+                               overridden_by NVARCHAR(255) NOT NULL,
+                               overridden_at DATETIME2 NOT NULL,
+                               CONSTRAINT fk_rank_override_round FOREIGN KEY (round_id) REFERENCES round(id),
+                               CONSTRAINT fk_rank_override_team  FOREIGN KEY (team_id)  REFERENCES team(id) ON DELETE CASCADE,
+                               CONSTRAINT uq_round_team UNIQUE (round_id, team_id)
+);
+GO
+
 -- =============================================
 -- 4. INDEXES
 -- =============================================
