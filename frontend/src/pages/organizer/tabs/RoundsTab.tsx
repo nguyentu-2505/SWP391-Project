@@ -457,7 +457,7 @@ const RoundsTab: React.FC = () => {
                                          Complete Event
                                      </button>
                                 )}
-                                {round.endTime && new Date() < new Date(round.endTime) && (
+                                {round.startTime && round.endTime && new Date() >= new Date(round.startTime) && new Date() < new Date(round.endTime) && (
                                     <button
                                         onClick={() => handleEndSubmissionEarly(round.id)}
                                         className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"

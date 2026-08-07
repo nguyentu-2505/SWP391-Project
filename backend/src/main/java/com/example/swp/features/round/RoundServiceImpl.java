@@ -279,11 +279,14 @@ public class RoundServiceImpl implements RoundService {
                 .orElseThrow(() -> new com.example.swp.exception.ResourceNotFoundException("Round not found: " + id));
 
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        if (round.getStartTime() != null && now.isBefore(round.getStartTime())) {
+            throw new IllegalStateException("Grading period has not started yet for this round.");
+        }
+        if (round.getEndTime() != null && now.isBefore(round.getEndTime())) {
+            throw new IllegalStateException("Submission period has not ended yet for this round.");
+        }
         round.setGradingEnded(true);
         round.setGradingEndTime(now);
-        if (round.getEndTime() == null || round.getEndTime().isAfter(now)) {
-            round.setEndTime(now);
-        }
         Round saved = roundRepository.save(round);
 
         auditLogService.logAction("END_GRADING", "ROUND", saved.getId(), null, "Ended grading early for round " + saved.getName(), saved.getHackathonEvent().getId());
@@ -305,6 +308,9 @@ public class RoundServiceImpl implements RoundService {
                 .orElseThrow(() -> new com.example.swp.exception.ResourceNotFoundException("Round not found: " + id));
 
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        if (round.getStartTime() != null && now.isBefore(round.getStartTime())) {
+            throw new IllegalStateException("Submission period has not started yet for this round.");
+        }
         if (round.getEndTime() == null || round.getEndTime().isAfter(now)) {
             round.setEndTime(now);
         } else {
