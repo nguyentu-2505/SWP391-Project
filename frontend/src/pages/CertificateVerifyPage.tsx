@@ -195,8 +195,7 @@ const CertificateVerifyPage: React.FC = () => {
                                 <p className="max-w-lg text-amber-100/90 text-sm leading-relaxed my-4 px-2 font-sans">
                                     for participating in SEAL Summer 2026 as <strong className="text-white">{cert.role}</strong> of team{' '}
                                     <strong className="text-white">"{cert.teamName}"</strong> in the{' '}
-                                    <strong className="text-white">{cert.trackName}</strong> track, completing the{' '}
-                                    <strong className="text-white">{cert.roundName}</strong> round.
+                                    <strong className="text-white">{cert.trackName}</strong> track.
                                 </p>
 
                                 <div className="w-full flex justify-between items-end mt-8 pt-6 border-t border-[#d4af37]/40">

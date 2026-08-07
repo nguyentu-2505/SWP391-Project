@@ -17,12 +17,14 @@ import com.example.swp.features.submission.Submission;
 import com.example.swp.features.criterion.Criterion;
 import com.example.swp.features.team.TeamStatus;
 import com.example.swp.features.user.User;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -286,7 +288,67 @@ public class RoundServiceImpl implements RoundService {
 
         auditLogService.logAction("END_GRADING", "ROUND", saved.getId(), null, "Ended grading early for round " + saved.getName(), saved.getHackathonEvent().getId());
 
+        // Shift the timeline of subsequent rounds so the next round starts immediately
+        try {
+            shiftSubsequentRounds(saved, now);
+        } catch (Exception e) {
+            log.error("Failed to shift subsequent rounds' timeline: {}", e.getMessage());
+        }
+
         return mapToResponse(saved);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public RoundResponse endSubmission(Long id) {
+        Round round = roundRepository.findById(id)
+                .orElseThrow(() -> new com.example.swp.exception.ResourceNotFoundException("Round not found: " + id));
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        if (round.getEndTime() == null || round.getEndTime().isAfter(now)) {
+            round.setEndTime(now);
+        } else {
+            throw new IllegalStateException("Submission period has already ended for this round.");
+        }
+        Round saved = roundRepository.save(round);
+
+        auditLogService.logAction("END_SUBMISSION", "ROUND", saved.getId(), null, "Ended submission early for round " + saved.getName(), saved.getHackathonEvent().getId());
+
+        return mapToResponse(saved);
+    }
+
+    private void shiftSubsequentRounds(Round currentRound, java.time.LocalDateTime newGradingEndTime) {
+        List<Round> subsequentRounds = roundRepository.findByHackathonEventId(currentRound.getHackathonEvent().getId())
+                .stream()
+                .filter(r -> r.getRoundOrder() > currentRound.getRoundOrder())
+                .sorted(java.util.Comparator.comparing(Round::getRoundOrder))
+                .collect(Collectors.toList());
+
+        if (subsequentRounds.isEmpty()) {
+            return;
+        }
+
+        Round nextRound = subsequentRounds.get(0);
+        java.time.LocalDateTime nextStart = nextRound.getStartTime();
+
+        if (nextStart != null && nextStart.isAfter(newGradingEndTime)) {
+            long diffSeconds = java.time.temporal.ChronoUnit.SECONDS.between(newGradingEndTime, nextStart);
+            if (diffSeconds > 0) {
+                log.info("Shifting timeline of subsequent rounds forward by {} seconds.", diffSeconds);
+                for (Round r : subsequentRounds) {
+                    if (r.getStartTime() != null) {
+                        r.setStartTime(r.getStartTime().minusSeconds(diffSeconds));
+                    }
+                    if (r.getEndTime() != null) {
+                        r.setEndTime(r.getEndTime().minusSeconds(diffSeconds));
+                    }
+                    if (r.getGradingEndTime() != null) {
+                        r.setGradingEndTime(r.getGradingEndTime().minusSeconds(diffSeconds));
+                    }
+                    roundRepository.save(r);
+                }
+            }
+        }
     }
 
     @Override
