@@ -8,7 +8,6 @@ import com.example.swp.features.track.dto.response.TrackMentorResponse;
 import com.example.swp.features.track.dto.response.TrackResponse;
 import com.example.swp.features.audit_log.AuditLogService;
 import com.example.swp.features.user.Role;
-import com.example.swp.features.user.Role;
 import com.example.swp.features.user.User;
 import com.example.swp.features.user.UserRepository;
 import com.example.swp.features.judge_assignment.JudgeAssignmentRepository;
@@ -30,9 +29,9 @@ public class TrackServiceImpl implements TrackService {
 
     private final TrackRepository trackRepository;
     private final HackathonEventRepository hackathonEventRepository;
-    private final TrackMentorRepository trackMentorRepository;  // NEW
-    private final UserRepository userRepository;                 // NEW
-    private final AuditLogService auditLogService;               // NEW
+    private final TrackMentorRepository trackMentorRepository; // NEW
+    private final UserRepository userRepository; // NEW
+    private final AuditLogService auditLogService; // NEW
     private final JudgeAssignmentRepository judgeAssignmentRepository;
     private final NotificationService notificationService;
 
@@ -41,11 +40,13 @@ public class TrackServiceImpl implements TrackService {
     @Override
     public TrackResponse createTrack(CreateTrackRequest request) {
         HackathonEvent hackathonEvent = hackathonEventRepository.findById(request.getHackathonEventId())
-                .orElseThrow(() -> new ResourceNotFoundException("Hackathon event not found with id: " + request.getHackathonEventId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Hackathon event not found with id: " + request.getHackathonEventId()));
 
-        if (hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT 
+        if (hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT
                 && hackathonEvent.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.PUBLISHED) {
-            throw new IllegalStateException("Cannot create track: Configurations can only be added to events in DRAFT or PUBLISHED status.");
+            throw new IllegalStateException(
+                    "Cannot create track: Configurations can only be added to events in DRAFT or PUBLISHED status.");
         }
 
         boolean nameExists = trackRepository.findByHackathonEventId(hackathonEvent.getId()).stream()
@@ -61,7 +62,8 @@ public class TrackServiceImpl implements TrackService {
                 .build();
 
         Track savedTrack = trackRepository.save(newTrack);
-        auditLogService.logAction("CREATE_TRACK", "TRACK", savedTrack.getId(), null, "Created track " + savedTrack.getName(), hackathonEvent.getId());
+        auditLogService.logAction("CREATE_TRACK", "TRACK", savedTrack.getId(), null,
+                "Created track " + savedTrack.getName(), hackathonEvent.getId());
         return mapToResponse(savedTrack);
     }
 
@@ -101,24 +103,24 @@ public class TrackServiceImpl implements TrackService {
         // Validation: only MENTOR or JUDGE roles can mentor tracks
         if (mentor.getRole() != Role.MENTOR && mentor.getRole() != Role.JUDGE) {
             throw new IllegalArgumentException(
-                "Only users with MENTOR or JUDGE role can be assigned as track mentors. " +
-                "User '" + mentor.getUsername() + "' has role: " + mentor.getRole()
-            );
+                    "Only users with MENTOR or JUDGE role can be assigned as track mentors. " +
+                            "User '" + mentor.getUsername() + "' has role: " + mentor.getRole());
         }
 
         // Idempotency guard: prevent duplicate assignment
         if (trackMentorRepository.existsByTrackIdAndMentorId(trackId, mentorUserId)) {
             throw new IllegalStateException(
-                "User '" + mentor.getUsername() + "' is already assigned as mentor for this track."
-            );
+                    "User '" + mentor.getUsername() + "' is already assigned as mentor for this track.");
         }
 
         // Conflict check: mentor cannot be a judge for this track or event-wide
         if (judgeAssignmentRepository.existsByJudgeIdAndTrackId(mentor.getId(), trackId)) {
             throw new IllegalStateException("User is already assigned to grade submissions for this track.");
         }
-        if (judgeAssignmentRepository.existsByJudgeIdAndRoundHackathonEventIdAndTrackIdIsNull(mentor.getId(), track.getHackathonEvent().getId())) {
-            throw new IllegalStateException("User is already assigned as an event-wide judge, so they cannot mentor a specific track.");
+        if (judgeAssignmentRepository.existsByJudgeIdAndRoundHackathonEventIdAndTrackIdIsNull(mentor.getId(),
+                track.getHackathonEvent().getId())) {
+            throw new IllegalStateException(
+                    "User is already assigned as an event-wide judge, so they cannot mentor a specific track.");
         }
 
         User assigner = getCurrentUser();
@@ -133,22 +135,20 @@ public class TrackServiceImpl implements TrackService {
         TrackMentor saved = trackMentorRepository.save(assignment);
 
         auditLogService.logAction(
-            "ASSIGN_TRACK_MENTOR",
-            "TRACK",
-            trackId,
-            null,
-            "Assigned mentor " + mentor.getUsername(),
-            track.getHackathonEvent().getId()
-        );
+                "ASSIGN_TRACK_MENTOR",
+                "TRACK",
+                trackId,
+                null,
+                "Assigned mentor " + mentor.getUsername(),
+                track.getHackathonEvent().getId());
 
         notificationService.createNotification(
-            mentor,
-            "Mentor Assignment",
-            "You have been assigned as a mentor for track '" + track.getName() + "'.",
-            "MENTOR_ASSIGNMENT",
-            "TRACK",
-            track.getId()
-        );
+                mentor,
+                "Mentor Assignment",
+                "You have been assigned as a mentor for track '" + track.getName() + "'.",
+                "MENTOR_ASSIGNMENT",
+                "TRACK",
+                track.getId());
 
         return mapToMentorResponse(saved);
     }
@@ -162,17 +162,16 @@ public class TrackServiceImpl implements TrackService {
     public void removeMentor(Long trackId, Long mentorUserId) {
         TrackMentor assignment = trackMentorRepository.findByTrackIdAndMentorId(trackId, mentorUserId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                    "No mentor assignment found for user " + mentorUserId + " on track " + trackId));
+                        "No mentor assignment found for user " + mentorUserId + " on track " + trackId));
         trackMentorRepository.delete(assignment);
 
         auditLogService.logAction(
-            "REMOVE_TRACK_MENTOR",
-            "TRACK",
-            trackId,
-            "Mentor " + assignment.getMentor().getUsername(),
-            null,
-            assignment.getEvent().getId()
-        );
+                "REMOVE_TRACK_MENTOR",
+                "TRACK",
+                trackId,
+                "Mentor " + assignment.getMentor().getUsername(),
+                null,
+                assignment.getEvent().getId());
     }
 
     /**
@@ -197,7 +196,7 @@ public class TrackServiceImpl implements TrackService {
                 .orElseThrow(() -> new ResourceNotFoundException("Track not found: " + id));
 
         HackathonEvent event = track.getHackathonEvent();
-        
+
         // Security check
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUsername(username)
@@ -210,7 +209,8 @@ public class TrackServiceImpl implements TrackService {
 
         // Check if event status is DRAFT
         if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT) {
-            throw new IllegalStateException("Không thể xóa bảng đấu: Chỉ sự kiện ở trạng thái DRAFT mới được phép xóa bảng đấu.");
+            throw new IllegalStateException(
+                    "Không thể xóa bảng đấu: Chỉ sự kiện ở trạng thái DRAFT mới được phép xóa bảng đấu.");
         }
 
         trackMentorRepository.deleteByTrackId(id);
@@ -239,7 +239,8 @@ public class TrackServiceImpl implements TrackService {
 
         // Check if event status is DRAFT
         if (event.getStatus() != com.example.swp.features.hackathon_event.HackathonStatus.DRAFT) {
-            throw new IllegalStateException("Không thể chỉnh sửa bảng đấu: Chỉ sự kiện ở trạng thái DRAFT mới được phép chỉnh sửa bảng đấu.");
+            throw new IllegalStateException(
+                    "Không thể chỉnh sửa bảng đấu: Chỉ sự kiện ở trạng thái DRAFT mới được phép chỉnh sửa bảng đấu.");
         }
 
         boolean nameExists = trackRepository.findByHackathonEventId(event.getId()).stream()
@@ -270,7 +271,8 @@ public class TrackServiceImpl implements TrackService {
         track.setDescription(request.getDescription());
 
         Track updatedTrack = trackRepository.save(track);
-        auditLogService.logAction("UPDATE_TRACK", "TRACK", updatedTrack.getId(), oldValueJson, newValueJson, event.getId());
+        auditLogService.logAction("UPDATE_TRACK", "TRACK", updatedTrack.getId(), oldValueJson, newValueJson,
+                event.getId());
         return mapToResponse(updatedTrack);
     }
 
@@ -305,4 +307,3 @@ public class TrackServiceImpl implements TrackService {
                 .build();
     }
 }
-

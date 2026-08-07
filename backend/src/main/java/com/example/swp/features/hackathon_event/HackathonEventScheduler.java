@@ -30,7 +30,8 @@ public class HackathonEventScheduler {
     @Transactional
     public void checkAndStartEvents() {
         LocalDateTime now = LocalDateTime.now();
-        List<HackathonEvent> publishedEvents = hackathonEventRepository.findByStatusAndIsDeletedFalse(HackathonStatus.PUBLISHED);
+        List<HackathonEvent> publishedEvents = hackathonEventRepository
+                .findByStatusAndIsDeletedFalse(HackathonStatus.PUBLISHED);
 
         for (HackathonEvent event : publishedEvents) {
             // Nếu đã qua hoặc bằng thời gian bắt đầu
@@ -52,30 +53,36 @@ public class HackathonEventScheduler {
     public void checkAndNotifyGradingStart() {
         LocalDateTime now = LocalDateTime.now();
         List<Round> allRounds = roundRepository.findAll();
-        
+
         for (Round round : allRounds) {
-            // Check if grading period has started (now >= endTime) and grading is not explicitly ended
-            if (round.getEndTime() != null && !now.isBefore(round.getEndTime()) && !Boolean.TRUE.equals(round.getGradingEnded())) {
+            // Check if grading period has started (now >= endTime) and grading is not
+            // explicitly ended
+            if (round.getEndTime() != null && !now.isBefore(round.getEndTime())
+                    && !Boolean.TRUE.equals(round.getGradingEnded())) {
                 // Check if already notified
-                if (!notificationRepository.existsByTypeAndReferenceTypeAndReferenceId("GRADING_STARTED", "ROUND", round.getId())) {
-                    List<JudgeAssignmentResponse> assignments = judgeAssignmentService.getAssignmentsForRound(round.getId());
-                    
+                if (!notificationRepository.existsByTypeAndReferenceTypeAndReferenceId("GRADING_STARTED", "ROUND",
+                        round.getId())) {
+                    List<JudgeAssignmentResponse> assignments = judgeAssignmentService
+                            .getAssignmentsForRound(round.getId());
+
                     List<User> judgesToNotify = assignments.stream()
-                        .map(a -> userRepository.findById(a.getJudgeId()).orElse(null))
-                        .filter(u -> u != null)
-                        .distinct()
-                        .collect(Collectors.toList());
-                        
+                            .filter(a -> a != null && a.getJudgeId() != null)
+                            .map(a -> userRepository.findById((long) a.getJudgeId()).orElse(null))
+                            .filter(u -> u != null)
+                            .distinct()
+                            .collect(Collectors.toList());
+
                     if (!judgesToNotify.isEmpty()) {
                         notificationService.createNotifications(
-                            judgesToNotify,
-                            "Grading Started!",
-                            "The grading period for round '" + round.getName() + "' has started. Please begin scoring the submissions.",
-                            "GRADING_STARTED",
-                            "ROUND",
-                            round.getId()
-                        );
-                        log.info("Sent GRADING_STARTED notification to {} judges for round {}", judgesToNotify.size(), round.getName());
+                                judgesToNotify,
+                                "Grading Started!",
+                                "The grading period for round '" + round.getName()
+                                        + "' has started. Please begin scoring the submissions.",
+                                "GRADING_STARTED",
+                                "ROUND",
+                                round.getId());
+                        log.info("Sent GRADING_STARTED notification to {} judges for round {}", judgesToNotify.size(),
+                                round.getName());
                     }
                 }
             }

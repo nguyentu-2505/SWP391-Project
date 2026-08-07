@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { Trophy, Award, Printer, Sparkles, User, Search, Filter, Calendar, Layers, X, AlertCircle, Copy, CheckCircle, Share2 } from 'lucide-react';
@@ -65,11 +65,45 @@ const CertificatesPage: React.FC = () => {
     const [userRole, setUserRole] = useState<string>('PARTICIPANT');
     const [currentUserId, setCurrentUserId] = useState<number>(0);
     const [currentUsername, setCurrentUsername] = useState<string>('');
+    
     const [selectedStudentFilter, setSelectedStudentFilter] = useState<string>('ALL');
+    const [studentSearchInput, setStudentSearchInput] = useState<string>('All Students');
+    const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState<boolean>(false);
+
     const [eventFilter, setEventFilter] = useState<string>('ALL');
-    const [awardCategoryFilter, setAwardCategoryFilter] = useState<string>('ALL');
+    const [eventSearchInput, setEventSearchInput] = useState<string>('All Completed Events');
+    const [isEventDropdownOpen, setIsEventDropdownOpen] = useState<boolean>(false);
+
     const [dateSort, setDateSort] = useState<string>('NEWEST');
     const [searchTerm, setSearchTerm] = useState<string>('');
+
+    const studentDropdownRef = useRef<HTMLDivElement>(null);
+    const eventDropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (studentDropdownRef.current && !studentDropdownRef.current.contains(event.target as Node)) {
+                setIsStudentDropdownOpen(false);
+                if (selectedStudentFilter === 'ALL') {
+                    setStudentSearchInput('All Students');
+                } else {
+                    setStudentSearchInput(selectedStudentFilter);
+                }
+            }
+            if (eventDropdownRef.current && !eventDropdownRef.current.contains(event.target as Node)) {
+                setIsEventDropdownOpen(false);
+                if (eventFilter === 'ALL') {
+                    setEventSearchInput('All Completed Events');
+                } else {
+                    setEventSearchInput(eventFilter);
+                }
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [selectedStudentFilter, eventFilter]);
 
     useEffect(() => {
         loadCertificateData();
@@ -202,6 +236,36 @@ const CertificatesPage: React.FC = () => {
         window.print();
     };
 
+    const handleStudentFocus = () => {
+        setIsStudentDropdownOpen(true);
+        if (selectedStudentFilter === 'ALL') {
+            setStudentSearchInput('');
+        } else {
+            setStudentSearchInput(selectedStudentFilter);
+        }
+    };
+
+    const handleSelectStudent = (studentName: string) => {
+        setSelectedStudentFilter(studentName);
+        setStudentSearchInput(studentName === 'ALL' ? 'All Students' : studentName);
+        setIsStudentDropdownOpen(false);
+    };
+
+    const handleEventFocus = () => {
+        setIsEventDropdownOpen(true);
+        if (eventFilter === 'ALL') {
+            setEventSearchInput('');
+        } else {
+            setEventSearchInput(eventFilter);
+        }
+    };
+
+    const handleSelectEvent = (eventName: string) => {
+        setEventFilter(eventName);
+        setEventSearchInput(eventName === 'ALL' ? 'All Completed Events' : eventName);
+        setIsEventDropdownOpen(false);
+    };
+
     // Filter & Sort Logic
     const filteredCertificates = certificates.filter(cert => {
         const matchesSearch = cert.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -212,12 +276,7 @@ const CertificatesPage: React.FC = () => {
         const matchesStudent = selectedStudentFilter === 'ALL' || cert.studentName === selectedStudentFilter;
         const matchesEvent = eventFilter === 'ALL' || cert.eventName === eventFilter;
         
-        let matchesCategory = true;
-        if (awardCategoryFilter === 'CHAMPION') matchesCategory = cert.rank === 1;
-        else if (awardCategoryFilter === 'RUNNER_UP') matchesCategory = cert.rank === 2;
-        else if (awardCategoryFilter === 'PARTICIPATION') matchesCategory = cert.rank === null || cert.rank > 2;
-
-        return matchesSearch && matchesStudent && matchesEvent && matchesCategory;
+        return matchesSearch && matchesStudent && matchesEvent;
     }).sort((a, b) => {
         if (dateSort === 'NEWEST') return b.rawDate.getTime() - a.rawDate.getTime();
         if (dateSort === 'OLDEST') return a.rawDate.getTime() - b.rawDate.getTime();
@@ -226,8 +285,17 @@ const CertificatesPage: React.FC = () => {
 
     const isAdminOrOrganizer = userRole === 'ADMIN' || userRole === 'ORGANIZER';
 
+    // Unique Student Names for Filter Dropdown
+    const uniqueStudents = Array.from(new Set(allStudentsCertificates.map(c => c.studentName)));
+    const filteredStudents = uniqueStudents.filter(sName => 
+        sName.toLowerCase().includes(studentSearchInput.toLowerCase())
+    );
+
     // Unique Event Names for Filter Dropdown
     const uniqueEvents = Array.from(new Set(allStudentsCertificates.map(c => c.eventName)));
+    const filteredEventsList = uniqueEvents.filter(eName => 
+        eName.toLowerCase().includes(eventSearchInput.toLowerCase())
+    );
 
     return (
         <>
@@ -289,7 +357,7 @@ const CertificatesPage: React.FC = () => {
                         </span>
                     </div>
 
-                    <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAdminOrOrganizer ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-3`}>
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAdminOrOrganizer ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-3`}>
                         
                         {/* Search Input */}
                         <div className="relative">
@@ -305,49 +373,84 @@ const CertificatesPage: React.FC = () => {
 
                         {/* Filter by Student (Admin / Organizer Only) */}
                         {isAdminOrOrganizer && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 relative" ref={studentDropdownRef}>
                                 <User size={14} className="text-slate-400 flex-shrink-0" />
-                                <select
-                                    value={selectedStudentFilter}
-                                    onChange={e => setSelectedStudentFilter(e.target.value)}
-                                    className="w-full px-3 py-2 text-xs bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:border-amber-400 font-medium cursor-pointer"
-                                >
-                                    <option value="ALL">All Students ({allStudentsCertificates.length})</option>
-                                    {Array.from(new Set(allStudentsCertificates.map(c => c.studentName))).map((sName, i) => (
-                                        <option key={i} value={sName}>{sName}</option>
-                                    ))}
-                                </select>
+                                <div className="relative w-full">
+                                    <input
+                                        type="text"
+                                        value={studentSearchInput}
+                                        onFocus={handleStudentFocus}
+                                        onChange={e => setStudentSearchInput(e.target.value)}
+                                        placeholder="Search student..."
+                                        className="w-full px-3 py-2 text-xs bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:border-amber-400 font-medium cursor-text"
+                                    />
+                                    <div className="absolute right-3 top-2.5 pointer-events-none text-slate-400 text-[10px]">▼</div>
+                                    
+                                    {isStudentDropdownOpen && (
+                                        <div className="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-slate-900 border border-slate-700 rounded-lg shadow-2xl z-[9999]">
+                                            <div
+                                                onClick={() => handleSelectStudent('ALL')}
+                                                className={`px-3 py-2 text-xs text-white hover:bg-amber-500/20 cursor-pointer ${selectedStudentFilter === 'ALL' ? 'bg-amber-500/10 text-amber-400 font-semibold' : ''}`}
+                                            >
+                                                All Students ({allStudentsCertificates.length})
+                                            </div>
+                                            {filteredStudents.length > 0 ? (
+                                                filteredStudents.map((sName, i) => (
+                                                    <div
+                                                        key={i}
+                                                        onClick={() => handleSelectStudent(sName)}
+                                                        className={`px-3 py-2 text-xs text-white hover:bg-amber-500/20 cursor-pointer ${selectedStudentFilter === sName ? 'bg-amber-500/10 text-amber-400 font-semibold' : ''}`}
+                                                    >
+                                                        {sName}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="px-3 py-2 text-xs text-slate-500 italic">No students found</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
                         {/* Filter by Event */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 relative" ref={eventDropdownRef}>
                             <Layers size={14} className="text-slate-400 flex-shrink-0" />
-                            <select
-                                value={eventFilter}
-                                onChange={e => setEventFilter(e.target.value)}
-                                className="w-full px-3 py-2 text-xs bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:border-amber-400 font-medium cursor-pointer"
-                            >
-                                <option value="ALL">All Completed Events</option>
-                                {uniqueEvents.map((eName, i) => (
-                                    <option key={i} value={eName}>{eName}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Filter by Award Type */}
-                        <div className="flex items-center gap-2">
-                            <Sparkles size={14} className="text-slate-400 flex-shrink-0" />
-                            <select
-                                value={awardCategoryFilter}
-                                onChange={e => setAwardCategoryFilter(e.target.value)}
-                                className="w-full px-3 py-2 text-xs bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:border-amber-400 font-medium cursor-pointer"
-                            >
-                                <option value="ALL">All Award Types</option>
-                                <option value="CHAMPION">🥇 1st Place Champions</option>
-                                <option value="RUNNER_UP">🥈 2nd Place Runner-Ups</option>
-                                <option value="PARTICIPATION">📜 Normal Participation</option>
-                            </select>
+                            <div className="relative w-full">
+                                <input
+                                    type="text"
+                                    value={eventSearchInput}
+                                    onFocus={handleEventFocus}
+                                    onChange={e => setEventSearchInput(e.target.value)}
+                                    placeholder="Search completed event..."
+                                    className="w-full px-3 py-2 text-xs bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:border-amber-400 font-medium cursor-text"
+                                />
+                                <div className="absolute right-3 top-2.5 pointer-events-none text-slate-400 text-[10px]">▼</div>
+                                
+                                {isEventDropdownOpen && (
+                                    <div className="absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-slate-900 border border-slate-700 rounded-lg shadow-2xl z-[9999]">
+                                        <div
+                                            onClick={() => handleSelectEvent('ALL')}
+                                            className={`px-3 py-2 text-xs text-white hover:bg-amber-500/20 cursor-pointer ${eventFilter === 'ALL' ? 'bg-amber-500/10 text-amber-400 font-semibold' : ''}`}
+                                        >
+                                            All Completed Events
+                                        </div>
+                                        {filteredEventsList.length > 0 ? (
+                                            filteredEventsList.map((eName, i) => (
+                                                <div
+                                                    key={i}
+                                                    onClick={() => handleSelectEvent(eName)}
+                                                    className={`px-3 py-2 text-xs text-white hover:bg-amber-500/20 cursor-pointer ${eventFilter === eName ? 'bg-amber-500/10 text-amber-400 font-semibold' : ''}`}
+                                                >
+                                                    {eName}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="px-3 py-2 text-xs text-slate-500 italic">No events found</div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Sort by Date */}
@@ -453,13 +556,13 @@ const CertificatesPage: React.FC = () => {
             {/* FULLSCREEN CERTIFICATE MODAL POPUP */}
             {selectedCert && (
                 <div
-                    className="fixed inset-0 z-[999999] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-start md:justify-center p-4 md:p-6 overflow-y-auto"
+                    className="fixed inset-0 z-[999999] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-start md:justify-center p-4 md:p-6 overflow-y-auto gap-4"
                     onClick={() => setSelectedCert(null)}
                 >
                     
                     {/* TOP ACTION BAR — stopPropagation to avoid closing modal */}
                     <div
-                        className="w-full max-w-5xl flex justify-between items-center bg-slate-900/90 border border-slate-700 p-4 rounded-xl mb-4 shadow-2xl shrink-0 hide-on-print"
+                        className="w-full max-w-5xl flex justify-between items-center bg-slate-900/90 border border-slate-700 p-4 rounded-xl shadow-2xl shrink-0 hide-on-print"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="text-left">
@@ -507,7 +610,7 @@ const CertificatesPage: React.FC = () => {
                     {/* CERTIFICATE — Landscape 16:9, clean typography */}
                     <div
                         id="printable-certificate"
-                        className="rounded-2xl border-[6px] border-[#d4af37] shadow-[0_0_100px_rgba(212,175,55,0.45)] max-w-5xl w-full relative overflow-hidden my-auto shrink-0"
+                        className="rounded-2xl border-[6px] border-[#d4af37] shadow-[0_0_100px_rgba(212,175,55,0.45)] max-w-5xl w-full relative overflow-hidden shrink-0 my-2 md:my-0"
                         style={{ fontFamily: "'Times New Roman', Georgia, serif", aspectRatio: '16/9', minHeight: '420px', background: 'linear-gradient(160deg, #1e1208 0%, #140e05 50%, #0c0803 100%)' }}
                         onClick={e => e.stopPropagation()}
                     >
