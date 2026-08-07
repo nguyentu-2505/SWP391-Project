@@ -34,6 +34,15 @@ public class RoundScheduler {
         List<Round> endedRounds = roundRepository.findByGradingEndTimeBeforeAndGradingEndedFalse(now);
 
         for (Round round : endedRounds) {
+            com.example.swp.features.hackathon_event.HackathonStatus eventStatus = round.getHackathonEvent().getStatus();
+            if (eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.COMPLETED ||
+                    eventStatus == com.example.swp.features.hackathon_event.HackathonStatus.CANCELLED) {
+                log.info("Round {} belongs to a completed/cancelled event. Marking grading as ended.", round.getId());
+                round.setGradingEnded(true);
+                roundRepository.save(round);
+                continue;
+            }
+
             log.info("Auto-advancing round: {}", round.getId());
             try {
                 // 1. Finalize scores
