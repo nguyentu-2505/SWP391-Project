@@ -8,7 +8,6 @@ import lombok.Setter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -19,7 +18,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Entity
 @Table(name = "submission", uniqueConstraints = {
-    @UniqueConstraint(name = "uq_team_round", columnNames = {"team_id", "round_id"})
+        @UniqueConstraint(name = "uq_team_round", columnNames = { "team_id", "round_id" })
 })
 public class Submission {
 
@@ -49,22 +48,63 @@ public class Submission {
 
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
-    
-    public Long getId() { return id; }
-    public Team getTeam() { return team; }
-    public Round getRound() { return round; }
-    public String getDemoUrl() { return demoUrl; }
-    public String getReportUrl() { return reportUrl; }
-    public int getVersion() { return version; }
-    public LocalDateTime getSubmittedAt() { return submittedAt; }
-    public void setVersion(int version) { this.version = version; }
-    public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
-    public void setRepositoryUrl(String repositoryUrl) { this.repositoryUrl = repositoryUrl; }
-    public void setDemoUrl(String demoUrl) { this.demoUrl = demoUrl; }
-    public void setReportUrl(String reportUrl) { this.reportUrl = reportUrl; }
-    public String getRepositoryUrl() { return repositoryUrl; }
 
-    public static SubmissionBuilder builder() { return new SubmissionBuilder(); }
+    public Long getId() {
+        return id;
+    }
+
+    public Team getTeam() {
+        return team;
+    }
+
+    public Round getRound() {
+        return round;
+    }
+
+    public String getDemoUrl() {
+        return demoUrl;
+    }
+
+    public String getReportUrl() {
+        return reportUrl;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public LocalDateTime getSubmittedAt() {
+        return submittedAt;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    public void setSubmittedAt(LocalDateTime submittedAt) {
+        this.submittedAt = submittedAt;
+    }
+
+    public void setRepositoryUrl(String repositoryUrl) {
+        this.repositoryUrl = repositoryUrl;
+    }
+
+    public void setDemoUrl(String demoUrl) {
+        this.demoUrl = demoUrl;
+    }
+
+    public void setReportUrl(String reportUrl) {
+        this.reportUrl = reportUrl;
+    }
+
+    public String getRepositoryUrl() {
+        return repositoryUrl;
+    }
+
+    public static SubmissionBuilder builder() {
+        return new SubmissionBuilder();
+    }
+
     public static class SubmissionBuilder {
         private Long id;
         private Team team;
@@ -75,20 +115,55 @@ public class Submission {
         private int version;
         private LocalDateTime submittedAt;
 
-        public SubmissionBuilder id(Long id) { this.id = id; return this; }
-        public SubmissionBuilder team(Team team) { this.team = team; return this; }
-        public SubmissionBuilder round(Round round) { this.round = round; return this; }
-        public SubmissionBuilder repositoryUrl(String repositoryUrl) { this.repositoryUrl = repositoryUrl; return this; }
-        public SubmissionBuilder demoUrl(String demoUrl) { this.demoUrl = demoUrl; return this; }
-        public SubmissionBuilder reportUrl(String reportUrl) { this.reportUrl = reportUrl; return this; }
-        public SubmissionBuilder version(int version) { this.version = version; return this; }
-        public SubmissionBuilder submittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; return this; }
+        public SubmissionBuilder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public SubmissionBuilder team(Team team) {
+            this.team = team;
+            return this;
+        }
+
+        public SubmissionBuilder round(Round round) {
+            this.round = round;
+            return this;
+        }
+
+        public SubmissionBuilder repositoryUrl(String repositoryUrl) {
+            this.repositoryUrl = repositoryUrl;
+            return this;
+        }
+
+        public SubmissionBuilder demoUrl(String demoUrl) {
+            this.demoUrl = demoUrl;
+            return this;
+        }
+
+        public SubmissionBuilder reportUrl(String reportUrl) {
+            this.reportUrl = reportUrl;
+            return this;
+        }
+
+        public SubmissionBuilder version(int version) {
+            this.version = version;
+            return this;
+        }
+
+        public SubmissionBuilder submittedAt(LocalDateTime submittedAt) {
+            this.submittedAt = submittedAt;
+            return this;
+        }
 
         public Submission build() {
             Submission s = new Submission();
-            s.id = this.id; s.team = this.team; s.round = this.round;
-            s.repositoryUrl = this.repositoryUrl; s.demoUrl = this.demoUrl;
-            s.reportUrl = this.reportUrl; s.version = this.version;
+            s.id = this.id;
+            s.team = this.team;
+            s.round = this.round;
+            s.repositoryUrl = this.repositoryUrl;
+            s.demoUrl = this.demoUrl;
+            s.reportUrl = this.reportUrl;
+            s.version = this.version;
             s.submittedAt = this.submittedAt;
             return s;
         }
