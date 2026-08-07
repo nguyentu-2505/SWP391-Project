@@ -126,11 +126,7 @@ const HackathonEventPage: React.FC = () => {
   const handleStatusChange = async (eventId: number, newStatus: string) => {
     const loadingToast = toast.loading('Updating status...');
     try {
-      if (newStatus === 'PUBLISHED') {
-        await api.put(`/hackathon-events/${eventId}/publish`);
-      } else {
-        await HackathonEventService.updateHackathonEventStatus(eventId, newStatus);
-      }
+      await HackathonEventService.updateHackathonEventStatus(eventId, newStatus);
       fetchEvents();
       toast.success(`Event status updated to ${newStatus}`, { id: loadingToast });
     } catch (error: any) {
@@ -210,6 +206,22 @@ const HackathonEventPage: React.FC = () => {
       console.error('Failed to delete hackathon event:', error);
       const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
       toast.error('Failed to delete event: ' + errorMessage, { id: loadingToast });
+    }
+  };
+
+  const handleCloneEvent = async (eventId: number) => {
+    const confirmClone = window.confirm("Are you sure you want to clone this event? All rounds and criteria will be copied to a new DRAFT event.");
+    if (!confirmClone) return;
+
+    const loadingToast = toast.loading('Cloning event...');
+    try {
+      await HackathonEventService.cloneHackathonEvent(eventId);
+      fetchEvents();
+      toast.success('Event cloned successfully!', { id: loadingToast });
+    } catch (error: any) {
+      console.error('Failed to clone hackathon event:', error);
+      const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.message;
+      toast.error('Failed to clone event: ' + errorMessage, { id: loadingToast });
     }
   };
 
@@ -350,6 +362,13 @@ const HackathonEventPage: React.FC = () => {
                               title="Edit"
                             >
                               <Edit2 size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleCloneEvent(event.id)}
+                              className="text-amber-600 hover:text-amber-900 transition-colors cursor-pointer"
+                              title="Clone Event"
+                            >
+                              <Copy size={18} />
                             </button>
                             <Link
                               to={`/organizer/events/${event.id}/dashboard`}

@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import Modal from '../../components/Modal';
 import { RefreshCcw } from 'lucide-react';
 
+const isActionableRequest = (status: string) => status === 'OPEN' || status === 'IN_PROGRESS';
+
 const MentorDashboardPage: React.FC = () => {
     const [myRequests, setMyRequests] = useState<MentorshipRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -111,7 +113,7 @@ const MentorDashboardPage: React.FC = () => {
                                                 setAnswerText('');
                                             }}
                                         >
-                                            {req.status === 'RESOLVED' ? 'View Details' : 'Reply'}
+                                            {isActionableRequest(req.status) ? 'Reply' : 'View Details'}
                                         </button>
                                     </td>
                                 </tr>
@@ -126,7 +128,7 @@ const MentorDashboardPage: React.FC = () => {
                 onClose={() => {
                     if (!isSubmitting) setSelectedRequest(null);
                 }}
-                title={selectedRequest?.status === 'RESOLVED' ? 'Session Details' : 'Reply to Mentorship Request'}
+                title={selectedRequest && isActionableRequest(selectedRequest.status) ? 'Reply to Mentorship Request' : 'Session Details'}
             >
                 {selectedRequest && (
                     <div className="space-y-4">
@@ -151,7 +153,7 @@ const MentorDashboardPage: React.FC = () => {
                             </span>
                         </div>
 
-                        {selectedRequest.status !== 'RESOLVED' && (
+                        {isActionableRequest(selectedRequest.status) && (
                             <div className="mt-6 pt-6 border-t border-gray-200">
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                                     Your Answer / Feedback
@@ -192,7 +194,7 @@ const MentorDashboardPage: React.FC = () => {
                                 </div>
                             </div>
                         )}
-                        {selectedRequest.status === 'RESOLVED' && (
+                        {!isActionableRequest(selectedRequest.status) && (
                             <div className="flex justify-end mt-4">
                                 <button
                                     type="button"

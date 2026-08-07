@@ -62,8 +62,9 @@ const RankingTab: React.FC = () => {
                 const list = Array.isArray(data) ? data : [];
                 setRounds(list);
                 if (list.length > 0) setSelectedRoundId(list[0].id);
-            } catch {
-                toast.error('Failed to load rounds.');
+            } catch (err: any) {
+                console.error('Error fetching rounds:', err);
+                toast.error(err.response?.data?.message || 'Failed to load rounds.');
             } finally {
                 setLoadingRounds(false);
             }
@@ -77,8 +78,10 @@ const RankingTab: React.FC = () => {
         try {
             const res = await api.get(`/rankings/round/${selectedRoundId}`);
             setRankings(res.data.data ?? []);
-        } catch {
-            toast.error('Failed to load rankings for this round.');
+        } catch (err: any) {
+            console.error('Error fetching rankings:', err);
+            const errMsg = err.response?.data?.message || err.message || 'Failed to load rankings for this round.';
+            toast.error(errMsg);
             setRankings([]);
         } finally {
             setLoadingRankings(false);
