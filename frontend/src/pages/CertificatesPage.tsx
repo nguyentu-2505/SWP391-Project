@@ -201,8 +201,8 @@ const CertificatesPage: React.FC = () => {
                         // 1. If prizes are configured/assigned, check the team's assigned prize
                         if (teamPrizeMap.size > 0) {
                             const prize = teamPrizeMap.get(t.id);
-                            if (!prize) {
-                                continue; // No prize assigned to this team -> No certificate!
+                            if (!prize || prize.hasCertificate === false) {
+                                continue; // No prize assigned OR prize explicitly says no certificate -> Skip!
                             }
                             rank = prize.rank || null;
                             awardTitle = prize.name;
