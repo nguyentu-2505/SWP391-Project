@@ -677,8 +677,7 @@ const CertificatesPage: React.FC = () => {
                             <p className="text-amber-100/75 text-base leading-relaxed font-sans max-w-2xl mb-5">
                                 for participating as <strong className="text-white font-semibold">{selectedCert.userRoleInTeam}</strong>{' '}
                                 of team <strong className="text-white font-semibold">"{selectedCert.teamName}"</strong>{' '}
-                                in the <strong className="text-white font-semibold">{selectedCert.trackName}</strong> track,{' '}
-                                completing the <strong className="text-white font-semibold">{selectedCert.roundName}</strong> round.
+                                in the <strong className="text-white font-semibold">{selectedCert.trackName}</strong> track.
                             </p>
 
                             {/* Bottom ornamental line */}
