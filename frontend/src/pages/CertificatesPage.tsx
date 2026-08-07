@@ -161,6 +161,16 @@ const CertificatesPage: React.FC = () => {
                         !max || r.roundOrder > max.roundOrder ? r : max, null
                     );
 
+                    // Fetch prizes for the event
+                    const prizesRes = await api.get(`/prizes/event/${ev.id}`);
+                    const prizes = Array.isArray(prizesRes.data) ? prizesRes.data : [];
+                    const teamPrizeMap = new Map<number, any>();
+                    prizes.forEach((p: any) => {
+                        if (p.winningTeamId) {
+                            teamPrizeMap.set(p.winningTeamId, p);
+                        }
+                    });
+
                     // Fetch final rankings if finalRound exists
                     const rankMap = new Map<number, number>();
                     let finalRoundName = 'Final Round';
@@ -185,23 +195,36 @@ const CertificatesPage: React.FC = () => {
                                   Array.isArray(teamRes.data) ? teamRes.data : [];
 
                     for (const t of teams) {
-                        const rank = rankMap.get(t.id) || null;
+                        let rank: number | null = null;
+                        let awardTitle = '';
 
-                        // Only award certificates to teams that won a prize (ranks 1, 2, or 3)
-                        if (rank === null || rank > 3) {
-                            continue;
+                        // 1. If prizes are configured/assigned, check the team's assigned prize
+                        if (teamPrizeMap.size > 0) {
+                            const prize = teamPrizeMap.get(t.id);
+                            if (!prize) {
+                                continue; // No prize assigned to this team -> No certificate!
+                            }
+                            rank = prize.rank || null;
+                            awardTitle = prize.name;
+                        } 
+                        // 2. Fallback to rankings if no prizes are configured/assigned yet (limit to top 3)
+                        else {
+                            rank = rankMap.get(t.id) || null;
+                            if (rank === null || rank > 3) {
+                                continue; // Only top 3 receive certificates!
+                            }
+                            
+                            let defaultAwardTitle = 'Certificate of Participation';
+                            if (rank === 1) defaultAwardTitle = '1st Place Grand Champion';
+                            else if (rank === 2) defaultAwardTitle = '2nd Place Runner-Up';
+                            else if (rank === 3) defaultAwardTitle = '3rd Place Bronze Winner';
+
+                            const trackName = t.trackName || 'General Track';
+                            awardTitle = defaultAwardTitle;
+                            if (rank === 1 && trackName) awardTitle = `1st Place ${trackName} Champion`;
+                            else if (rank === 2 && trackName) awardTitle = `2nd Place ${trackName} Runner-Up`;
+                            else if (rank === 3 && trackName) awardTitle = `3rd Place ${trackName} Bronze Winner`;
                         }
-
-                        let defaultAwardTitle = 'Certificate of Participation';
-                        if (rank === 1) defaultAwardTitle = '1st Place Grand Champion';
-                        else if (rank === 2) defaultAwardTitle = '2nd Place Runner-Up';
-                        else if (rank === 3) defaultAwardTitle = '3rd Place Bronze Winner';
-
-                        const trackName = t.trackName || 'General Track';
-                        let awardTitle = defaultAwardTitle;
-                        if (rank === 1 && trackName) awardTitle = `1st Place ${trackName} Champion`;
-                        else if (rank === 2 && trackName) awardTitle = `2nd Place ${trackName} Runner-Up`;
-                        else if (rank === 3 && trackName) awardTitle = `3rd Place ${trackName} Bronze Winner`;
 
                         if (t.members && t.members.length > 0) {
                             t.members
