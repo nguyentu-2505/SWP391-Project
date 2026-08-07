@@ -369,7 +369,7 @@ GO
 -- Mỗi bảng có 2-3 dòng mẫu để test
 -- =============================================
 -- -----------------------------------------------
--- 5.1 _user (12 users: 1 admin, 2 organizer, 2 judge, 2 mentor, 12 participant)
+-- 5.1 _user (10 users: 1 admin, 2 organizer, 2 judge, 2 mentor, 3 participant)
 -- -----------------------------------------------
 INSERT INTO _user (username, password, email, role, fpt_student_id, school_name, approved, is_verified, full_name, phone, skills, bio, github_url)
 VALUES
@@ -407,13 +407,9 @@ VALUES
     ('student9',  '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student9@fpt.edu.vn',  'PARTICIPANT', 'SE170009', 'FPT University', 1, 1, N'Ngô Văn I',   '0901000016', N'Java, Spring', N'Sinh viên năm 4', NULL),
     -- id=17: Participant 10
     ('student10', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student10@fpt.edu.vn', 'PARTICIPANT', 'SE170010', 'FPT University', 1, 1, N'Bùi Thị K',   '0901000017', N'AWS, Docker', N'Sinh viên năm 3', NULL),
-    -- id=18: Participant 11
-    ('student11', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student11@fpt.edu.vn', 'PARTICIPANT', 'SE170011', 'FPT University', 1, 1, N'Lý Văn L',   '0901000020', N'C#',          N'Sinh viên năm 3', NULL),
-    -- id=19: Participant 12
-    ('student12', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'student12@fpt.edu.vn', 'PARTICIPANT', 'SE170012', 'FPT University', 1, 1, N'Trần Thị M',  '0901000021', N'Java',        N'Sinh viên năm 2', NULL),
-    -- id=20: Guest Judge 1
+    -- id=18: Guest Judge 1
     ('guestjudge1', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'guestjudge1@external.com', 'GUEST_JUDGE', NULL,        'External Tech Corp', 1, 1, N'Võ Hoài Guest',      '0901000018', N'Blockchain, AI',       N'Giám khảo khách mời từ doanh nghiệp', NULL),
-    -- id=21: Guest Judge 2
+    -- id=19: Guest Judge 2
     ('guestjudge2', '$2a$10$lj8/uT7YJgOHJnoi7fxajuiaEWepHCxRWA1xtOqYv5iGdjG6KdVru', 'guestjudge2@external.com', 'GUEST_JUDGE', NULL,        'FPT Software',       1, 1, N'Đặng Lê Guest',      '0901000019', N'Cloud Architecture',   N'Chuyên gia khách mời từ FPT Software', NULL);
 
 
@@ -463,10 +459,8 @@ INSERT INTO event_registration (event_id, user_id, status) VALUES
                                                                (1, 15, 'REGISTERED'),
                                                                (1, 16, 'REGISTERED'),
                                                                (1, 17, 'REGISTERED'),
-                                                               (1, 18, 'REGISTERED'),  -- student11
-                                                               (1, 19, 'REGISTERED'),  -- student12
-                                                               (1, 20, 'REGISTERED'),  -- guestjudge1
-                                                               (1, 21, 'REGISTERED'),  -- guestjudge2
+                                                               (1, 18, 'REGISTERED'),
+                                                               (1, 19, 'REGISTERED'),
                                                                (1, 4,  'REGISTERED'),  -- judge1 (đăng ký tham gia với tư cách judge)
                                                                (1, 5,  'REGISTERED'),  -- judge2
                                                                (1, 6,  'REGISTERED');  -- mentor1

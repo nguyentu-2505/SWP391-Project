@@ -15,7 +15,6 @@ interface SubmissionDetails {
     demoUrl: string;
     reportUrl: string;
     eventSlug?: string;
-    eventId?: number;
 }
 
 interface Criterion {
@@ -53,11 +52,10 @@ const ScoringPage: React.FC = () => {
                 const submissionData = subRes.data.data;
                 setSubmission(submissionData);
 
-                // Fetch criteria for the submission's event
+                // Fetch criteria: assuming hackathon event ID 1 for now
                 let critData = [];
                 try {
-                    const eventId = submissionData.eventId || 1;
-                    const critRes = await api.get(`/criteria/event/${eventId}`);
+                    const critRes = await api.get(`/criteria/event/1`);
                     critData = critRes.data.data ?? [];
                     
                     if (critData.length === 0) {
