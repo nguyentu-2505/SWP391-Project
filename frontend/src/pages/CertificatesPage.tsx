@@ -151,21 +151,57 @@ const CertificatesPage: React.FC = () => {
             // 3. Query teams and members from database for eligible events
             for (const ev of eligibleEvents) {
                 try {
+                    // Fetch rounds for the event
+                    const roundsRes = await api.get(`/rounds/hackathon/${ev.id}`);
+                    const rounds = Array.isArray(roundsRes.data?.data) ? roundsRes.data.data : 
+                                   Array.isArray(roundsRes.data) ? roundsRes.data : [];
+
+                    // Find the final round (with highest roundOrder)
+                    const finalRound = rounds.reduce((max: any, r: any) => 
+                        !max || r.roundOrder > max.roundOrder ? r : max, null
+                    );
+
+                    // Fetch final rankings if finalRound exists
+                    const rankMap = new Map<number, number>();
+                    let finalRoundName = 'Final Round';
+                    if (finalRound) {
+                        finalRoundName = finalRound.name;
+                        try {
+                            const rankingsRes = await api.get(`/rankings/round/${finalRound.id}`);
+                            const rankings = Array.isArray(rankingsRes.data?.data) ? rankingsRes.data.data : 
+                                             Array.isArray(rankingsRes.data) ? rankingsRes.data : [];
+                            rankings.forEach((r: any) => {
+                                if (r.teamId && r.rank) {
+                                    rankMap.set(r.teamId, r.rank);
+                                }
+                            });
+                        } catch (err) {
+                            console.log('Failed to fetch rankings for round', finalRound.id, err);
+                        }
+                    }
+
                     const teamRes = await api.get(`/teams/event/${ev.id}`);
                     const teams = Array.isArray(teamRes.data?.data) ? teamRes.data.data : 
                                   Array.isArray(teamRes.data) ? teamRes.data : [];
 
                     for (const t of teams) {
-                        const rank = t.rank || 1;
+                        const rank = rankMap.get(t.id) || null;
+
+                        // Only award certificates to teams that won a prize (ranks 1, 2, or 3)
+                        if (rank === null || rank > 3) {
+                            continue;
+                        }
+
                         let defaultAwardTitle = 'Certificate of Participation';
                         if (rank === 1) defaultAwardTitle = '1st Place Grand Champion';
                         else if (rank === 2) defaultAwardTitle = '2nd Place Runner-Up';
                         else if (rank === 3) defaultAwardTitle = '3rd Place Bronze Winner';
 
-                        const trackName = t.trackName || (ev.tracks && ev.tracks[0]?.name) || 'General Track';
+                        const trackName = t.trackName || 'General Track';
                         let awardTitle = defaultAwardTitle;
                         if (rank === 1 && trackName) awardTitle = `1st Place ${trackName} Champion`;
                         else if (rank === 2 && trackName) awardTitle = `2nd Place ${trackName} Runner-Up`;
+                        else if (rank === 3 && trackName) awardTitle = `3rd Place ${trackName} Bronze Winner`;
 
                         if (t.members && t.members.length > 0) {
                             t.members
@@ -180,7 +216,7 @@ const CertificatesPage: React.FC = () => {
                                         userRoleInTeam: m.isLeader ? 'Team Leader' : 'Team Member',
                                         teamName: t.name || 'SEAL Innovators',
                                         trackName: trackName,
-                                        roundName: (ev.rounds && ev.rounds[0]?.name) || 'Vòng loại',
+                                        roundName: finalRoundName,
                                         rank: rank,
                                         awardTitle: awardTitle,
                                         issueDate: formattedDate,
