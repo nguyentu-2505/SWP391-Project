@@ -60,6 +60,13 @@ public class RoundController {
         return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response, "Grading period ended early successfully."));
     }
 
+    @PostMapping("/{id}/end-submission")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<com.example.swp.common.ApiResponse<RoundResponse>> endSubmission(@PathVariable Long id) {
+        RoundResponse response = roundService.endSubmission(id);
+        return ResponseEntity.ok(com.example.swp.common.ApiResponse.success(response, "Submission period ended early successfully."));
+    }
+
     @GetMapping("/{id}/grading-progress")
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
     public ResponseEntity<com.example.swp.common.ApiResponse<List<com.example.swp.features.round.dto.GradingProgressDto>>> getGradingProgress(@PathVariable Long id) {

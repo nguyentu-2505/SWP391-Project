@@ -192,19 +192,38 @@ const RoundsTab: React.FC = () => {
         }
     };
 
-    const handleEndGradingEarly = (id: number) => {
-        setConfirmTitle('End Round Early');
-        setConfirmMessage('Are you sure you want to end the submission / grading time for this round early? The rankings will be displayed immediately.');
-        setConfirmText('End');
+    const handleEndSubmissionEarly = (id: number) => {
+        setConfirmTitle('End Submission Early');
+        setConfirmMessage('Are you sure you want to end the student submission period for this round early? Teams will no longer be able to submit, and the grading period will start immediately.');
+        setConfirmText('End Submission');
         setConfirmIsDanger(false);
         setConfirmAction(() => async () => {
-            const loadingToast = toast.loading('Ending early...');
+            const loadingToast = toast.loading('Ending submission early...');
             try {
-                await api.post(`/rounds/${id}/end-grading`);
-                toast.success('Ended early successfully!', { id: loadingToast });
+                await api.post(`/rounds/${id}/end-submission`);
+                toast.success('Submission period ended early successfully!', { id: loadingToast });
                 fetchRounds();
             } catch (err: any) {
-                toast.error(err.response?.data?.error?.message || 'Failed to end early.', { id: loadingToast });
+                toast.error(err.response?.data?.error?.message || 'Failed to end submission early.', { id: loadingToast });
+            }
+            setConfirmOpen(false);
+        });
+        setConfirmOpen(true);
+    };
+
+    const handleEndGradingEarly = (id: number) => {
+        setConfirmTitle('End Grading Early');
+        setConfirmMessage('Are you sure you want to end the grading period for this round early? The rankings will be finalized and displayed immediately, and subsequent rounds will be shifted to start now.');
+        setConfirmText('End Grading');
+        setConfirmIsDanger(false);
+        setConfirmAction(() => async () => {
+            const loadingToast = toast.loading('Ending grading early...');
+            try {
+                await api.post(`/rounds/${id}/end-grading`);
+                toast.success('Grading ended early successfully!', { id: loadingToast });
+                fetchRounds();
+            } catch (err: any) {
+                toast.error(err.response?.data?.error?.message || 'Failed to end grading early.', { id: loadingToast });
             }
             setConfirmOpen(false);
         });
@@ -438,14 +457,23 @@ const RoundsTab: React.FC = () => {
                                          Complete Event
                                      </button>
                                 )}
-                                {round.gradingEndTime && !round.gradingEnded && new Date() < new Date(round.gradingEndTime) && (
-                                     <button
-                                         onClick={() => handleEndGradingEarly(round.id)}
-                                         className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
-                                         title="End round or grading time early"
-                                     >
-                                         End Early
-                                     </button>
+                                {round.endTime && new Date() < new Date(round.endTime) && (
+                                    <button
+                                        onClick={() => handleEndSubmissionEarly(round.id)}
+                                        className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
+                                        title="End submission period early"
+                                    >
+                                        End Submission
+                                    </button>
+                                )}
+                                {round.endTime && round.gradingEndTime && !round.gradingEnded && new Date() >= new Date(round.endTime) && new Date() < new Date(round.gradingEndTime) && (
+                                    <button
+                                        onClick={() => handleEndGradingEarly(round.id)}
+                                        className="text-[10px] bg-amber-600 hover:bg-amber-700 text-white border border-amber-700 px-2 py-1 rounded-md font-semibold transition-colors shrink-0 cursor-pointer"
+                                        title="End grading period early"
+                                    >
+                                        End Grading
+                                    </button>
                                 )}
                                 <button
                                      onClick={() => handleViewProgress(round.id)}
