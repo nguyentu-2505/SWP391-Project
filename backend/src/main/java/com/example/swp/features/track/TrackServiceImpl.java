@@ -172,6 +172,14 @@ public class TrackServiceImpl implements TrackService {
                 "Mentor " + assignment.getMentor().getUsername(),
                 null,
                 assignment.getEvent().getId());
+
+        notificationService.createNotification(
+                assignment.getMentor(),
+                "Mentor Unassigned",
+                "You have been unassigned as a mentor for track '" + assignment.getTrack().getName() + "'.",
+                "MENTOR_UNASSIGNMENT",
+                "TRACK",
+                assignment.getTrack().getId());
     }
 
     /**

@@ -112,6 +112,19 @@ public class HackathonEventServiceImpl implements HackathonEventService {
                 "Created event: " + savedEvent.getName(), savedEvent.getId());
         log.info("Hackathon event created successfully: id={}, name={} by organizer={}", savedEvent.getId(),
                 savedEvent.getName(), organizer.getUsername());
+
+        User currentUser = getCurrentUser();
+        if (!organizer.getId().equals(currentUser.getId())) {
+            notificationService.createNotification(
+                    organizer,
+                    "Organizer Assignment",
+                    "You have been assigned as the organizer for the new event: " + savedEvent.getName(),
+                    "ORGANIZER_ASSIGNMENT",
+                    "HACKATHON_EVENT",
+                    savedEvent.getId()
+            );
+        }
+
         return mapToResponse(savedEvent);
     }
 
@@ -218,11 +231,23 @@ public class HackathonEventServiceImpl implements HackathonEventService {
         if (request.getImageUrl() != null) {
             event.setImageUrl(request.getImageUrl());
         }
-        if (request.getOrganizerId() != null) {
+        if (request.getOrganizerId() != null && (event.getOrganizer() == null || !event.getOrganizer().getId().equals(request.getOrganizerId()))) {
             User newOrganizer = userRepository.findById(request.getOrganizerId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Organizer not found with id: " + request.getOrganizerId()));
             event.setOrganizer(newOrganizer);
+            
+            User currentUser = getCurrentUser();
+            if (!newOrganizer.getId().equals(currentUser.getId())) {
+                notificationService.createNotification(
+                        newOrganizer,
+                        "Organizer Assignment",
+                        "You have been assigned as the organizer for the event: " + event.getName(),
+                        "ORGANIZER_ASSIGNMENT",
+                        "HACKATHON_EVENT",
+                        event.getId()
+                );
+            }
         }
 
         // Validate sau khi merge: endTime > startTime

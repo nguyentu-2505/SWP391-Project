@@ -146,6 +146,16 @@ public class JudgeAssignmentService {
             null,
             assignment.getRound().getHackathonEvent().getId()
         );
+
+        String trackName = assignment.getTrack() != null ? assignment.getTrack().getName() : "All Tracks";
+        notificationService.createNotification(
+            assignment.getJudge(),
+            "Judge Unassigned",
+            "You have been unassigned from grading " + trackName + " in round '" + assignment.getRound().getName() + "'.",
+            "JUDGE_UNASSIGNMENT",
+            "ROUND",
+            assignment.getRound().getId()
+        );
     }
 
     private User getCurrentUser() {
