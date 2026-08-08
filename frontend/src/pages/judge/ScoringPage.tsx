@@ -15,7 +15,6 @@ interface SubmissionDetails {
     demoUrl: string;
     reportUrl: string;
     eventSlug?: string;
-    eventId?: number;
 }
 
 interface Criterion {
